@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, fireEvent } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 
 const mockPush = jest.fn();
@@ -15,6 +15,8 @@ jest.mock("next/navigation", () => ({
 }));
 
 import { ProductsFilters } from "./ProductsFilters";
+
+const tagOptions = ["climate", "hls", "landsat"];
 
 const renderWithTheme = (component: React.ReactElement) => {
   return render(<Theme>{component}</Theme>);
@@ -35,7 +37,7 @@ describe("ProductsFilters", () => {
   it("should preserve tags query param from URL on mount", () => {
     mockSearchParams.set("tags", "hls");
 
-    renderWithTheme(<ProductsFilters />);
+    renderWithTheme(<ProductsFilters tagOptions={tagOptions} />);
 
     // Advance past the debounce delay
     act(() => {
@@ -52,7 +54,7 @@ describe("ProductsFilters", () => {
   it("should preserve search query param from URL on mount", () => {
     mockSearchParams.set("search", "climate");
 
-    renderWithTheme(<ProductsFilters />);
+    renderWithTheme(<ProductsFilters tagOptions={tagOptions} />);
 
     act(() => {
       jest.advanceTimersByTime(600);
@@ -68,7 +70,7 @@ describe("ProductsFilters", () => {
     mockSearchParams.set("tags", "hls");
     mockSearchParams.set("search", "satellite");
 
-    renderWithTheme(<ProductsFilters />);
+    renderWithTheme(<ProductsFilters tagOptions={tagOptions} />);
 
     act(() => {
       jest.advanceTimersByTime(600);
@@ -81,18 +83,26 @@ describe("ProductsFilters", () => {
     expect(strippingCalls).toHaveLength(0);
   });
 
-  it("should render input fields with values from URL params", () => {
-    mockSearchParams.set("tags", "hls");
+  it("should render search and chosen tags from URL params", () => {
+    mockSearchParams.set("tags", "hls,climate");
     mockSearchParams.set("search", "satellite");
 
-    renderWithTheme(<ProductsFilters />);
+    renderWithTheme(<ProductsFilters tagOptions={tagOptions} />);
 
-    const searchInput = screen.getByPlaceholderText("Search products...");
-    const tagsInput = screen.getByPlaceholderText(
-      "Filter by tags (comma-separated)"
+    expect(screen.getByPlaceholderText("Search products...")).toHaveValue(
+      "satellite"
     );
+    expect(screen.getByLabelText("Remove hls")).toBeInTheDocument();
+    expect(screen.getByLabelText("Remove climate")).toBeInTheDocument();
+  });
 
-    expect(searchInput).toHaveValue("satellite");
-    expect(tagsInput).toHaveValue("hls");
+  it("should filter by the remaining tags when one is removed", () => {
+    mockSearchParams.set("tags", "hls,climate");
+
+    renderWithTheme(<ProductsFilters tagOptions={tagOptions} />);
+    mockPush.mockClear();
+    fireEvent.click(screen.getByLabelText("Remove hls"));
+
+    expect(mockPush).toHaveBeenCalledWith("/products?tags=climate");
   });
 });

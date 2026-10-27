@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout";
 import { ProductsList } from "@/components/features/products/ProductsList";
 import { ProductsFilters } from "@/components/features/products/ProductsFilters";
 import { listProducts } from "@/lib/operations/products";
+import { tagsTable } from "@/lib";
 import { notFound } from "next/navigation";
 import { Badge, Box, Flex, Text } from "@radix-ui/themes";
 
@@ -61,7 +62,7 @@ export default async function ProductsPage({
     <Box>
       <PageHeader title="Products" />
 
-      <ProductsFilters />
+      <ProductsFilters tagOptions={await tagsTable.listAll()} />
 
       {hasActiveFilters && (
         <Flex gap="2" align="center" mb="3">

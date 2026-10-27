@@ -5,8 +5,14 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { TextField, Button, Flex } from "@radix-ui/themes";
 import { Cross2Icon, StarFilledIcon } from "@radix-ui/react-icons";
 import { useDebounce } from "@/hooks/useDebounce";
+import { TagPicker } from "./TagPicker";
 
-export function ProductsFilters() {
+interface ProductsFiltersProps {
+  /** The known corpus of tags to filter by. */
+  tagOptions: string[];
+}
+
+export function ProductsFilters({ tagOptions }: ProductsFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -18,58 +24,30 @@ export function ProductsFilters() {
   const currentFeatured = searchParams.get("featured") === "1";
   const hasActiveFilters = currentSearch || currentTags || currentFeatured;
 
-  // Local state for search and tags input (initialized from URL to prevent race condition)
+  // Local state, initialized from the URL to prevent a race condition. Tags
+  // are kept here too so a ticked box shows before the page reloads.
   const [searchInput, setSearchInput] = useState(currentSearch);
-  const [tagsInput, setTagsInput] = useState(currentTags);
+  const [tags, setTags] = useState(currentTags.split(",").filter(Boolean));
 
-  // Set search and tags input values from URL on mount
+  // Follow the URL when it changes underneath us (clear, back, forward)
   useEffect(() => {
     setSearchInput(currentSearch);
-    setTagsInput(currentTags);
+    setTags(currentTags.split(",").filter(Boolean));
   }, [searchParams]);
 
-  // Update filters when search or tags change
   const debouncedSearch = useDebounce(searchInput, 500);
-  const debouncedTags = useDebounce(tagsInput, 500);
   useEffect(() => {
-    updateFilters(debouncedSearch, debouncedTags);
-  }, [debouncedSearch, debouncedTags]);
+    setFilter("search", debouncedSearch);
+  }, [debouncedSearch]);
 
-  const updateFilters = (search: string, tags: string) => {
+  const setFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
-
-    if (search) {
-      params.set("search", search);
+    if (value) {
+      params.set(key, value);
     } else {
-      params.delete("search");
+      params.delete(key);
     }
-
-    if (tags) {
-      params.set("tags", tags);
-    } else {
-      params.delete("tags");
-    }
-
     // Reset pagination when filters change
-    params.delete("cursor");
-    params.delete("previous");
-
-    const newUrl = params.toString()
-      ? `${pathname}?${params.toString()}`
-      : pathname;
-
-    startTransition(() => {
-      router.push(newUrl);
-    });
-  };
-
-  const toggleFeatured = () => {
-    const params = new URLSearchParams(searchParams);
-    if (currentFeatured) {
-      params.delete("featured");
-    } else {
-      params.set("featured", "1");
-    }
     params.delete("cursor");
     params.delete("previous");
     const newUrl = params.toString()
@@ -82,14 +60,14 @@ export function ProductsFilters() {
 
   const handleClearFilters = () => {
     setSearchInput("");
-    setTagsInput("");
+    setTags([]);
     startTransition(() => {
       router.push(pathname);
     });
   };
 
   return (
-    <Flex gap="3" mb="4" wrap="wrap">
+    <Flex gap="3" mb="4" wrap="wrap" align="center">
       <TextField.Root
         size="1"
         style={{ minWidth: "300px" }}
@@ -98,19 +76,21 @@ export function ProductsFilters() {
         onChange={(e) => setSearchInput(e.target.value)}
       />
 
-      <TextField.Root
-        size="1"
-        style={{ minWidth: "250px" }}
-        placeholder="Filter by tags (comma-separated)"
-        value={tagsInput}
-        onChange={(e) => setTagsInput(e.target.value)}
+      <TagPicker
+        options={tagOptions}
+        value={tags}
+        label="Filter by tags"
+        onChange={(next) => {
+          setTags(next);
+          setFilter("tags", next.join(","));
+        }}
       />
 
       <Button
         size="1"
         variant={currentFeatured ? "solid" : "soft"}
         color={currentFeatured ? "orange" : "gray"}
-        onClick={toggleFeatured}
+        onClick={() => setFilter("featured", currentFeatured ? "" : "1")}
         disabled={isPending}
       >
         <StarFilledIcon />

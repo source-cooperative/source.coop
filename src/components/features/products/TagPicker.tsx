@@ -16,27 +16,40 @@ import type { ControlProps } from "@/components/core/DynamicForm";
 
 interface TagPickerProps extends Partial<ControlProps> {
   /** The form field each chosen tag is submitted under, once per tag. */
-  name: string;
+  name?: string;
   /** The known corpus: the only tags that can be added. */
   options: string[];
   /** Tags already on the product, kept even when the corpus no longer has them. */
   defaultValue?: string[];
+  /** The chosen tags, for a parent that keeps them itself. */
+  value?: string[];
+  /** Called with the chosen tags each time one is added or removed. */
+  onChange?: (tags: string[]) => void;
+  /** The button's text, in place of "Add tags" or "Edit tags". */
+  label?: string;
 }
 
 export function TagPicker({
   name,
   options,
   defaultValue = [],
+  value,
+  onChange,
+  label,
   ...controlProps
 }: TagPickerProps) {
-  const [tags, setTags] = useState(defaultValue);
+  const [ownTags, setTags] = useState(defaultValue);
+  const tags = value ?? ownTags;
   const [filter, setFilter] = useState("");
 
   const matches = options.filter((tag) =>
     tag.toLowerCase().includes(filter.trim().toLowerCase())
   );
-  const toggle = (tag: string, on: boolean) =>
-    setTags((tags) => (on ? [...tags, tag] : tags.filter((t) => t !== tag)));
+  const toggle = (tag: string, on: boolean) => {
+    const next = on ? [...tags, tag] : tags.filter((t) => t !== tag);
+    setTags(next);
+    onChange?.(next);
+  };
 
   return (
     <Flex gap="2" wrap="wrap" align="center">
@@ -53,13 +66,13 @@ export function TagPicker({
           >
             <Cross2Icon />
           </IconButton>
-          <input type="hidden" name={name} value={tag} />
+          {name && <input type="hidden" name={name} value={tag} />}
         </Badge>
       ))}
       <Popover.Root onOpenChange={() => setFilter("")}>
         <Popover.Trigger>
           <Button {...controlProps} type="button" size="1" variant="soft">
-            {tags.length ? "Edit tags" : "Add tags"}
+            {label ?? (tags.length ? "Edit tags" : "Add tags")}
           </Button>
         </Popover.Trigger>
         <Popover.Content width="280px" aria-label="Choose tags">
