@@ -4,17 +4,6 @@ import { getPageSession } from "@/lib";
 import * as ops from "@/lib/operations/tags";
 
 /**
- * Suggests the picker's filter text as a new tag. Resolves to the tag as
- * stored, which may be one that already existed, or to why it was refused.
- */
-export async function suggestTag(
-  raw: string
-): Promise<{ tag: string } | { error: string }> {
-  const result = await ops.suggestTag(await getPageSession(), { tag_id: raw });
-  return result.ok ? { tag: result.value.tag.tag_id } : { error: result.message };
-}
-
-/**
  * An admin's decision from the review page: approve the tag, merge it into
  * the approved tag chosen, or reject it. Resolves to why it was refused, if
  * it was, so the page can say so; a thrown error's message is hidden in

@@ -43,6 +43,7 @@ import {
 } from "./result";
 import { publicView } from "./accounts";
 import { canonTag } from "@/lib/tags/canon";
+import { planSuggestions } from "./tags";
 
 export const ListProductsQuerySchema = PageQuerySchema.extend({
   q: z
@@ -69,6 +70,11 @@ const TagsSchema = z.array(z.string()).openapi({
     "Topics people can filter products by. Each tag must be on Source's list of tags. Tags are lowercase with hyphens between words, and `New Zealand` is read as `new-zealand`.",
 });
 
+const SuggestTagsSchema = z.array(z.string()).openapi({
+  description:
+    "Tags to suggest for Source's list and add to the product in the same save. Each one the list lacks is added awaiting review, which counts toward your 5 suggestions awaiting review. A tag already on the list is just added. Nothing is suggested if the save fails.",
+});
+
 export const CreateProductSchema = ProductCreationRequestSchema.omit({
   search_text: true,
 }).extend({
@@ -77,6 +83,7 @@ export const CreateProductSchema = ProductCreationRequestSchema.omit({
     .min(1, "A data connection is required")
     .openapi({ description: "Where the product's data is stored. Fixed once created." }),
   tags: TagsSchema.optional(),
+  suggest_tags: SuggestTagsSchema.optional(),
 }).openapi("CreateProduct");
 
 export const UpdateProductSchema = ProductSchema.pick({
@@ -90,6 +97,10 @@ export const UpdateProductSchema = ProductSchema.pick({
     tags: TagsSchema.openapi({
       description:
         "Replaces the product's tags. Each tag must be on Source's list of tags. Tags are lowercase with hyphens between words, and `New Zealand` is read as `new-zealand`. A tag the product already has is kept even if the list has dropped it. Omit the field to leave the tags as they are.",
+    }),
+    suggest_tags: SuggestTagsSchema.openapi({
+      description:
+        "Tags to suggest for Source's list and add to the product, on top of `tags` or, without it, the tags the product has. Each one the list lacks is added awaiting review, which counts toward your 5 suggestions awaiting review. Nothing is suggested if the save fails.",
     }),
   })
   .partial()
@@ -106,12 +117,18 @@ export const UpdateProductSchema = ProductSchema.pick({
  */
 async function checkTags(
   tags: string[],
-  current: string[] = []
+  current: string[] = [],
+  // Planned in this save and written just before the product, so the corpus
+  // read here doesn't have them yet.
+  suggested: string[] = []
 ): Promise<OperationResult<string[]>> {
-  const keys = [...new Set(tags.map(canonTag).filter(Boolean))];
+  const keys = [...new Set([...tags, ...suggested].map(canonTag).filter(Boolean))];
   if (!keys.length) return ok([]);
   const bySpelling = (list: string[]) => new Map(list.map((t) => [canonTag(t), t]));
-  const corpus = bySpelling((await tagsTable.listAll()).map((tag) => tag.tag_id));
+  const corpus = bySpelling([
+    ...(await tagsTable.listAll()).map((tag) => tag.tag_id),
+    ...suggested,
+  ]);
   const carried = bySpelling(current);
   const unknown = keys.filter((key) => !corpus.has(key) && !carried.has(key));
   return unknown.length
@@ -290,7 +307,12 @@ export async function createProduct(
   if (!session) return unauthenticated();
   const parsed = CreateProductSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
-  const { data_connection_id, tags: requestedTags = [], ...request } = parsed.data;
+  const {
+    data_connection_id,
+    tags: requestedTags = [],
+    suggest_tags: toSuggest = [],
+    ...request
+  } = parsed.data;
   const { account_id, product_id } = request;
 
   // Before any lookup, so a caller who may not create products here learns
@@ -327,8 +349,12 @@ export async function createProduct(
       "visibility"
     );
   }
-  const tags = await checkTags(requestedTags);
+  const plan = await planSuggestions(session, toSuggest, "suggest_tags");
+  if (!plan.ok) return plan;
+  const tags = await checkTags(requestedTags, [], plan.value.tags);
   if (!tags.ok) return tags;
+  // Every check has passed, so the suggestions land with the product.
+  await plan.value.write();
 
   const now = new Date().toISOString();
   const product: Product = {
@@ -373,15 +399,20 @@ export async function updateProduct(
   const parsed = UpdateProductSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
 
-  const { tags: requestedTags, ...fields } = parsed.data;
+  const { tags: requestedTags, suggest_tags: toSuggest = [], ...fields } = parsed.data;
   // Zod keeps a key given as undefined, which would blank the stored value.
   const changes: Partial<Product> = Object.fromEntries(
     Object.entries(fields).filter(([, value]) => value !== undefined)
   );
-  if (requestedTags) {
-    const tags = await checkTags(requestedTags, product.metadata?.tags);
+  let writeSuggestions = async () => {};
+  if (requestedTags || toSuggest.length) {
+    const plan = await planSuggestions(session, toSuggest, "suggest_tags");
+    if (!plan.ok) return plan;
+    const current = product.metadata?.tags ?? [];
+    const tags = await checkTags(requestedTags ?? current, current, plan.value.tags);
     if (!tags.ok) return tags;
     changes.metadata = { ...product.metadata, tags: tags.value };
+    writeSuggestions = async () => void (await plan.value.write());
   }
   // The data connection is fixed at creation, so the allowed visibilities
   // come from the primary mirror's. Without it there's no knowing what's
@@ -407,6 +438,8 @@ export async function updateProduct(
     }
   }
 
+  // Every check has passed, so the suggestions land with the product.
+  await writeSuggestions();
   const updated = {
     // The row as written, with the account it doesn't store.
     ...(await productsTable.update({ ...product, ...changes })),
@@ -420,7 +453,7 @@ export async function updateProduct(
       product_id,
       by: session.account?.account_id,
       ...fields,
-      ...(requestedTags && { tags: changes.metadata?.tags }),
+      ...(changes.metadata && { tags: changes.metadata.tags, suggested: toSuggest }),
     },
   });
   return ok(shown(session, updated));

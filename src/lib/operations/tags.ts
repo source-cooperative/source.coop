@@ -108,6 +108,59 @@ export async function listTags(
 }
 
 /**
+ * Checks tags someone wants to suggest, without writing anything: each is
+ * spelled the way tags are stored, and the ones the list lacks must fit the
+ * suggester's cap. Answers their stored spelling, the rows that already
+ * exist, and a `write` that adds the new ones as pending. A product save
+ * checks everything else before calling `write`, so a save that fails leaves
+ * no suggestion behind on no product.
+ */
+export async function planSuggestions(
+  session: UserSession | null,
+  raw: string[],
+  field = "tag_id"
+): Promise<
+  OperationResult<{
+    tags: string[];
+    existing: Tag[];
+    write: () => Promise<Tag[]>;
+  }>
+> {
+  if (!raw.length) return ok({ tags: [], existing: [], write: async () => [] });
+  const account_id = session?.account?.account_id;
+  if (!account_id) return unauthenticated();
+  const tags: string[] = [];
+  for (const tag of raw) {
+    const parsed = SuggestTagSchema.shape.tag_id.safeParse(tag);
+    if (!parsed.success) return invalid(parsed.error.issues[0].message, field);
+    if (!tags.includes(parsed.data)) tags.push(parsed.data);
+  }
+
+  const all = await tagsTable.listAll();
+  const existing = all.filter((t) => tags.includes(t.tag_id));
+  const fresh = tags.filter((tag) => !existing.some((t) => t.tag_id === tag));
+  // ponytail: read then write, so simultaneous suggestions can pass the cap;
+  // bounded, and not worth a counter while suggestions are rare.
+  const awaiting = all.filter((t) => t.pending && t.suggested_by === account_id);
+  if (fresh.length && awaiting.length + fresh.length > MAX_PENDING_PER_ACCOUNT) {
+    return conflict(
+      `You may have ${MAX_PENDING_PER_ACCOUNT} tags awaiting review at once, and have ${awaiting.length}. Suggest more once they've been reviewed.`
+    );
+  }
+  return ok({
+    tags,
+    existing,
+    write: async () => {
+      const written = await Promise.all(
+        fresh.map((tag) => tagsTable.suggest(tag, account_id))
+      );
+      if (written.length) revalidatePath(adminTagsUrl());
+      return written;
+    },
+  });
+}
+
+/**
  * Suggests a tag the list doesn't have. It is added as pending, which lets
  * products carry it until an admin reviews it. A tag that already exists,
  * pending or not, is answered as it is, with `created` false.
@@ -116,26 +169,14 @@ export async function suggestTag(
   session: UserSession | null,
   input: unknown
 ): Promise<OperationResult<{ tag: Tag; created: boolean }>> {
-  const account_id = session?.account?.account_id;
-  if (!account_id) return unauthenticated();
+  if (!session?.account?.account_id) return unauthenticated();
   const parsed = SuggestTagSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
-  const { tag_id } = parsed.data;
-
-  const tags = await tagsTable.listAll();
-  const existing = tags.find((t) => t.tag_id === tag_id);
+  const plan = await planSuggestions(session, [parsed.data.tag_id]);
+  if (!plan.ok) return plan;
+  const [existing] = plan.value.existing;
   if (existing) return ok({ tag: existing, created: false });
-  // ponytail: read then write, so simultaneous suggestions can pass the cap;
-  // bounded, and not worth a counter while suggestions are rare.
-  const awaiting = tags.filter((t) => t.pending && t.suggested_by === account_id);
-  if (awaiting.length >= MAX_PENDING_PER_ACCOUNT) {
-    return conflict(
-      `You have ${awaiting.length} tags awaiting review. Suggest more once they've been reviewed.`
-    );
-  }
-
-  const tag = await tagsTable.suggest(tag_id, account_id);
-  revalidatePath(adminTagsUrl());
+  const [tag] = await plan.value.write();
   return ok({ tag, created: true });
 }
 
