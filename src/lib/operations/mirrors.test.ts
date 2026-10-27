@@ -5,7 +5,7 @@ import {
   dataConnectionsTable,
   productsTable,
 } from "@/lib/clients/database";
-import { canManageAccount } from "@/lib/api/authz";
+import { canManageAccount, isAdmin } from "@/lib/api/authz";
 import {
   canManageDataConnection,
   denyDataConnectionFor,
@@ -18,7 +18,7 @@ jest.mock("@/lib/clients/database", () => ({
   productsTable: { fetchById: jest.fn(), update: jest.fn() },
   dataConnectionsTable: { fetchById: jest.fn() },
 }));
-jest.mock("@/lib/api/authz", () => ({ canManageAccount: jest.fn() }));
+jest.mock("@/lib/api/authz", () => ({ canManageAccount: jest.fn(), isAdmin: jest.fn() }));
 jest.mock("@/lib/data-connections", () => ({
   canManageDataConnection: jest.fn(),
   denyDataConnectionFor: jest.fn(),
@@ -60,6 +60,7 @@ beforeEach(() => {
   (denyDataConnectionFor as jest.Mock).mockReturnValue(null);
   (dataConnectionsTable.fetchById as jest.Mock).mockImplementation(async (id) => ({
     data_connection_id: id,
+    owner: "acct",
     prefix_template: "{{repository.account_id}}/{{repository.repository_id}}/",
   }));
   (productsTable.update as jest.Mock).mockImplementation(async (p) => p);
@@ -278,6 +279,23 @@ describe("removeMirror", () => {
       mirrors: { a: mirror("a", true) },
       primary_mirror: "a",
     });
+  });
+
+  test.each([
+    ["refuses", "a Source-managed mirror, for a non-admin", { read_only: false }, false, "forbidden"],
+    ["allows", "a Source-managed mirror, for an admin", { read_only: false }, true, undefined],
+    ["allows", "a read-only mirror", { read_only: true }, false, undefined],
+    ["allows", "a mirror whose connection is gone", null, false, undefined],
+  ])("%s removing %s", async (_v, _n, connection, admin, error) => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(TWO());
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection);
+    (isAdmin as jest.Mock).mockReturnValue(admin);
+    const result = await removeMirror(SESSION, "acct", "prod", "b");
+    expect(result.ok).toBe(!error);
+    if (error) {
+      expect(result).toMatchObject({ error });
+      expect(productsTable.update).not.toHaveBeenCalled();
+    }
   });
 
   test("__proto__ is not a mirror", async () => {

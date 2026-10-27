@@ -82,7 +82,7 @@ registry.registerPath({
   tags: ["Products"],
   summary: "Delete a product",
   description:
-    "Deletes the product, its memberships and, unless `preserve_data` is set, its objects. Objects on a read-only data connection are never deleted. Only the owning account or an owner of the product may delete it.",
+    "Deletes the product, its memberships and, unless `preserve_data` is set, its objects. Objects on a read-only data connection are never deleted. Objects are deleted from the primary mirror only, so only an admin may delete a product with another mirror on Source-managed storage. Only the owning account or an owner of the product may delete it.",
   security: bearer,
   request: { params, query: DeleteProductQuerySchema },
   responses: {

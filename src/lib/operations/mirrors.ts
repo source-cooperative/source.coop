@@ -7,7 +7,7 @@ import {
   resolveMirrorPrefix,
   UserSession,
 } from "@/types";
-import { canManageAccount } from "@/lib/api/authz";
+import { canManageAccount, isAdmin } from "@/lib/api/authz";
 import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
 import {
   canManageDataConnection,
@@ -293,6 +293,14 @@ export async function removeMirror(
   const product = found.value;
   const removed = mirrorAt(product, key);
   if (!removed) return notFound("Mirror not found");
+  // The objects stay behind, and on Source-managed storage only an admin may
+  // leave objects behind, as with deleting a product but keeping its data.
+  const connection = await dataConnectionsTable.fetchById(removed.connection_id);
+  if (connection && !connection.read_only && !connection.owner && !isAdmin(session)) {
+    return forbidden(
+      "Only an admin can remove a mirror on Source-managed storage, because its objects would be left behind"
+    );
+  }
   const { [key]: _, ...remaining } = product.metadata.mirrors;
 
   let primary = product.metadata.primary_mirror;

@@ -586,6 +586,31 @@ describe("deleteProduct", () => {
     expect(productsTable.delete).toHaveBeenCalled();
   });
 
+  test("refuses a non-admin when another mirror on Source-managed storage would be left", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({
+        metadata: {
+          primary_mirror: "own",
+          mirrors: {
+            own: { connection_id: "own", prefix: "" },
+            shared: { connection_id: "shared", prefix: "" },
+          },
+        },
+      })
+    );
+    (dataConnectionsTable.fetchById as jest.Mock).mockImplementation(async (id) =>
+      id === "own" ? { read_only: false, owner: "alice" } : { read_only: false }
+    );
+    expect(await deleteProduct(SESSION, "alice", "my-product", {})).toMatchObject({
+      error: "forbidden",
+      message: expect.stringMatching(/primary first/),
+    });
+    expect(deleteByPrefix).not.toHaveBeenCalled();
+
+    (isAdmin as jest.Mock).mockReturnValue(true);
+    expect(await deleteProduct(SESSION, "alice", "my-product", {})).toMatchObject({ ok: true });
+  });
+
   test("refuses to delete stored objects for a caller with no identity", async () => {
     (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue({ read_only: false });
     const bot = { identity_id: null, account: { account_id: "alice--bot" } } as never;

@@ -430,6 +430,18 @@ export async function deleteProduct(
   if (preserveData && !connection?.read_only && !connection?.owner && !isAdmin(session)) {
     return forbidden("You are not permitted to keep this product's data when deleting it.");
   }
+  // Objects are deleted from the primary alone, so the same goes for every
+  // other mirror on Source-managed storage.
+  const others = await Promise.all(
+    Object.entries(product.metadata?.mirrors ?? {})
+      .filter(([key]) => key !== product.metadata.primary_mirror)
+      .map(([, m]) => dataConnectionsTable.fetchById(m.connection_id))
+  );
+  if (others.some((c) => c && !c.read_only && !c.owner) && !isAdmin(session)) {
+    return forbidden(
+      "This product has another mirror on Source-managed storage, whose objects deleting it would leave behind. Make that mirror the primary first."
+    );
+  }
 
   // The proxy addresses every backend as bucket=account_id, key=product_id/….
   // The credentials are minted for this session's identity rather than read
