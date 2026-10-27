@@ -6,21 +6,31 @@ import {
   serviceAccountKeysTable,
 } from "@/lib/clients/database";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
-import { isAuthorized } from "@/lib/api/authz";
+import { isAdmin, isAuthorized } from "@/lib/api/authz";
+import { searchUsers } from "@/lib/api/user-lookup";
 import {
+  createOrganization,
   deleteAccount,
   getAccount,
+  searchAccounts,
   updateAccount,
   whoami,
 } from "./accounts";
 
 jest.mock("@/lib/clients/database", () => ({
-  accountsTable: { fetchById: jest.fn(), update: jest.fn(), delete: jest.fn() },
-  membershipsTable: { listByUser: jest.fn(), delete: jest.fn() },
+  accountsTable: {
+    fetchById: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    create: jest.fn(),
+    searchMemberCandidates: jest.fn(),
+  },
+  membershipsTable: { listByUser: jest.fn(), delete: jest.fn(), create: jest.fn() },
   serviceAccountKeysTable: { listByAccount: jest.fn(), delete: jest.fn() },
 }));
 jest.mock("@/lib/accounts/service-accounts", () => ({ managedServiceAccount: jest.fn() }));
-jest.mock("@/lib/api/authz", () => ({ isAuthorized: jest.fn() }));
+jest.mock("@/lib/api/authz", () => ({ isAuthorized: jest.fn(), isAdmin: jest.fn() }));
+jest.mock("@/lib/api/user-lookup", () => ({ searchUsers: jest.fn() }));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
 const SESSION = { identity_id: "an-identity", account: { account_id: "alice" } } as never;
@@ -370,5 +380,105 @@ describe("deleteAccount", () => {
     expect(update).not.toHaveBeenCalled();
     expect(await deleteAccount(null, "an-account")).toMatchObject({ error: "unauthenticated" });
     expect(accountsTable.delete).not.toHaveBeenCalled();
+  });
+});
+
+describe("searchAccounts", () => {
+  const search = accountsTable.searchMemberCandidates as jest.Mock;
+  beforeEach(() => search.mockResolvedValue([{ account_id: "bob" }]));
+
+  it("answers a page of people", async () => {
+    expect(await searchAccounts(SESSION, { q: "bo" })).toEqual({
+      ok: true,
+      value: { items: [{ account_id: "bob" }], next_cursor: null },
+    });
+    expect(search).toHaveBeenLastCalledWith("bo", undefined);
+    expect(isAuthorized).not.toHaveBeenCalled();
+  });
+
+  it("offers an account's service accounts only to someone who may invite to it", async () => {
+    await searchAccounts(SESSION, { q: "bo", member_of: "acme" });
+    expect(search).toHaveBeenLastCalledWith("bo", "acme");
+    expect(isAuthorized).toHaveBeenCalledWith(
+      SESSION,
+      { membership_account_id: "acme" },
+      Actions.InviteMembership
+    );
+    (isAuthorized as jest.Mock).mockReturnValue(false);
+    await searchAccounts(SESSION, { q: "bo", member_of: "acme" });
+    expect(search).toHaveBeenLastCalledWith("bo", undefined);
+  });
+
+  it("needs a session and two characters", async () => {
+    expect(await searchAccounts(null, { q: "bo" })).toMatchObject({ error: "unauthenticated" });
+    expect(await searchAccounts(SESSION, { q: " b " })).toMatchObject({ error: "invalid" });
+    expect(await searchAccounts(SESSION, {})).toMatchObject({ error: "invalid" });
+    expect(search).not.toHaveBeenCalled();
+  });
+
+  it("looks up an email for an admin only", async () => {
+    expect(await searchAccounts(SESSION, { q: "bob@example.com" })).toMatchObject({
+      error: "forbidden",
+    });
+    expect(searchUsers).not.toHaveBeenCalled();
+
+    (isAdmin as jest.Mock).mockReturnValue(true);
+    (searchUsers as jest.Mock).mockResolvedValue({ source: "ory", results: [{ account_id: "bob" }] });
+    expect(await searchAccounts(SESSION, { q: "bob@example.com" })).toMatchObject({
+      value: { items: [{ account_id: "bob" }] },
+    });
+    expect(searchUsers).toHaveBeenCalledWith("bob@example.com", "alice");
+    expect(search).not.toHaveBeenCalled();
+  });
+});
+
+describe("createOrganization", () => {
+  const create = accountsTable.create as jest.Mock;
+  const input = { account_id: "acme", name: "Acme Corp" };
+
+  it("creates the organization and makes the caller its owner", async () => {
+    expect(await createOrganization(SESSION, input)).toMatchObject({
+      ok: true,
+      value: { account_id: "acme", type: AccountType.ORGANIZATION, flags: [] },
+    });
+    expect(isAuthorized).toHaveBeenCalledWith(SESSION, "*", Actions.CreateAccount);
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ account_id: "acme" }));
+    expect(membershipsTable.create).toHaveBeenCalledWith(
+      expect.objectContaining({ account_id: "alice", membership_account_id: "acme", role: "owners" })
+    );
+  });
+
+  it("refuses whoever may not create organizations, before reading the input", async () => {
+    (isAuthorized as jest.Mock).mockReturnValue(false);
+    expect(await createOrganization(SESSION, {})).toMatchObject({ error: "forbidden" });
+    expect(await createOrganization(null, input)).toMatchObject({ error: "unauthenticated" });
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it("lets only an admin name another person as owner", async () => {
+    const forBob = { ...input, owner_account_id: "bob" };
+    expect(await createOrganization(SESSION, forBob)).toMatchObject({ error: "forbidden" });
+
+    (isAdmin as jest.Mock).mockReturnValue(true);
+    fetchById.mockResolvedValue(account({ type: AccountType.ORGANIZATION }));
+    expect(await createOrganization(SESSION, forBob)).toMatchObject({ error: "invalid" });
+    expect(create).not.toHaveBeenCalled();
+
+    fetchById.mockResolvedValue(account({ account_id: "bob" }));
+    expect(await createOrganization(SESSION, forBob)).toMatchObject({ ok: true });
+    expect(membershipsTable.create).toHaveBeenCalledWith(
+      expect.objectContaining({ account_id: "bob" })
+    );
+  });
+
+  it("answers a taken ID as a conflict and grants nothing", async () => {
+    create.mockRejectedValue(
+      Object.assign(new Error("taken"), { name: "ConditionalCheckFailedException" })
+    );
+    expect(await createOrganization(SESSION, input)).toMatchObject({
+      error: "conflict",
+      fieldErrors: { account_id: ["That account ID is already taken."] },
+    });
+    expect(membershipsTable.create).not.toHaveBeenCalled();
   });
 });

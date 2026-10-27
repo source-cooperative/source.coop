@@ -4,6 +4,7 @@ import { generateDocument } from "@/lib/api/openapi";
 // Each route registers its own path when its module loads. A route missing
 // from this list is missing from the document, which route-coverage.test.ts
 // catches.
+import "../v1/accounts/route";
 import "../v1/accounts/[account_id]/route";
 import "../v1/accounts/[account_id]/keys/route";
 import "../v1/accounts/[account_id]/keys/[key_id]/route";
