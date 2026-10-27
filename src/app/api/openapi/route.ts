@@ -19,6 +19,8 @@ import "../v1/products/featured/route";
 import "../v1/products/[account_id]/route";
 import "../v1/products/[account_id]/[product_id]/route";
 import "../v1/products/[account_id]/[product_id]/permissions/route";
+import "../v1/products/[account_id]/[product_id]/mirrors/route";
+import "../v1/products/[account_id]/[product_id]/mirrors/[connection_id]/route";
 import "../v1/secret-scanning/github/route";
 import "../v1/service-account-keys/exchanges/route";
 import "../v1/service-account-keys/revocations/route";

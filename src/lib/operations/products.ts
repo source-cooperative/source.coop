@@ -159,7 +159,7 @@ const page = (
  * Drops the cached pages that show a product, and its account's listing of
  * it, whichever adapter changed it.
  */
-function revalidate(account_id: string, product_id?: string) {
+export function revalidate(account_id: string, product_id?: string) {
   revalidatePath(accountUrl(account_id));
   if (product_id) {
     revalidatePath(productUrl(account_id, product_id));
@@ -362,7 +362,10 @@ export async function updateProduct(
   // allowed, so the visibility stays as it is.
   const { visibility } = parsed.data;
   if (visibility && visibility !== product.visibility) {
-    const id = product.metadata?.primary_mirror;
+    // The primary is a key into `mirrors`, which on older products isn't the
+    // connection's ID.
+    const { mirrors, primary_mirror } = product.metadata ?? {};
+    const id = mirrors?.[primary_mirror]?.connection_id;
     const connection = id ? await dataConnectionsTable.fetchById(id) : null;
     if (!connection) {
       return invalid(
