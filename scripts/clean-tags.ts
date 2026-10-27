@@ -2,8 +2,9 @@
 /**
  * Clean the free-text tags products carry and build the tag corpus from them.
  *
- * Each tag is lowercased, stripped of `#`, split if it holds several tags, and
- * mapped through ALIASES to its canonical form (or dropped). A canonical tag
+ * Each tag is lowercased, stripped of `#`, split if it holds several tags, its
+ * spaces turned into hyphens (`new zealand` is `new-zealand`), and mapped
+ * through ALIASES to its canonical form (or dropped). A canonical tag
  * joins the corpus when at least MIN_USES products carry it, or when it is in
  * KEEP. Each product then keeps only its cleaned tags that made the corpus.
  *
@@ -27,12 +28,17 @@ import {
   ScanCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { canonTag } from "../src/lib/tags/canon";
 
 const MIN_USES = 2;
 
-const FIBOA = ["fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"];
+const FIBOA = ["fiboa", "field", "boundaries", "geoparquet", "vector", "pmtiles"];
 
-/** Normalized tag → canonical tags. An empty list drops the tag. */
+/**
+ * Raw tag → canonical tags. An empty list drops the tag. Keys and tags are
+ * written with spaces for reading, and go through canonTag like every tag, so
+ * a tag typed either way matches them.
+ */
 const ALIASES: Record<string, string[]> = {
   // Noise: true of every product on Source, placeholders, or tests.
   "": [], "--": [], geospatial: [], "geo spatial": [], dataset: [], data: [],
@@ -40,11 +46,12 @@ const ALIASES: Record<string, string[]> = {
   static: [], years: [], source: [], opendata: [], "open data": [],
   public: [], "public-data": [], aws: [], "2024": [], rgb: [], aois: [],
   tabaqat: [], cbam: [], euhvd: [], analysis: [], metadata: [], land: [],
-  earth: [], field: [], polygon: [], image: [], state: [], county: [],
+  earth: [], polygon: [], image: [], state: [], county: [],
   countries: [], arc: [], amx: [], sfer: [], sax: [], hcat: [],
   lowcoder: [], lacuna: [], wadhwaniai: [], pacificspatial: [],
 
   // Spelling, plurals and synonyms.
+  "field boundaries": ["field", "boundaries"],
   "field boundary": ["field", "boundaries"],
   fieldboundaries: ["field", "boundaries"],
   "field boundarie": ["field", "boundaries"],
@@ -206,6 +213,18 @@ const ALIASES: Record<string, string[]> = {
   "boundary vector agriculture": ["field", "boundaries", "vector", "agriculture"],
   "geozarr": ["zarr"],
 };
+const LOOKUP = new Map<string, string[]>();
+for (const [raw, tags] of Object.entries(ALIASES)) {
+  const key = canonTag(raw);
+  const value = tags.map(canonTag);
+  const earlier = LOOKUP.get(key);
+  // Two keys spelled the same once respelled must agree, or one would
+  // silently replace the other.
+  if (earlier && earlier.join() !== value.join()) {
+    throw new Error(`ALIASES spell "${raw}" as "${key}", which another key maps differently`);
+  }
+  LOOKUP.set(key, value);
+}
 
 /** Kept in the corpus however few products carry them. */
 const KEEP = new Set([
@@ -229,15 +248,15 @@ const KEEP = new Set([
   "csv", "iceberg", "png",
   /** temporal frequency */
   "time series",
-]);
+].map(canonTag));
 
 
 /** One raw tag as typed → its canonical tags. */
 function clean(raw: string): string[] {
   const parts = raw.includes("#") ? raw.split("#") : [raw];
   return parts.flatMap((part) => {
-    const tag = part.trim().toLowerCase();
-    return ALIASES[tag] ?? [tag];
+    const tag = canonTag(part);
+    return LOOKUP.get(tag) ?? [tag];
   });
 }
 
@@ -290,11 +309,11 @@ async function fromCounts(file: string) {
 
 /** Why a raw tag became what it did, for the preview table. */
 function note(raw: string, cleaned: string[], after: string[]): string {
-  const tag = raw.replace(/#/g, "").trim().toLowerCase();
+  const tag = canonTag(raw);
   if (!cleaned.length) return "Dropped: noise";
   if (!after.length) return "Dropped: on one product only";
   if (cleaned.length > 1) return "Split into several tags";
-  if (after[0] === tag) return raw === tag ? "" : "Normalized (case, #)";
+  if (after[0] === tag) return raw === tag ? "" : "Normalized (case, #, spaces)";
   return "Merged";
 }
 

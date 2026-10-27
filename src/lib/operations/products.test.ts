@@ -149,6 +149,16 @@ describe("listProducts", () => {
     expect(result).toEqual({ ok: true, value: { items: [], next_cursor: null } });
   });
 
+  test("filters on tags in the spelling they are stored in", async () => {
+    (productsTable.listPublic as jest.Mock).mockResolvedValue({ products: [] });
+
+    await listProducts(null, { tags: "New Zealand, #ocean,," });
+
+    expect((productsTable.listPublic as jest.Mock).mock.calls[0][2].tags).toBe(
+      "new-zealand,ocean"
+    );
+  });
+
   test("hides public products the caller may not list", async () => {
     (productsTable.listPublic as jest.Mock).mockResolvedValue({ products: [product()] });
     allowExcept(Actions.ListRepository);
@@ -405,6 +415,39 @@ describe("updateProduct", () => {
     expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
       "legacy",
       "ocean",
+    ]);
+  });
+
+  test("reads a tag in its one spelling, but keeps the product's own as they are", async () => {
+    (tagsTable.listAll as jest.Mock).mockResolvedValue(["ocean", "sea-ice"]);
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({
+        metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["field boundaries"] },
+      })
+    );
+    const result = await updateProduct(SESSION, "alice", "my-product", {
+      tags: ["Sea  Ice", " OCEAN ", "field boundaries"],
+    });
+    expect(result.ok).toBe(true);
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "sea-ice",
+      "ocean",
+      "field boundaries",
+    ]);
+  });
+
+  test("keeps one tag per spelling, preferring the corpus's", async () => {
+    (tagsTable.listAll as jest.Mock).mockResolvedValue(["sea-ice", "machine learning"]);
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({ metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["sea ice"] } })
+    );
+    const result = await updateProduct(SESSION, "alice", "my-product", {
+      tags: ["sea ice", "sea-ice", "Machine-Learning"],
+    });
+    expect(result.ok).toBe(true);
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "sea-ice",
+      "machine learning",
     ]);
   });
 
