@@ -13,6 +13,7 @@ import {
 } from "@radix-ui/themes";
 import { ArrowRightIcon, ChevronDownIcon } from "@radix-ui/react-icons";
 import { productUrl } from "@/lib/urls";
+import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
 
 export interface TagSuggestion {
   tag: string;
@@ -35,12 +36,15 @@ interface AdminTagSuggestionsProps {
   approved: { tag: string; products: number }[];
   /** Applies a decision, resolving to why it was refused if it was. */
   action: (formData: FormData) => Promise<{ error?: string }>;
+  /** The suggesters' accounts, for their cards on hover. */
+  accounts?: AccountsById;
 }
 
 export function AdminTagSuggestions({
   suggestions,
   approved,
   action,
+  accounts,
 }: AdminTagSuggestionsProps) {
   if (!suggestions.length) {
     return (
@@ -57,6 +61,7 @@ export function AdminTagSuggestions({
           suggestion={suggestion}
           approved={approved}
           action={action}
+          accounts={accounts}
         />
       ))}
     </Flex>
@@ -69,6 +74,7 @@ function SuggestionCard({
   suggestion: { tag, suggested_by, suggested_at, products, matches, split },
   approved,
   action,
+  accounts,
 }: { suggestion: TagSuggestion } & Omit<AdminTagSuggestionsProps, "suggestions">) {
   // A merge rewrites other people's products, so choosing targets only stages
   // them; nothing changes until the merge is saved.
@@ -117,7 +123,8 @@ function SuggestionCard({
             </>
           )}
           <Text size="1" color="gray">
-            Suggested by {suggested_by ?? "unknown"}
+            Suggested by{" "}
+            {suggested_by ? <AccountMention id={suggested_by} accounts={accounts} /> : "unknown"}
             {suggested_at &&
               ` on ${new Date(suggested_at).toLocaleDateString("en-US", { dateStyle: "medium" })}`}
           </Text>

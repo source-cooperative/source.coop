@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
 import { AdminTagList } from "./AdminTagList";
+import { storyAccounts } from "./story-accounts";
 
 /**
  * Every approved tag on the admin tags page, most used first, with how many
@@ -13,6 +14,7 @@ const meta = {
   component: AdminTagList,
   parameters: { layout: "padded" },
   args: {
+    accounts: storyAccounts,
     tags: [
       { tag: "field-boundaries", products: 113 },
       { tag: "geoparquet", products: 101 },

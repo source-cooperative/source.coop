@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Flex, Table, Text, TextField } from "@radix-ui/themes";
 import { productListUrl } from "@/lib/urls";
+import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
 
 export interface ApprovedTag {
   tag: string;
@@ -17,20 +18,43 @@ export interface ApprovedTag {
 const date = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium" });
 
-/** Where an approved tag came from, in words. */
-function provenance({ suggested_by, reviewed_by, reviewed_at }: ApprovedTag) {
-  if (!suggested_by && !reviewed_by) return "Initial import";
-  const parts = [
-    suggested_by && `Suggested by ${suggested_by}`,
-    reviewed_by && `approved by ${reviewed_by}`,
-    reviewed_at && `on ${date(reviewed_at)}`,
-  ].filter(Boolean);
-  const text = parts.join(", ").replace(/, on /, " on ");
-  return text.charAt(0).toUpperCase() + text.slice(1);
+/** Where an approved tag came from, in words, its people linked. */
+function Provenance({
+  tag: { suggested_by, reviewed_by, reviewed_at },
+  accounts,
+}: {
+  tag: ApprovedTag;
+  accounts?: AccountsById;
+}) {
+  if (!suggested_by && !reviewed_by) return <>Initial import</>;
+  return (
+    <>
+      {suggested_by && (
+        <>
+          Suggested by <AccountMention id={suggested_by} accounts={accounts} />
+        </>
+      )}
+      {suggested_by && reviewed_by && ", "}
+      {reviewed_by && (
+        <>
+          {suggested_by ? "approved" : "Approved"} by{" "}
+          <AccountMention id={reviewed_by} accounts={accounts} />
+        </>
+      )}
+      {reviewed_at && ` on ${date(reviewed_at)}`}
+    </>
+  );
 }
 
 /** Every approved tag, most used first, with where each one came from. */
-export function AdminTagList({ tags }: { tags: ApprovedTag[] }) {
+export function AdminTagList({
+  tags,
+  accounts,
+}: {
+  tags: ApprovedTag[];
+  /** The suggesters' and approvers' accounts, for their cards on hover. */
+  accounts?: AccountsById;
+}) {
   const [filter, setFilter] = useState("");
   const query = filter.trim().toLowerCase();
   const shown = tags
@@ -68,7 +92,9 @@ export function AdminTagList({ tags }: { tags: ApprovedTag[] }) {
                   {t.products}
                 </Table.Cell>
                 <Table.Cell>
-                  <Text color="gray">{provenance(t)}</Text>
+                  <Text color="gray">
+                    <Provenance tag={t} accounts={accounts} />
+                  </Text>
                 </Table.Cell>
               </Table.Row>
             ))}

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Badge, Button, Flex, Table, Text } from "@radix-ui/themes";
+import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
 
 export interface ReviewedTag {
   tag: string;
@@ -19,6 +20,8 @@ interface AdminReviewedTagsProps {
   reviewed: ReviewedTag[];
   /** Applies a decision, resolving to why it was refused if it was. */
   action: (formData: FormData) => Promise<{ error?: string }>;
+  /** The suggesters' and reviewers' accounts, for their cards on hover. */
+  accounts?: AccountsById;
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -39,7 +42,11 @@ function outcome({ outcome, merged_into, products }: ReviewedTag) {
  * and who made it. Undo puts a tag back awaiting review, and reverses what a
  * merge or rejection did to products.
  */
-export function AdminReviewedTags({ reviewed, action }: AdminReviewedTagsProps) {
+export function AdminReviewedTags({
+  reviewed,
+  action,
+  accounts,
+}: AdminReviewedTagsProps) {
   if (!reviewed.length) {
     return (
       <Text size="2" color="gray">
@@ -59,7 +66,7 @@ export function AdminReviewedTags({ reviewed, action }: AdminReviewedTagsProps) 
       </Table.Header>
       <Table.Body>
         {reviewed.map((tag) => (
-          <ReviewedRow key={tag.tag} tag={tag} action={action} />
+          <ReviewedRow key={tag.tag} tag={tag} action={action} accounts={accounts} />
         ))}
       </Table.Body>
     </Table.Root>
@@ -71,9 +78,11 @@ const COLORS = { approved: "green", merged: "blue", rejected: "gray" } as const;
 function ReviewedRow({
   tag,
   action,
+  accounts,
 }: {
   tag: ReviewedTag;
   action: AdminReviewedTagsProps["action"];
+  accounts?: AccountsById;
 }) {
   const [error, setError] = useState("");
   const [busy, startTransition] = useTransition();
@@ -96,13 +105,17 @@ function ReviewedRow({
         <Text size="2">{outcome(tag)}</Text>
         {tag.suggested_by && (
           <Text as="div" size="1" color="gray">
-            Suggested by {tag.suggested_by}
+            Suggested by <AccountMention id={tag.suggested_by} accounts={accounts} />
           </Text>
         )}
       </Table.Cell>
       <Table.Cell>
         <Text size="2" color="gray">
-          {tag.reviewed_by ?? "unknown"}
+          {tag.reviewed_by ? (
+            <AccountMention id={tag.reviewed_by} accounts={accounts} />
+          ) : (
+            "unknown"
+          )}
           {tag.reviewed_at && ` on ${date(tag.reviewed_at)}`}
         </Text>
       </Table.Cell>

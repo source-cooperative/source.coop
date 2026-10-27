@@ -4,7 +4,8 @@ import { FormTitle } from "@/components/core";
 import { AdminReviewedTags } from "@/components/features/admin/AdminReviewedTags";
 import { AdminTagList } from "@/components/features/admin/AdminTagList";
 import { AdminTagSuggestions } from "@/components/features/admin/AdminTagSuggestions";
-import { productsTable } from "@/lib/clients/database";
+import { accountsTable, productsTable } from "@/lib/clients/database";
+import { publicView } from "@/lib/operations/accounts";
 import { getPageSession } from "@/lib/api/utils";
 import { reviewTag } from "@/lib/actions/tags";
 import { listTags } from "@/lib/operations/tags";
@@ -31,6 +32,17 @@ export default async function AdminTagsPage() {
   // on the tags table if the products table outgrows a page render.
   const carrying = (tag: string) =>
     tagged.filter((p) => p.metadata.tags!.includes(tag));
+  // Everyone named on the page, for their account cards on hover; public
+  // views only, since they go to the browser.
+  const named = [...pending.value.items, ...approved.value.items, ...reviewed.value.items]
+    .flatMap((t) => [t.suggested_by, t.reviewed_by])
+    .filter((id): id is string => !!id);
+  const accounts = Object.fromEntries(
+    (await accountsTable.fetchManyByIds([...new Set(named)])).map((a) => [
+      a.account_id,
+      publicView(a),
+    ])
+  );
   const approvedTags = approved.value.items.map((t) => t.tag_id);
   const counted = approved.value.items.map((t) => ({
     tag: t.tag_id,
@@ -64,6 +76,7 @@ export default async function AdminTagsPage() {
           }))}
           approved={counted}
           action={reviewTag}
+          accounts={accounts}
         />
       </Flex>
       <Flex direction="column" gap="3">
@@ -79,11 +92,12 @@ export default async function AdminTagsPage() {
             products: t.changed?.length ?? carrying(t.tag_id).length,
           }))}
           action={reviewTag}
+          accounts={accounts}
         />
       </Flex>
       <Flex direction="column" gap="3">
         <Heading size="4">All tags</Heading>
-        <AdminTagList tags={counted} />
+        <AdminTagList tags={counted} accounts={accounts} />
       </Flex>
     </Flex>
   );
