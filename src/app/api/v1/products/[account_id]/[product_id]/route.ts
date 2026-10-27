@@ -1,7 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { ProductResponseSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
-import { bearer, errors, json, productParams, registry } from "@/lib/api/openapi";
+import { bearer, errors, json, optionalBearer, productParams, registry } from "@/lib/api/openapi";
 import {
   deleteProduct,
   DeleteProductQuerySchema,
@@ -21,6 +21,7 @@ registry.registerPath({
   summary: "Get a product",
   description:
     "Anyone may read a public or unlisted product; a restricted one needs a member's credentials. A deactivated product is not found, except by its owners and maintainers.",
+  security: optionalBearer,
   request: { params },
   responses: {
     200: json("The product.", ProductResponseSchema),
@@ -39,6 +40,7 @@ registry.registerPath({
   summary: "Check that a product exists",
   description:
     "`GET` without the body, so it answers with the same status: 404 only when no product holds this ID, or when it is deactivated and hidden from the caller. A 401 or 403 means the product exists but the caller may not read it.",
+  security: optionalBearer,
   request: { params },
   responses: {
     200: { description: "The product exists and the caller may read it." },

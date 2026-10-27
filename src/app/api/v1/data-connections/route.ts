@@ -1,7 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { DataConnectionObjectSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
-import { bearer, errors, json, registry } from "@/lib/api/openapi";
+import { bearer, errors, json, optionalBearer, registry } from "@/lib/api/openapi";
 import {
   createDataConnection,
   CreateDataConnectionSchema,
@@ -17,6 +17,7 @@ registry.registerPath({
   summary: "List data connections",
   description:
     "The storage locations products can keep their data in: the platform's own, and the account-owned ones the caller manages. Static keys and SAS tokens are never returned; federated settings such as a role ARN are. `?usable_for=` answers which connections a new product under that account may use; `?owner=` lists the connections an account manages.",
+  security: optionalBearer,
   request: { query: ListDataConnectionsQuerySchema },
   responses: {
     200: json(
