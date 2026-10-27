@@ -8,6 +8,7 @@ jest.mock("@duckdb/node-api", () => ({
 jest.mock("@/lib/logging", () => ({ LOGGER: { error: jest.fn() } }));
 jest.mock("@/lib/urls", () => ({ fileSourceUrl: jest.fn() }));
 jest.mock("@/lib/files", () => ({ getExtension: jest.fn() }));
+jest.mock("@radix-ui/themes", () => ({ Code: () => null, Text: () => null }));
 jest.mock("./PreviewIframe", () => ({}));
 
 import { fileTypeLabel } from "./ObjectPreviewExternal";
