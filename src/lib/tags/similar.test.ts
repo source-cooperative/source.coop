@@ -1,6 +1,8 @@
 import { similarTags } from "./similar";
 
 const approved = [
+  "boundaries",
+  "boxes",
   "crop-type",
   "crops",
   "field-boundaries",
@@ -16,6 +18,8 @@ test.each([
   ["sentinel2-l2a", "sentinel-2"],
   ["crop-types", "crop-type"],
   ["field-boundary-polygons", "field-boundaries"],
+  ["boundary", "boundaries"],
+  ["box", "boxes"],
 ])("%p looks most like %p", (tag, best) => {
   expect(names(tag)[0]).toBe(best);
 });
