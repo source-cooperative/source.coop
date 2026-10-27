@@ -2,8 +2,9 @@
 /**
  * Clean the free-text tags products carry and build the tag corpus from them.
  *
- * Each tag is lowercased, stripped of `#`, split if it holds several tags, and
- * mapped through ALIASES to its canonical form (or dropped). A canonical tag
+ * Each tag is lowercased, stripped of `#`, split if it holds several tags, its
+ * spaces turned into hyphens (`new zealand` is `new-zealand`), and mapped
+ * through ALIASES to its canonical form (or dropped). A canonical tag
  * joins the corpus when at least MIN_USES products carry it, or when it is in
  * KEEP. Each product then keeps only its cleaned tags that made the corpus.
  *
@@ -31,6 +32,13 @@ import {
 const MIN_USES = 2;
 
 const FIBOA = ["fiboa", "field boundaries", "geoparquet", "vector", "pmtiles"];
+
+/**
+ * A tag's one spelling: lowercase, with hyphens between words. The lists
+ * below are written with spaces for reading, and go through this too, so a
+ * tag typed either way matches them.
+ */
+const canon = (tag: string) => tag.trim().toLowerCase().replace(/\s+/g, "-");
 
 /** Normalized tag → canonical tags. An empty list drops the tag. */
 const ALIASES: Record<string, string[]> = {
@@ -206,6 +214,9 @@ const ALIASES: Record<string, string[]> = {
   "boundary vector agriculture": ["field", "boundaries", "vector", "agriculture"],
   "geozarr": ["zarr"],
 };
+const LOOKUP = new Map(
+  Object.entries(ALIASES).map(([raw, tags]) => [canon(raw), tags.map(canon)])
+);
 
 /** Kept in the corpus however few products carry them. */
 const KEEP = new Set([
@@ -229,15 +240,15 @@ const KEEP = new Set([
   "csv", "iceberg", "png",
   /** temporal frequency */
   "time series",
-]);
+].map(canon));
 
 
 /** One raw tag as typed → its canonical tags. */
 function clean(raw: string): string[] {
   const parts = raw.includes("#") ? raw.split("#") : [raw];
   return parts.flatMap((part) => {
-    const tag = part.trim().toLowerCase();
-    return ALIASES[tag] ?? [tag];
+    const tag = canon(part);
+    return LOOKUP.get(tag) ?? [tag];
   });
 }
 
@@ -290,11 +301,11 @@ async function fromCounts(file: string) {
 
 /** Why a raw tag became what it did, for the preview table. */
 function note(raw: string, cleaned: string[], after: string[]): string {
-  const tag = raw.replace(/#/g, "").trim().toLowerCase();
+  const tag = canon(raw.replace(/#/g, ""));
   if (!cleaned.length) return "Dropped: noise";
   if (!after.length) return "Dropped: on one product only";
   if (cleaned.length > 1) return "Split into several tags";
-  if (after[0] === tag) return raw === tag ? "" : "Normalized (case, #)";
+  if (after[0] === tag) return raw === tag ? "" : "Normalized (case, #, spaces)";
   return "Merged";
 }
 
