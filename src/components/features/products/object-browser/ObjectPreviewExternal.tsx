@@ -113,6 +113,7 @@ export async function fileTypeLabel(
     case "pdf":
       return "PDF";
     case "glb":
+      return "GLB";
     case "gltf":
       return "GLTF";
     case "obj":
