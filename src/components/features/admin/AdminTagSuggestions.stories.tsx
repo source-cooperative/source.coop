@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
 import { AdminTagSuggestions } from "./AdminTagSuggestions";
+import { storyAccounts } from "./story-accounts";
 
 /**
  * The admin queue of suggested tags. Each suggestion shows who suggested it,
@@ -17,6 +18,7 @@ const meta = {
   component: AdminTagSuggestions,
   parameters: { layout: "padded" },
   args: {
+    accounts: storyAccounts,
     approved: [
       { tag: "boundaries", products: 121 },
       { tag: "climate", products: 17 },

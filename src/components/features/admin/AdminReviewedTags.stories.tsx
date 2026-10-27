@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
 import { AdminReviewedTags } from "./AdminReviewedTags";
+import { storyAccounts } from "./story-accounts";
 
 /**
  * Suggested tags an admin has decided, on the admin tags page, most recent
@@ -14,6 +15,7 @@ const meta = {
   component: AdminReviewedTags,
   parameters: { layout: "padded" },
   args: {
+    accounts: storyAccounts,
     action: async () => ({}),
     reviewed: [
       {
@@ -50,6 +52,16 @@ type Story = StoryObj<typeof meta>;
 
 /** An approval, a merge into two tags, and a rejection. */
 export const Reviewed: Story = {};
+
+/**
+ * Every name links to the account, and hovering it shows the account's card:
+ * here, the admin who merged `field-boundaries`.
+ */
+export const AccountCard: Story = {
+  play: async ({ canvasElement }) => {
+    await userEvent.hover(within(canvasElement).getAllByRole("link", { name: "alukach" })[0]);
+  },
+};
 
 /** An undo the server refused, with its reason. */
 export const UndoRefused: Story = {
