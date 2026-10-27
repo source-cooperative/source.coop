@@ -88,6 +88,13 @@ describe("suggestTag", () => {
     expect(tagsTable.suggest).toHaveBeenCalledWith("sea-ice", "alice");
   });
 
+  test("spells a suggestion the way tags are stored", async () => {
+    expect(await suggestTag(ALICE, { tag_id: "#Sea - Ice" })).toMatchObject({
+      ok: true,
+      value: { tag: { tag_id: "sea-ice" } },
+    });
+  });
+
   test("answers a tag that already exists, without suggesting it", async () => {
     expect(await suggestTag(ALICE, { tag_id: "Ocean" })).toEqual({
       ok: true,
@@ -102,7 +109,7 @@ describe("suggestTag", () => {
     });
   });
 
-  test.each(["#seaice", "-ice", "a".repeat(41), ""])(
+  test.each(["sea_ice", "sea.ice", "a".repeat(41), "", "--"])(
     "refuses the malformed tag %p",
     async (tag_id) => {
       expect(await suggestTag(ALICE, { tag_id })).toMatchObject({
