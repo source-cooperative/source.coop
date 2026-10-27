@@ -5,6 +5,7 @@ import {
   dataConnectionsTable,
   membershipsTable,
   productsTable,
+  tagsTable,
 } from "@/lib/clients/database";
 import { canListOnProfile, isAdmin, isAuthorized } from "@/lib/api/authz";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
@@ -32,6 +33,7 @@ jest.mock("@/lib/clients/database", () => ({
   },
   dataConnectionsTable: { fetchById: jest.fn() },
   membershipsTable: { deleteByProduct: jest.fn() },
+  tagsTable: { listAll: jest.fn() },
 }));
 jest.mock("@/lib/api/authz", () => ({
   canListOnProfile: jest.fn(),
@@ -74,6 +76,7 @@ beforeEach(() => {
   (productsTable.attachAccounts as jest.Mock).mockImplementation(async (p) => p);
   (productsTable.create as jest.Mock).mockImplementation(async (p) => p);
   (productsTable.update as jest.Mock).mockImplementation(async (p) => p);
+  (tagsTable.listAll as jest.Mock).mockResolvedValue(["acoustics", "ocean"]);
 });
 
 describe("listProducts", () => {
@@ -242,6 +245,32 @@ describe("createProduct", () => {
     });
   });
 
+  test("saves tags from the corpus, deduplicated", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+    const result = await createProduct(SESSION, input({ tags: ["ocean", "ocean"] }));
+    expect(result.ok).toBe(true);
+    const created = (productsTable.create as jest.Mock).mock.calls[0][0];
+    expect(created.metadata.tags).toEqual(["ocean"]);
+  });
+
+  test("rejects a tag outside the corpus", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+    expect(
+      await createProduct(SESSION, input({ tags: ["ocean", "made-up"] }))
+    ).toMatchObject({
+      error: "invalid",
+      fieldErrors: { tags: ["Unknown tags: made-up"] },
+    });
+    expect(productsTable.create).not.toHaveBeenCalled();
+  });
+
+  test("a product without tags never reads the tag table", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+    await createProduct(SESSION, input());
+    expect((productsTable.create as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([]);
+    expect(tagsTable.listAll).not.toHaveBeenCalled();
+  });
+
   test("a connection without a prefix template mirrors at the root", async () => {
     (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
     await createProduct(SESSION, input());
@@ -348,6 +377,55 @@ describe("updateProduct", () => {
       visibility: "restricted",
     });
     expect(result.ok && result.value.visibility).toBe("restricted");
+  });
+
+  test("replaces the tags, keeping the rest of the metadata", async () => {
+    const result = await updateProduct(SESSION, "alice", "my-product", {
+      tags: ["ocean", "acoustics"],
+    });
+    expect(result.ok).toBe(true);
+    const updated = (productsTable.update as jest.Mock).mock.calls[0][0];
+    expect(updated.metadata).toEqual({
+      primary_mirror: "conn-x",
+      mirrors: {},
+      tags: ["ocean", "acoustics"],
+    });
+  });
+
+  test("keeps a tag the product already has after the corpus drops it", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({ metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["legacy"] } })
+    );
+    const result = await updateProduct(SESSION, "alice", "my-product", {
+      tags: ["legacy", "ocean"],
+    });
+    expect(result.ok).toBe(true);
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "legacy",
+      "ocean",
+    ]);
+  });
+
+  test("rejects a tag outside the corpus", async () => {
+    expect(
+      await updateProduct(SESSION, "alice", "my-product", { tags: ["made-up"] })
+    ).toMatchObject({ error: "invalid", fieldErrors: { tags: ["Unknown tags: made-up"] } });
+    expect(productsTable.update).not.toHaveBeenCalled();
+  });
+
+  test("an empty list clears the tags; leaving the field out keeps them", async () => {
+    const tagged = product({
+      metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["ocean"] },
+    });
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(tagged);
+
+    await updateProduct(SESSION, "alice", "my-product", { tags: [] });
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([]);
+
+    await updateProduct(SESSION, "alice", "my-product", { title: "New" });
+    expect((productsTable.update as jest.Mock).mock.calls[1][0].metadata.tags).toEqual([
+      "ocean",
+    ]);
   });
 
   test("rejects a visibility change when the data connection no longer exists", async () => {

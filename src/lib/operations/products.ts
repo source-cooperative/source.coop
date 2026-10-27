@@ -22,6 +22,7 @@ import {
   dataConnectionsTable,
   membershipsTable,
   productsTable,
+  tagsTable,
 } from "@/lib/clients/database";
 import {
   conflict,
@@ -58,6 +59,11 @@ export const ListProductsQuerySchema = PageQuerySchema.extend({
 
 export const ProductPageSchema = pageSchema("ProductPage", ProductResponseSchema);
 
+const TagsSchema = z.array(z.string()).openapi({
+  description:
+    "Topics people can filter products by. Each tag must be on Source's list of tags.",
+});
+
 export const CreateProductSchema = ProductCreationRequestSchema.omit({
   search_text: true,
 }).extend({
@@ -65,6 +71,7 @@ export const CreateProductSchema = ProductCreationRequestSchema.omit({
     .string({ required_error: "A data connection is required" })
     .min(1, "A data connection is required")
     .openapi({ description: "Where the product's data is stored. Fixed once created." }),
+  tags: TagsSchema.optional(),
 }).openapi("CreateProduct");
 
 export const UpdateProductSchema = ProductSchema.pick({
@@ -73,9 +80,33 @@ export const UpdateProductSchema = ProductSchema.pick({
   visibility: true,
   disabled: true,
 })
-  .extend({ title: ProductSchema.shape.title.trim().min(1, "A title is required") })
+  .extend({
+    title: ProductSchema.shape.title.trim().min(1, "A title is required"),
+    tags: TagsSchema.openapi({
+      description:
+        "Replaces the product's tags. Each tag must be on Source's list of tags. A tag the product already has is kept even if the list has dropped it. Omit the field to leave the tags as they are.",
+    }),
+  })
   .partial()
   .openapi("UpdateProduct");
+
+/**
+ * The tags deduplicated, or the error naming those outside the corpus. A tag
+ * the product already carries is kept even if the corpus has since dropped it,
+ * so editing some other field isn't blocked by a tag nobody chose today.
+ */
+async function checkTags(
+  tags: string[],
+  current: string[] = []
+): Promise<OperationResult<string[]>> {
+  const unique = [...new Set(tags)];
+  if (!unique.length) return ok(unique);
+  const corpus = new Set([...(await tagsTable.listAll()), ...current]);
+  const unknown = unique.filter((tag) => !corpus.has(tag));
+  return unknown.length
+    ? invalid(`Unknown tags: ${unknown.join(", ")}`, "tags")
+    : ok(unique);
+}
 
 export const DeleteProductQuerySchema = z.object({
   preserve_data: z.enum(["true", "false"]).default("false").openapi({
@@ -233,7 +264,7 @@ export async function createProduct(
   if (!session) return unauthenticated();
   const parsed = CreateProductSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
-  const { data_connection_id, ...request } = parsed.data;
+  const { data_connection_id, tags: requestedTags = [], ...request } = parsed.data;
   const { account_id, product_id } = request;
 
   // Before any lookup, so a caller who may not create products here learns
@@ -270,6 +301,8 @@ export async function createProduct(
       "visibility"
     );
   }
+  const tags = await checkTags(requestedTags);
+  if (!tags.ok) return tags;
 
   const now = new Date().toISOString();
   const product: Product = {
@@ -279,7 +312,7 @@ export async function createProduct(
     disabled: false,
     featured: 0,
     metadata: {
-      tags: [],
+      tags: tags.value,
       primary_mirror: data_connection_id,
       mirrors: {
         [data_connection_id]: {
@@ -314,10 +347,16 @@ export async function updateProduct(
   const parsed = UpdateProductSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
 
+  const { tags: requestedTags, ...fields } = parsed.data;
   // Zod keeps a key given as undefined, which would blank the stored value.
-  const changes = Object.fromEntries(
-    Object.entries(parsed.data).filter(([, value]) => value !== undefined)
+  const changes: Partial<Product> = Object.fromEntries(
+    Object.entries(fields).filter(([, value]) => value !== undefined)
   );
+  if (requestedTags) {
+    const tags = await checkTags(requestedTags, product.metadata?.tags);
+    if (!tags.ok) return tags;
+    changes.metadata = { ...product.metadata, tags: tags.value };
+  }
   // The data connection is fixed at creation, so the allowed visibilities
   // come from the primary mirror's. Without it there's no knowing what's
   // allowed, so the visibility stays as it is.
@@ -347,7 +386,13 @@ export async function updateProduct(
   revalidate(account_id, product_id);
   LOGGER.info("Product updated", {
     operation: "updateProduct",
-    metadata: { account_id, product_id, by: session.account?.account_id, ...changes },
+    metadata: {
+      account_id,
+      product_id,
+      by: session.account?.account_id,
+      ...fields,
+      ...(requestedTags && { tags: changes.metadata?.tags }),
+    },
   });
   return ok(shown(session, updated));
 }

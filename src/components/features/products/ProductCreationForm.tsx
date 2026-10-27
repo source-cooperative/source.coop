@@ -7,6 +7,7 @@ import { Account, DataConnection } from "@/types";
 import { Product, ProductVisibility } from "@/types/product";
 import { useProductIdValidation } from "@/hooks/useIdValidation";
 import { createProduct, updateProduct } from "@/lib/actions/products";
+import { TagPicker } from "./TagPicker";
 
 const VISIBILITY_LABELS: Record<ProductVisibility, string> = {
   [ProductVisibility.Public]: "Public",
@@ -79,6 +80,7 @@ interface ProductCreationFormProps {
   product?: Product; // Optional product for edit mode
   mode?: "create" | "edit"; // Mode of operation
   defaultOwnerId?: string; // Preselected owner (e.g. from ?owner=…), create mode
+  tagOptions?: string[]; // The tag corpus a product may draw from
 }
 
 export function ProductCreationForm({
@@ -87,6 +89,7 @@ export function ProductCreationForm({
   product,
   mode = "create",
   defaultOwnerId,
+  tagOptions = [],
 }: ProductCreationFormProps) {
   const isEditMode = mode === "edit" && product;
 
@@ -252,6 +255,21 @@ export function ProductCreationForm({
       section: "Description",
       description: "A brief description of your product",
       placeholder: "Describe your product",
+    },
+    {
+      label: "Tags",
+      name: "tags" as keyof Product,
+      type: "custom",
+      section: "Description",
+      description: "Topics people can filter products by.",
+      customComponent: (controlProps) => (
+        <TagPicker
+          {...controlProps}
+          name="tags"
+          options={tagOptions}
+          defaultValue={isEditMode ? product.metadata.tags : []}
+        />
+      ),
     },
     // Data connection selector (create mode only). Drives the region and the
     // visibility options available below.
