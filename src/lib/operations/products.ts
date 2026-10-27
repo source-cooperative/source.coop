@@ -51,7 +51,10 @@ export const ListProductsQuerySchema = PageQuerySchema.extend({
   tags: z
     .string()
     .optional()
-    .openapi({ description: "Comma-separated tags, every one of which a product has." }),
+    .openapi({
+      description:
+        "Comma-separated tags, every one of which a product has. Each is read in the tags' own spelling, so `New Zealand` finds `new-zealand`.",
+    }),
   featured: z.enum(["true", "false"]).optional(),
   limit: PageQuerySchema.shape.limit.openapi({
     description: "At most this many, except with `q` or `tags`, whose pages can hold more.",
@@ -85,31 +88,32 @@ export const UpdateProductSchema = ProductSchema.pick({
     title: ProductSchema.shape.title.trim().min(1, "A title is required"),
     tags: TagsSchema.openapi({
       description:
-        "Replaces the product's tags. Each tag must be on Source's list of tags. A tag the product already has is kept even if the list has dropped it. Omit the field to leave the tags as they are.",
+        "Replaces the product's tags. Each tag must be on Source's list of tags. Tags are lowercase with hyphens between words, and `New Zealand` is read as `new-zealand`. A tag the product already has is kept even if the list has dropped it. Omit the field to leave the tags as they are.",
     }),
   })
   .partial()
   .openapi("UpdateProduct");
 
 /**
- * The tags in their one spelling and deduplicated, or the error naming those
- * outside the corpus. A tag the product already carries is kept as it is, even
- * if the corpus has since dropped or respelled it, so editing some other field
- * isn't blocked by a tag nobody chose today.
+ * The tags as they are stored, one per spelling, or the error naming those
+ * outside the corpus. Each tag is matched by its one spelling (canonTag): to
+ * the corpus's entry if there is one, and otherwise to a tag the product
+ * already carries, which is kept as it is even if the corpus has since dropped
+ * it, so editing some other field isn't blocked by a tag nobody chose today.
  */
 async function checkTags(
   tags: string[],
   current: string[] = []
 ): Promise<OperationResult<string[]>> {
-  const unique = [
-    ...new Set(tags.map((tag) => (current.includes(tag) ? tag : canonTag(tag)))),
-  ];
-  if (!unique.length) return ok(unique);
-  const corpus = new Set([...(await tagsTable.listAll()), ...current]);
-  const unknown = unique.filter((tag) => !corpus.has(tag));
+  const keys = [...new Set(tags.map(canonTag).filter(Boolean))];
+  if (!keys.length) return ok([]);
+  const bySpelling = (list: string[]) => new Map(list.map((t) => [canonTag(t), t]));
+  const corpus = bySpelling(await tagsTable.listAll());
+  const carried = bySpelling(current);
+  const unknown = keys.filter((key) => !corpus.has(key) && !carried.has(key));
   return unknown.length
     ? invalid(`Unknown tags: ${unknown.join(", ")}`, "tags")
-    : ok(unique);
+    : ok(keys.map((key) => corpus.get(key) ?? carried.get(key)!));
 }
 
 export const DeleteProductQuerySchema = z.object({
@@ -218,7 +222,8 @@ export async function listProducts(
 
   const result = await productsTable.listPublic(limit, start, {
     search: q,
-    tags,
+    // In the spelling tags are stored in, so `?tags=New Zealand` finds them.
+    tags: tags?.split(",").map(canonTag).filter(Boolean).join(",") || undefined,
     featuredOnly,
   });
   return ok(
