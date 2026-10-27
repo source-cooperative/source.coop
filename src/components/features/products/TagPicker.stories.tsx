@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
-import { canonTag } from "@/lib/tags/canon";
 import { TagPicker } from "./TagPicker";
 
 const options = [
@@ -26,23 +25,16 @@ const openAndFilter = async (canvasElement: HTMLElement, text: string) => {
 /**
  * Choosing a product's tags. Chosen tags show as chips; "Edit tags" opens a
  * list of every approved tag, with a box to filter it, and ticking one adds it.
- * When no tag fits, the filter text can be suggested as a new tag: it goes on
- * the product straight away, marked pending until an admin reviews it. Each
- * chosen tag is submitted as its own `tags` form value.
+ * When no tag fits, the filter text can be suggested as a new tag. It shows as
+ * a new chip, and is only sent for review when the product is saved, so
+ * leaving without saving suggests nothing. Each chosen tag is submitted as its
+ * own `tags` form value, and each new one as a `suggest_tags` value.
  */
 const meta = {
   title: "Features/Settings/Products/TagPicker",
   component: TagPicker,
   parameters: { layout: "padded" },
-  args: {
-    name: "tags",
-    options,
-    onSuggest: async (
-      tag: string
-    ): Promise<{ tag: string } | { error: string }> => ({
-      tag: canonTag(tag),
-    }),
-  },
+  args: { name: "tags", options, suggestName: "suggest_tags" },
 } satisfies Meta<typeof TagPicker>;
 
 export default meta;
@@ -71,31 +63,30 @@ export const Filtering: Story = {
 };
 
 /**
- * No tag fits, so the list offers to suggest the filter text as a new one.
- * The offer also appears when other tags only partly match.
+ * No tag fits, so the list offers to suggest the filter text as a new one, in
+ * the spelling tags are stored in. The offer also appears when other tags only
+ * partly match.
  */
 export const Suggesting: Story = {
   args: { defaultValue: ["acoustics"] },
-  play: ({ canvasElement }) => openAndFilter(canvasElement, "sea-ice"),
+  play: ({ canvasElement }) => openAndFilter(canvasElement, "Sea Ice"),
 };
 
-/** A suggested tag is on the product but hasn't been reviewed yet. */
-export const PendingTag: Story = {
-  args: { defaultValue: ["acoustics", "sea-ice"], pending: ["sea-ice"] },
-};
-
-/** A suggestion the server refused, with its reason. */
-export const SuggestionRefused: Story = {
-  args: {
-    onSuggest: async () => ({
-      error:
-        "You have 5 tags awaiting review. Suggest more once they've been reviewed.",
-    }),
-  },
+/**
+ * A tag suggested but not yet saved. It shows as new, with a reminder that it
+ * is only suggested once the product is saved.
+ */
+export const NewTag: Story = {
+  args: { defaultValue: ["acoustics"] },
   play: async ({ canvasElement }) => {
-    await openAndFilter(canvasElement, "sea-ice");
+    await openAndFilter(canvasElement, "Sea Ice");
     await userEvent.click(
       within(document.body).getByRole("button", { name: /^Suggest/ })
     );
   },
+};
+
+/** A tag suggested in an earlier save, waiting for an admin's review. */
+export const PendingTag: Story = {
+  args: { defaultValue: ["acoustics", "sea-ice"], pending: ["sea-ice"] },
 };

@@ -6,7 +6,7 @@ import { getPageSession, LOGGER } from "@/lib";
 import { FormState } from "@/components/core/DynamicForm";
 import { productUrl } from "@/lib/urls";
 import * as ops from "@/lib/operations/products";
-import { toFormState } from "@/lib/operations/result";
+import { toFormState, type OperationResult } from "@/lib/operations/result";
 
 export async function getFeaturedProducts(limit = 10): Promise<Product[]> {
   try {
@@ -24,15 +24,30 @@ export async function getFeaturedProducts(limit = 10): Promise<Product[]> {
   }
 }
 
+// The picker submits one form value per tag, which Object.fromEntries would
+// cut to the last: chosen tags under `tags`, new ones under `suggest_tags`.
+const tagFields = (formData: FormData) => ({
+  tags: formData.getAll("tags").map(String),
+  suggest_tags: formData.getAll("suggest_tags").map(String),
+});
+
+/** A problem with a suggested tag, shown under the form's one Tags field. */
+function onTagsField<T>(result: OperationResult<T>): OperationResult<T> {
+  if (result.ok || !result.fieldErrors?.suggest_tags) return result;
+  const { suggest_tags, ...rest } = result.fieldErrors;
+  return { ...result, fieldErrors: { ...rest, tags: suggest_tags } };
+}
+
 export async function createProduct(
   initialState: any,
   formData: FormData,
 ): Promise<FormState<ProductCreationRequest>> {
-  const result = await ops.createProduct(await getPageSession(), {
-    ...Object.fromEntries(formData),
-    // One form value per tag, which fromEntries would cut to the last.
-    tags: formData.getAll("tags").map(String),
-  });
+  const result = onTagsField(
+    await ops.createProduct(await getPageSession(), {
+      ...Object.fromEntries(formData),
+      ...tagFields(formData),
+    }),
+  );
   // Navigate on the client (see FormState.redirectTo) rather than redirect()
   // here, so the shared layout's auth UI re-renders with the current session.
   return toFormState(
@@ -56,19 +71,16 @@ export async function updateProduct(
   const field = (name: string) => formData.get(name) || undefined;
   const disabled = formData.get("disabled");
   try {
-    const result = await ops.updateProduct(
-      await getPageSession(),
-      account_id,
-      product_id,
-      {
+    const result = onTagsField(
+      await ops.updateProduct(await getPageSession(), account_id, product_id, {
         title: field("title"),
         description: field("description"),
         visibility: field("visibility"),
         disabled: disabled === null ? undefined : disabled === "true",
         // Always sent: the picker submits nothing when every chip is
         // removed, and that has to clear the tags.
-        tags: formData.getAll("tags").map(String),
-      },
+        ...tagFields(formData),
+      }),
     );
     return toFormState(result, formData, "Product updated successfully!");
   } catch (error) {

@@ -2,7 +2,7 @@
 import { getPageSession } from "@/lib";
 import * as ops from "@/lib/operations/tags";
 import { conflict, ok } from "@/lib/operations/result";
-import { reviewTag, suggestTag } from "./tags";
+import { reviewTag } from "./tags";
 
 jest.mock("@/lib", () => ({ getPageSession: jest.fn() }));
 jest.mock("@/lib/clients/database", () => ({}));
@@ -20,17 +20,6 @@ const form = (fields: Record<string, string>) => {
 beforeEach(() => {
   jest.resetAllMocks();
   (getPageSession as jest.Mock).mockResolvedValue(session);
-});
-
-test("suggestTag answers the tag as stored, or why it was refused", async () => {
-  operations.suggestTag.mockResolvedValue(
-    ok({ tag: { tag_id: "sea-ice", pending: true }, created: true })
-  );
-  expect(await suggestTag("Sea Ice")).toEqual({ tag: "sea-ice" });
-  expect(operations.suggestTag).toHaveBeenCalledWith(session, { tag_id: "Sea Ice" });
-
-  operations.suggestTag.mockResolvedValue(conflict("Too many"));
-  expect(await suggestTag("more")).toEqual({ error: "Too many" });
 });
 
 describe("reviewTag", () => {

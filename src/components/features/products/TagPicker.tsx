@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import {
   Badge,
   Button,
@@ -25,143 +25,140 @@ interface TagPickerProps extends Partial<ControlProps> {
   /** Tags someone suggested that an admin hasn't reviewed yet. */
   pending?: string[];
   /**
-   * Suggests a tag the corpus doesn't have. Resolves to the tag as stored, or
-   * to a message saying why it was refused. Without it, there's no way to
-   * suggest one.
+   * The form field each new tag is submitted under, once per tag, to be
+   * suggested when the form is saved. Without it, there's no way to suggest
+   * one.
    */
-  onSuggest?: (tag: string) => Promise<{ tag: string } | { error: string }>;
+  suggestName?: string;
 }
 
 export function TagPicker({
   name,
   options,
   defaultValue = [],
-  pending: initialPending = [],
-  onSuggest,
+  pending = [],
+  suggestName,
   ...controlProps
 }: TagPickerProps) {
   const [tags, setTags] = useState(defaultValue);
-  const [pending, setPending] = useState(initialPending);
+  // Suggested here, and only sent for review once the form is saved, so a
+  // suggestion never outlives a product that wasn't.
+  const [fresh, setFresh] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
-  const [error, setError] = useState("");
-  const [suggesting, startSuggesting] = useTransition();
 
   // In the tags' own spelling, so "sea ice" finds and suggests "sea-ice".
   const query = canonTag(filter);
   const matches = options.filter((tag) => tag.toLowerCase().includes(query));
   // Offered even when other tags partly match: someone after "ocean
   // acidification" shouldn't have to settle for "ocean".
-  const canSuggest = onSuggest && query && !options.includes(query);
+  const canSuggest =
+    suggestName && query && !options.includes(query) && !fresh.includes(query);
 
   const toggle = (tag: string, on: boolean) =>
     setTags((tags) => (on ? [...tags, tag] : tags.filter((t) => t !== tag)));
+  const suggest = () => {
+    setFresh((fresh) => [...fresh, query]);
+    setFilter("");
+  };
 
-  const suggest = () =>
-    startSuggesting(async () => {
-      const result = await onSuggest!(filter);
-      if ("error" in result) return setError(result.error);
-      if (!options.includes(result.tag)) {
-        setPending((pending) => [...pending, result.tag]);
-      }
-      setTags((tags) =>
-        tags.includes(result.tag) ? tags : [...tags, result.tag]
-      );
-      setFilter("");
-    });
+  const chip = (tag: string, isNew: boolean) => {
+    const label = isNew ? "new" : pending.includes(tag) ? "pending" : null;
+    return (
+      <Badge
+        key={tag}
+        color={label ? "amber" : "gray"}
+        size="2"
+        title={
+          isNew
+            ? "Suggested for review when you save"
+            : label
+              ? "Awaiting review"
+              : undefined
+        }
+      >
+        {tag}
+        {label && ` (${label})`}
+        <IconButton
+          type="button"
+          size="1"
+          variant="ghost"
+          color="gray"
+          aria-label={`Remove ${tag}`}
+          onClick={() =>
+            isNew
+              ? setFresh((fresh) => fresh.filter((t) => t !== tag))
+              : toggle(tag, false)
+          }
+        >
+          <Cross2Icon />
+        </IconButton>
+        <input type="hidden" name={isNew ? suggestName : name} value={tag} />
+      </Badge>
+    );
+  };
 
   return (
-    <Flex gap="2" wrap="wrap" align="center">
-      {tags.map((tag) => (
-        <Badge
-          key={tag}
-          color={pending.includes(tag) ? "amber" : "gray"}
-          size="2"
-          title={pending.includes(tag) ? "Awaiting review" : undefined}
-        >
-          {tag}
-          {pending.includes(tag) && " (pending)"}
-          <IconButton
-            type="button"
-            size="1"
-            variant="ghost"
-            color="gray"
-            aria-label={`Remove ${tag}`}
-            onClick={() => toggle(tag, false)}
-          >
-            <Cross2Icon />
-          </IconButton>
-          <input type="hidden" name={name} value={tag} />
-        </Badge>
-      ))}
-      <Popover.Root
-        onOpenChange={() => {
-          setFilter("");
-          setError("");
-        }}
-      >
-        <Popover.Trigger>
-          <Button {...controlProps} type="button" size="1" variant="soft">
-            {tags.length ? "Edit tags" : "Add tags"}
-          </Button>
-        </Popover.Trigger>
-        <Popover.Content width="280px" aria-label="Choose tags">
-          <Flex direction="column" gap="2">
-            <TextField.Root
-              size="2"
-              placeholder="Filter tags"
-              value={filter}
-              onChange={(e) => {
-                setFilter(e.target.value);
-                setError("");
-              }}
-              // Enter would submit the form behind the popover.
-              onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
-            />
-            {/* ponytail: renders every tag; fine to a few hundred, virtualise
-                the list if the corpus grows past that. */}
-            <Flex
-              direction="column"
-              gap="1"
-              style={{ maxHeight: 240, overflowY: "auto" }}
-            >
-              {matches.map((tag) => (
-                <Text as="label" size="2" key={tag}>
-                  <Flex gap="2" align="center" py="1">
-                    <Checkbox
-                      checked={tags.includes(tag)}
-                      onCheckedChange={(on) => toggle(tag, on === true)}
-                    />
-                    {tag}
-                  </Flex>
-                </Text>
-              ))}
-              {!matches.length && (
-                <Text size="2" color="gray">
-                  {options.length
-                    ? `No tag matches “${filter}”.`
-                    : "No tags to choose from yet."}
-                </Text>
+    <Flex direction="column" gap="2">
+      <Flex gap="2" wrap="wrap" align="center">
+        {tags.map((tag) => chip(tag, false))}
+        {fresh.map((tag) => chip(tag, true))}
+        <Popover.Root onOpenChange={() => setFilter("")}>
+          <Popover.Trigger>
+            <Button {...controlProps} type="button" size="1" variant="soft">
+              {tags.length || fresh.length ? "Edit tags" : "Add tags"}
+            </Button>
+          </Popover.Trigger>
+          <Popover.Content width="280px" aria-label="Choose tags">
+            <Flex direction="column" gap="2">
+              <TextField.Root
+                size="2"
+                placeholder="Filter tags"
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                // Enter would submit the form behind the popover.
+                onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
+              />
+              {/* ponytail: renders every tag; fine to a few hundred, virtualise
+                  the list if the corpus grows past that. */}
+              <Flex
+                direction="column"
+                gap="1"
+                style={{ maxHeight: 240, overflowY: "auto" }}
+              >
+                {matches.map((tag) => (
+                  <Text as="label" size="2" key={tag}>
+                    <Flex gap="2" align="center" py="1">
+                      <Checkbox
+                        checked={tags.includes(tag)}
+                        onCheckedChange={(on) => toggle(tag, on === true)}
+                      />
+                      {tag}
+                    </Flex>
+                  </Text>
+                ))}
+                {!matches.length && (
+                  <Text size="2" color="gray">
+                    {options.length
+                      ? `No tag matches “${filter}”.`
+                      : "No tags to choose from yet."}
+                  </Text>
+                )}
+              </Flex>
+              {canSuggest && (
+                <Button type="button" size="1" variant="ghost" onClick={suggest}>
+                  Suggest “{query}” as a new tag
+                </Button>
               )}
             </Flex>
-            {canSuggest && (
-              <Button
-                type="button"
-                size="1"
-                variant="ghost"
-                loading={suggesting}
-                onClick={suggest}
-              >
-                Suggest “{query}” as a new tag
-              </Button>
-            )}
-            {error && (
-              <Text size="1" color="red" role="alert">
-                {error}
-              </Text>
-            )}
-          </Flex>
-        </Popover.Content>
-      </Popover.Root>
+          </Popover.Content>
+        </Popover.Root>
+      </Flex>
+      {fresh.length > 0 && (
+        <Text size="1" color="gray">
+          New tags are suggested for review when you save the product. They
+          aren&apos;t kept until then.
+        </Text>
+      )}
     </Flex>
   );
 }

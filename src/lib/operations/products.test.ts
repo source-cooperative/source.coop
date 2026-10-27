@@ -34,7 +34,7 @@ jest.mock("@/lib/clients/database", () => ({
   },
   dataConnectionsTable: { fetchById: jest.fn() },
   membershipsTable: { deleteByProduct: jest.fn() },
-  tagsTable: { listAll: jest.fn() },
+  tagsTable: { listAll: jest.fn(), suggest: jest.fn() },
   hidePendingTags: jest.fn(),
 }));
 jest.mock("@/lib/api/authz", () => ({
@@ -294,6 +294,35 @@ describe("createProduct", () => {
     expect(productsTable.create).not.toHaveBeenCalled();
   });
 
+  test("suggests new tags with the product, and only once every check passes", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+    const result = await createProduct(
+      SESSION,
+      input({ tags: ["ocean"], suggest_tags: ["Sea Lion", "acoustics"] })
+    );
+    expect(result.ok).toBe(true);
+    // acoustics is already on the list, so only sea-lion is new.
+    expect(tagsTable.suggest).toHaveBeenCalledTimes(1);
+    expect(tagsTable.suggest).toHaveBeenCalledWith("sea-lion", "alice");
+    expect((productsTable.create as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "ocean",
+      "sea-lion",
+      "acoustics",
+    ]);
+  });
+
+  test("a save that fails suggests nothing", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+    expect(
+      await createProduct(SESSION, input({ tags: ["made-up"], suggest_tags: ["sea-ice"] }))
+    ).toMatchObject({ error: "invalid" });
+    expect(
+      await createProduct(SESSION, input({ suggest_tags: ["sea_ice"] }))
+    ).toMatchObject({ error: "invalid", fieldErrors: { suggest_tags: expect.any(Array) } });
+    expect(tagsTable.suggest).not.toHaveBeenCalled();
+    expect(productsTable.create).not.toHaveBeenCalled();
+  });
+
   test("a product without tags never reads the tag table", async () => {
     (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
     await createProduct(SESSION, input());
@@ -482,6 +511,36 @@ describe("updateProduct", () => {
     expect(
       await updateProduct(SESSION, "alice", "my-product", { tags: ["made-up"] })
     ).toMatchObject({ error: "invalid", fieldErrors: { tags: ["Unknown tags: made-up"] } });
+    expect(productsTable.update).not.toHaveBeenCalled();
+  });
+
+  test("suggested tags join the product's own when `tags` is left out", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({ metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["ocean"] } })
+    );
+    const result = await updateProduct(SESSION, "alice", "my-product", {
+      suggest_tags: ["sea lion"],
+    });
+    expect(result.ok).toBe(true);
+    expect(tagsTable.suggest).toHaveBeenCalledWith("sea-lion", "alice");
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "ocean",
+      "sea-lion",
+    ]);
+  });
+
+  test("a suggestion past the cap refuses the save", async () => {
+    (tagsTable.listAll as jest.Mock).mockResolvedValue(
+      ["a1", "a2", "a3", "a4", "a5"].map((tag_id) => ({
+        tag_id,
+        pending: true,
+        suggested_by: "alice",
+      }))
+    );
+    expect(
+      await updateProduct(SESSION, "alice", "my-product", { suggest_tags: ["sea-lion"] })
+    ).toMatchObject({ error: "conflict" });
+    expect(tagsTable.suggest).not.toHaveBeenCalled();
     expect(productsTable.update).not.toHaveBeenCalled();
   });
 

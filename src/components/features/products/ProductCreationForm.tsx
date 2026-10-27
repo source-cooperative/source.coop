@@ -7,7 +7,6 @@ import { Account, DataConnection } from "@/types";
 import { Product, ProductVisibility } from "@/types/product";
 import { useProductIdValidation } from "@/hooks/useIdValidation";
 import { createProduct, updateProduct } from "@/lib/actions/products";
-import { suggestTag } from "@/lib/actions/tags";
 import { TagPicker } from "./TagPicker";
 
 const VISIBILITY_LABELS: Record<ProductVisibility, string> = {
@@ -271,7 +270,7 @@ export function ProductCreationForm({
           name="tags"
           options={tagOptions}
           pending={pendingTags}
-          onSuggest={suggestTag}
+          suggestName="suggest_tags"
           defaultValue={isEditMode ? product.metadata.tags : []}
         />
       ),
@@ -365,6 +364,7 @@ export function ProductCreationForm({
       fields={fields}
       action={isEditMode ? updateProduct : createProduct}
       submitButtonText={isEditMode ? "Save" : "Create"}
+      warnOnUnsavedChanges
       hiddenFields={
         isEditMode
           ? {

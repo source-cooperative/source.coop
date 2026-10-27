@@ -1,24 +1,20 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
-import { canonTag } from "@/lib/tags/canon";
 import { TagPicker } from "./TagPicker";
 
-const submitted = (container: HTMLElement) =>
-  [...container.querySelectorAll<HTMLInputElement>('input[name="tags"]')].map(
+const submitted = (container: HTMLElement, name = "tags") =>
+  [...container.querySelectorAll<HTMLInputElement>(`input[name="${name}"]`)].map(
     (input) => input.value
   );
 
-function renderPicker(
-  defaultValue: string[] = [],
-  onSuggest?: (tag: string) => Promise<{ tag: string } | { error: string }>
-) {
+function renderPicker(defaultValue: string[] = [], suggestName?: string) {
   return render(
     <Theme>
       <TagPicker
         name="tags"
         options={["climate", "climate-change", "ocean"]}
         defaultValue={defaultValue}
-        onSuggest={onSuggest}
+        suggestName={suggestName}
       />
     </Theme>
   );
@@ -55,32 +51,31 @@ test("the popover filters the corpus and toggles tags", () => {
   expect(submitted(container)).toEqual(["ocean"]);
 });
 
-test("a suggested tag is added and marked pending", async () => {
-  const onSuggest = jest.fn(async (tag: string) => ({ tag: canonTag(tag) }));
-  const { container } = renderPicker(["ocean"], onSuggest);
+test("a suggested tag waits for the save, as a new suggest_tags value", () => {
+  const { container } = renderPicker(["ocean"], "suggest_tags");
   filterFor("Sea Ice");
-
   fireEvent.click(
     screen.getByRole("button", { name: "Suggest “sea-ice” as a new tag" })
   );
 
-  expect(await screen.findByText(/\(pending\)/)).toBeTruthy();
-  expect(onSuggest).toHaveBeenCalledWith("Sea Ice");
-  expect(submitted(container)).toEqual(["ocean", "sea-ice"]);
-});
+  expect(screen.getByText(/\(new\)/)).toBeTruthy();
+  expect(screen.getByText(/suggested for review when you save/)).toBeTruthy();
+  expect(submitted(container)).toEqual(["ocean"]);
+  expect(submitted(container, "suggest_tags")).toEqual(["sea-ice"]);
 
-test("a refused suggestion shows why and adds nothing", async () => {
-  const { container } = renderPicker([], async () => ({ error: "Too many" }));
-  filterFor("sea-ice");
-
-  fireEvent.click(screen.getByRole("button", { name: /^Suggest/ }));
-
-  expect((await screen.findByRole("alert")).textContent).toBe("Too many");
-  expect(submitted(container)).toEqual([]);
+  fireEvent.click(screen.getByRole("button", { name: "Remove sea-ice" }));
+  expect(submitted(container, "suggest_tags")).toEqual([]);
+  expect(screen.queryByText(/suggested for review when you save/)).toBeNull();
 });
 
 test("an existing tag can't be suggested", () => {
-  renderPicker([], async (tag) => ({ tag }));
+  renderPicker([], "suggest_tags");
   filterFor("ocean");
+  expect(screen.queryByRole("button", { name: /^Suggest/ })).toBeNull();
+});
+
+test("without suggestName there's no way to suggest", () => {
+  renderPicker();
+  filterFor("sea ice");
   expect(screen.queryByRole("button", { name: /^Suggest/ })).toBeNull();
 });
