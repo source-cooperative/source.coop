@@ -428,6 +428,19 @@ describe("updateProduct", () => {
     ]);
   });
 
+  test("writes only over the row it read, and a lost race is a conflict", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ updated_at: "t0" }));
+    (productsTable.update as jest.Mock).mockRejectedValue(
+      Object.assign(new Error("x"), { name: "ConditionalCheckFailedException" })
+    );
+    expect(
+      await updateProduct(SESSION, "alice", "my-product", { title: "New" })
+    ).toMatchObject({ ok: false, error: "conflict" });
+    expect((productsTable.update as jest.Mock).mock.calls[0][1]).toEqual({
+      expectedUpdatedAt: "t0",
+    });
+  });
+
   test("rejects a visibility change when the data connection no longer exists", async () => {
     (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(null);
     expect(
