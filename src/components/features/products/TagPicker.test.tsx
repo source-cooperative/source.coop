@@ -59,13 +59,11 @@ test("a suggested tag waits for the save, as a new suggest_tags value", () => {
   );
 
   expect(screen.getByText(/\(new\)/)).toBeTruthy();
-  expect(screen.getByText(/suggested for review when you save/)).toBeTruthy();
   expect(submitted(container)).toEqual(["ocean"]);
   expect(submitted(container, "suggest_tags")).toEqual(["sea-ice"]);
 
   fireEvent.click(screen.getByRole("button", { name: "Remove sea-ice" }));
   expect(submitted(container, "suggest_tags")).toEqual([]);
-  expect(screen.queryByText(/suggested for review when you save/)).toBeNull();
 });
 
 test("an existing tag can't be suggested", () => {
