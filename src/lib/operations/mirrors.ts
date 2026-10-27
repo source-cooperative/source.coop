@@ -202,6 +202,12 @@ export async function addMirror(
         "connection_id"
       );
   }
+  if (!connection.allowed_visibilities.includes(product.visibility)) {
+    return invalid(
+      `The "${connection.name}" data connection does not allow ${product.visibility} products`,
+      "connection_id"
+    );
+  }
   const { mirrors, primary_mirror } = product.metadata;
   // Older products key mirrors by other names, and the new mirror's key must
   // not overwrite one of those either.
@@ -248,11 +254,24 @@ export async function updateMirror(
   // shared Source-managed connection a free choice of it would let one account
   // point its product at another's objects. Only someone who also controls the
   // connection may re-point a mirror on it.
+  const connection =
+    (prefix !== undefined || is_primary) &&
+    (await dataConnectionsTable.fetchById(connection_id));
   if (prefix !== undefined) {
-    const connection = await dataConnectionsTable.fetchById(connection_id);
     if (!connection || !(await canManageDataConnection(session, connection))) {
       return forbidden(
         "You must be able to manage both this account and the data connection to edit its prefix"
+      );
+    }
+  }
+  // The primary is what the product is served from, so its connection must
+  // allow the product's visibility, as the one it was created on had to.
+  if (is_primary) {
+    if (!connection) return invalid("Data connection not found", "is_primary");
+    if (!connection.allowed_visibilities.includes(product.visibility)) {
+      return invalid(
+        `The "${connection.name}" data connection does not allow ${product.visibility} products`,
+        "is_primary"
       );
     }
   }
