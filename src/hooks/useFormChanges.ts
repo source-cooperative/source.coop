@@ -1,9 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useUnsavedChangesWarning } from "./useUnsavedChangesWarning";
 
-/** Everything the form would submit, comparable across renders. */
+/**
+ * Everything the form would submit, comparable across renders. A chosen file
+ * stands in as its name and size, since its contents can't be read here; not
+ * its modification time, which an empty file input reports as the moment it's
+ * asked.
+ */
 const snapshot = (form: HTMLFormElement) =>
-  JSON.stringify([...new FormData(form).entries()].map(([k, v]) => [k, String(v)]));
+  JSON.stringify(
+    [...new FormData(form).entries()].map(([k, v]) => [
+      k,
+      v instanceof File ? [v.name, v.size] : v,
+    ])
+  );
 
 /**
  * Whether a form holds changes it hasn't saved, kept live for showing so by
@@ -23,6 +33,9 @@ const snapshot = (form: HTMLFormElement) =>
 export function useFormChanges(lastSave: unknown) {
   const formRef = useRef<HTMLFormElement>(null);
   const saved = useRef<string | null>(null);
+  // What the form held when last submitted. A save that succeeds saved this,
+  // not whatever was typed while it was on its way.
+  const submitted = useRef<string | null>(null);
   const [dirty, setDirty] = useState(false);
 
   const isDirty = useCallback(
@@ -38,22 +51,26 @@ export function useFormChanges(lastSave: unknown) {
     if (!form) return;
     saved.current = snapshot(form);
     const check = () => setDirty(isDirty());
+    const onSubmit = () => (submitted.current = snapshot(form));
     form.addEventListener("input", check);
     form.addEventListener("change", check);
+    form.addEventListener("submit", onSubmit);
     const observer = new MutationObserver(check);
     observer.observe(form, { subtree: true, childList: true, attributes: true });
     return () => {
       form.removeEventListener("input", check);
       form.removeEventListener("change", check);
+      form.removeEventListener("submit", onSubmit);
       observer.disconnect();
     };
   }, [isDirty]);
 
   useEffect(() => {
     if (!lastSave || !formRef.current) return;
-    saved.current = snapshot(formRef.current);
-    setDirty(false);
-  }, [lastSave]);
+    saved.current = submitted.current ?? snapshot(formRef.current);
+    submitted.current = null;
+    setDirty(isDirty());
+  }, [lastSave, isDirty]);
 
   useUnsavedChangesWarning(isDirty);
   return { formRef, dirty };

@@ -11,6 +11,9 @@ function Form({ lastSave }: { lastSave?: unknown }) {
       {chips.map((tag) => (
         <input key={tag} type="hidden" name="tags" value={tag} />
       ))}
+      {/* An empty file input still submits a placeholder file, whose
+          modification time is the moment it's read: it mustn't count. */}
+      <input aria-label="File" name="file" type="file" />
       <button type="button" onClick={() => setChips([...chips, "climate"])}>
         Add tag
       </button>
@@ -44,5 +47,19 @@ test("a successful save makes what the form holds the saved state", () => {
   expect(status()).toBe("unsaved");
 
   act(() => rerender(<Form lastSave={{ success: true }} />));
+  expect(status()).toBe("clean");
+});
+
+test("an edit made while a save is on its way stays unsaved", () => {
+  const { container, rerender } = render(<Form />);
+  const title = screen.getByLabelText("Title");
+  fireEvent.input(title, { target: { value: "Lakes" } });
+  fireEvent.submit(container.querySelector("form")!);
+  fireEvent.input(title, { target: { value: "Lakes and rivers" } });
+
+  act(() => rerender(<Form lastSave={{ success: true }} />));
+  expect(status()).toBe("unsaved");
+
+  fireEvent.input(title, { target: { value: "Lakes" } });
   expect(status()).toBe("clean");
 });

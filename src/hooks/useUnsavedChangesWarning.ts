@@ -3,6 +3,9 @@ import { useBeforeUnload } from "./useBeforeUnload";
 
 const MESSAGE = "You have unsaved changes. Leave this page and lose them?";
 
+/** Clicks already asked about, so one click never asks twice. */
+const asked = new WeakSet<Event>();
+
 /**
  * Asks before someone leaves a page holding unsaved changes, whichever way
  * they leave. Closing the tab, reloading or typing an address unload the page,
@@ -39,7 +42,11 @@ export function useUnsavedChangesWarning(isDirty: () => boolean) {
       // link to a fragment of this page doesn't leave it.
       if (to.origin !== here.origin) return;
       if (to.pathname === here.pathname && to.search === here.search) return;
-      if (!isDirty() || window.confirm(MESSAGE)) return;
+      if (!isDirty() || asked.has(event)) return;
+      // Each dirty form on the page listens; the first to ask answers for
+      // all of them, whichever way the person answers.
+      asked.add(event);
+      if (window.confirm(MESSAGE)) return;
       event.preventDefault();
       // In the capture phase, before React's listener at the root, so
       // next/link never sees the click.

@@ -63,6 +63,20 @@ test("doesn't ask without unsaved changes, for a fragment, or for a new tab", ()
   expect(navigate).toHaveBeenCalledTimes(4);
 });
 
+test("one click asks once, however many forms on the page are dirty", () => {
+  const confirm = jest.spyOn(window, "confirm").mockReturnValue(false);
+  function TwoForms() {
+    useUnsavedChangesWarning(() => true);
+    return <Page dirty />;
+  }
+  render(<TwoForms />);
+
+  fireEvent.click(screen.getByText("Products"));
+
+  expect(confirm).toHaveBeenCalledTimes(1);
+  expect(navigate).not.toHaveBeenCalled();
+});
+
 test("asks the browser to warn before unloading only while dirty", () => {
   const { rerender } = render(<Page dirty={false} />);
   const clean = new Event("beforeunload", { cancelable: true });
