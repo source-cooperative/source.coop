@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Flex, Table, Text, TextField } from "@radix-ui/themes";
+import { productListUrl } from "@/lib/urls";
 
 export interface ApprovedTag {
   tag: string;
@@ -57,7 +59,11 @@ export function AdminTagList({ tags }: { tags: ApprovedTag[] }) {
           <Table.Body>
             {shown.map((t) => (
               <Table.Row key={t.tag}>
-                <Table.RowHeaderCell>{t.tag}</Table.RowHeaderCell>
+                <Table.RowHeaderCell>
+                  <Link href={`${productListUrl()}?tags=${encodeURIComponent(t.tag)}`}>
+                    {t.tag}
+                  </Link>
+                </Table.RowHeaderCell>
                 <Table.Cell justify="end" style={{ fontVariantNumeric: "tabular-nums" }}>
                   {t.products}
                 </Table.Cell>
