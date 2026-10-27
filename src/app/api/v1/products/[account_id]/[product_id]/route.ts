@@ -58,7 +58,7 @@ registry.registerPath({
   tags: ["Products"],
   summary: "Edit a product",
   description:
-    "Changes the fields given and leaves the rest. A new visibility must be one the product's data connection allows. Only an admin may edit a deactivated product, which is how one is reactivated.",
+    "Changes the fields given and leaves the rest. A new visibility must be one the product's data connection allows. Only an admin may edit a deactivated product, which is how one is reactivated. A product changed by someone else since it was read is a 409.",
   security: bearer,
   request: {
     params,
@@ -66,7 +66,7 @@ registry.registerPath({
   },
   responses: {
     200: json("The product as edited.", ProductResponseSchema),
-    ...errors(400, 401, 403, 404),
+    ...errors(400, 401, 403, 404, 409),
   },
 });
 

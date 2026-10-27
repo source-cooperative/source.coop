@@ -13,6 +13,7 @@ import {
 import { canListOnProfile, isAdmin, isAuthorized } from "@/lib/api/authz";
 import { denyDataConnectionFor } from "@/lib/data-connections";
 import { LOGGER } from "@/lib/logging";
+import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { getStorageClient } from "@/lib/clients/storage";
 import { accountUrl, editProductDetailsUrl, productUrl } from "@/lib/urls";
@@ -378,11 +379,20 @@ export async function updateProduct(
     }
   }
 
-  const updated = {
-    // The row as written, with the account it doesn't store.
-    ...(await productsTable.update({ ...product, ...changes })),
-    account: product.account,
-  };
+  // The row is written whole, metadata included, so a mirror change landing
+  // since the read would be written back over; the lock makes that a 409.
+  let written: Product;
+  try {
+    written = await productsTable.update(
+      { ...product, ...changes },
+      { expectedUpdatedAt: product.updated_at }
+    );
+  } catch (error) {
+    if (!isConditionalCheckFailed(error)) throw error;
+    return conflict("This product was modified by someone else. Please reload and try again.");
+  }
+  // The row as written, with the account it doesn't store.
+  const updated = { ...written, account: product.account };
   revalidate(account_id, product_id);
   LOGGER.info("Product updated", {
     operation: "updateProduct",
