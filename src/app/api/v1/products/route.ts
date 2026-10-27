@@ -13,7 +13,7 @@ registry.registerPath({
   tags: ["Products"],
   summary: "List public products",
   description:
-    "Public products, most featured first, one page at a time. Needs no credentials.",
+    "Public products, most featured first, one page at a time. Credentials are optional; a token returns the full embedded account.",
   security: optionalBearer,
   request: { query: ListProductsQuerySchema },
   responses: {
