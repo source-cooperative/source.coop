@@ -475,7 +475,10 @@ describe("updateProduct", () => {
   });
 
   test("reads a tag in its one spelling, but keeps the product's own as they are", async () => {
-    (tagsTable.listAll as jest.Mock).mockResolvedValue(["ocean", "sea-ice"]);
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([
+      { tag_id: "ocean" },
+      { tag_id: "sea-ice" },
+    ]);
     (productsTable.fetchById as jest.Mock).mockResolvedValue(
       product({
         metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["field boundaries"] },
@@ -493,7 +496,10 @@ describe("updateProduct", () => {
   });
 
   test("keeps one tag per spelling, preferring the corpus's", async () => {
-    (tagsTable.listAll as jest.Mock).mockResolvedValue(["sea-ice", "machine learning"]);
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([
+      { tag_id: "sea-ice" },
+      { tag_id: "machine learning" },
+    ]);
     (productsTable.fetchById as jest.Mock).mockResolvedValue(
       product({ metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["sea ice"] } })
     );
