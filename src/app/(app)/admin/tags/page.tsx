@@ -7,7 +7,7 @@ import { productsTable } from "@/lib/clients/database";
 import { getPageSession } from "@/lib/api/utils";
 import { reviewTag } from "@/lib/actions/tags";
 import { listTags } from "@/lib/operations/tags";
-import { similarTags } from "@/lib/tags/similar";
+import { similarTags, splitTag } from "@/lib/tags/similar";
 
 export const metadata: Metadata = {
   title: "Admin — Tags",
@@ -57,6 +57,7 @@ export default async function AdminTagsPage() {
               product_id,
             })),
             matches: similarTags(t.tag_id, approvedTags),
+            split: splitTag(t.tag_id, approvedTags),
           }))}
           approved={counted}
           action={reviewTag}

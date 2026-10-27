@@ -6,9 +6,11 @@ import { AdminTagSuggestions } from "./AdminTagSuggestions";
  * The admin queue of suggested tags. Each suggestion shows who suggested it,
  * the products carrying it, and the approved tags it looks most like.
  * Approving adds it to the list everyone picks from, and rejecting takes it
- * off its products; both happen at once. Merging takes two steps: choosing a
- * tag stages the merge and shows what it will change, and nothing happens
- * until **Save merge**. **Keep** goes back to the suggestion as it was.
+ * off its products; both happen at once. Merging takes two steps: choosing
+ * one or more tags stages the merge and shows what it will change, and
+ * nothing happens until **Save merge**. **Reset** goes back to the suggestion
+ * as it was. When every word of a suggestion is already a tag, as with
+ * `field-boundaries`, one button stages a merge into all of them.
  */
 const meta = {
   title: "Features/Admin/AdminTagSuggestions",
@@ -16,9 +18,11 @@ const meta = {
   parameters: { layout: "padded" },
   args: {
     approved: [
+      { tag: "boundaries", products: 121 },
       { tag: "climate", products: 17 },
       { tag: "crop-type", products: 12 },
       { tag: "crops", products: 12 },
+      { tag: "field", products: 115 },
       { tag: "ocean", products: 5 },
       { tag: "remote-sensing", products: 4 },
       { tag: "sentinel-2", products: 25 },
@@ -67,6 +71,47 @@ export const MergeStaged: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.click(
       within(canvasElement).getByRole("button", { name: "crop-type" })
+    );
+  },
+};
+
+/** A merge into two tags staged, waiting to be saved or reset. */
+export const MergeIntoSeveral: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "crop-type" }));
+    await userEvent.click(canvas.getByRole("button", { name: "crops" }));
+  },
+};
+
+/**
+ * Every word of the suggestion is already a tag, so one button stages a
+ * merge into all of them.
+ */
+export const Split: Story = {
+  args: {
+    suggestions: [
+      {
+        tag: "field-boundaries",
+        suggested_by: "ftw",
+        suggested_at: "2026-10-21T10:00:00Z",
+        products: [
+          { account_id: "ftw", product_id: "ftw-rwanda" },
+          { account_id: "ftw", product_id: "ftw-kenya" },
+        ],
+        matches: [{ tag: "boundaries", score: 0.85 }],
+        split: ["field", "boundaries"],
+      },
+    ],
+  },
+};
+
+/** The split staged: saving puts both tags in the suggestion's place. */
+export const SplitStaged: Story = {
+  args: Split.args,
+  play: async ({ canvasElement }) => {
+    await userEvent.click(
+      within(canvasElement).getByRole("button", { name: "field + boundaries" })
     );
   },
 };

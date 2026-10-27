@@ -81,10 +81,13 @@ export const UpdateTagSchema = z
   .openapi("UpdateTag");
 
 export const DeleteTagQuerySchema = z.object({
-  replace_with: z.string().min(1, "Choose a tag to merge into").optional().openapi({
-    description:
-      "An approved tag to put in this one's place on every product that carries it. Without it, the tag is just taken off them.",
-  }),
+  replace_with: z
+    .array(z.string())
+    .optional()
+    .openapi({
+      description:
+        "Approved tags to put in this one's place on every product that carries it. Repeat it to merge into several, as `?replace_with=field&replace_with=boundaries` for `field-boundaries`. Without it, the tag is just taken off them.",
+    }),
 });
 
 /**
@@ -201,9 +204,10 @@ export async function updateTag(
 
 /**
  * Rejects a pending tag, taking it off every product that carries it, or
- * merges it into an approved tag by putting that one in its place. Only a
- * pending tag can go: refusing an approved one keeps a review form left open
- * after another admin approved the tag from stripping it from every product.
+ * merges it into one or more approved tags by putting those in its place.
+ * Only a pending tag can go: refusing an approved one keeps a review form left
+ * open after another admin approved the tag from stripping it from every
+ * product.
  */
 export async function deleteTag(
   session: UserSession | null,
@@ -213,14 +217,23 @@ export async function deleteTag(
   if (!isAdmin(session)) return deny(session, "Only admins may review tags");
   const parsed = DeleteTagQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
-  const { replace_with } = parsed.data;
+  const replace_with = [...new Set(parsed.data.replace_with ?? [])];
 
   const tags = await tagsTable.listAll();
   const tag = tags.find((t) => t.tag_id === tag_id);
   if (!tag) return notFound(`Tag "${tag_id}" not found`);
   if (!tag.pending) return conflict(`"${tag_id}" is not awaiting review`);
-  if (replace_with && !tags.some((t) => t.tag_id === replace_with && !t.pending)) {
-    return invalid(`"${replace_with}" is not an approved tag`, "replace_with");
+  if (replace_with.some((target) => !target)) {
+    return invalid("Choose a tag to merge into", "replace_with");
+  }
+  const unapproved = replace_with.filter(
+    (target) => !tags.some((t) => t.tag_id === target && !t.pending)
+  );
+  if (unapproved.length) {
+    return invalid(
+      `Not approved tags: ${unapproved.map((t) => `"${t}"`).join(", ")}`,
+      "replace_with"
+    );
   }
 
   // ponytail: one write per product and no transaction; a failure partway
@@ -228,7 +241,7 @@ export async function deleteTag(
   const carrying = await productsTable.listByTag(tag_id);
   for (const product of carrying) {
     const replaced = product.metadata.tags!.flatMap((t) =>
-      t !== tag_id ? [t] : replace_with ? [replace_with] : []
+      t !== tag_id ? [t] : replace_with
     );
     await productsTable.setTags(product.account_id, product.product_id, [
       ...new Set(replaced),
@@ -236,7 +249,7 @@ export async function deleteTag(
   }
   await tagsTable.delete(tag_id);
   // The row is gone, so the log is the record of who decided.
-  LOGGER.info(replace_with ? "Tag merged" : "Tag rejected", {
+  LOGGER.info(replace_with.length ? "Tag merged" : "Tag rejected", {
     operation: "deleteTag",
     metadata: {
       tag_id,
