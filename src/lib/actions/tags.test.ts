@@ -24,9 +24,9 @@ beforeEach(() => {
 
 test("suggestTag answers the tag as stored, or why it was refused", async () => {
   operations.suggestTag.mockResolvedValue(
-    ok({ tag: { tag_id: "sea ice", pending: true }, created: true })
+    ok({ tag: { tag_id: "sea-ice", pending: true }, created: true })
   );
-  expect(await suggestTag("Sea Ice")).toEqual({ tag: "sea ice" });
+  expect(await suggestTag("Sea Ice")).toEqual({ tag: "sea-ice" });
   expect(operations.suggestTag).toHaveBeenCalledWith(session, { tag_id: "Sea Ice" });
 
   operations.suggestTag.mockResolvedValue(conflict("Too many"));

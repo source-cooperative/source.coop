@@ -7,7 +7,7 @@ function renderQueue(action = jest.fn(async () => ({}))) {
     <Theme>
       <AdminTagSuggestions
         approved={[
-          { tag: "crop type", products: 12 },
+          { tag: "crop-type", products: 12 },
           { tag: "ocean", products: 5 },
         ]}
         suggestions={[
@@ -15,7 +15,7 @@ function renderQueue(action = jest.fn(async () => ({}))) {
             tag: "crop-types",
             suggested_by: "fiboa",
             products: [{ account_id: "fiboa", product_id: "de-nrw" }],
-            matches: [{ tag: "crop type", score: 0.85 }],
+            matches: [{ tag: "crop-type", score: 0.85 }],
           },
         ]}
         action={action}
@@ -30,7 +30,7 @@ const sent = (action: jest.Mock) =>
 
 test("choosing a match only stages the merge; Keep goes back", () => {
   const action = renderQueue();
-  fireEvent.click(screen.getByRole("button", { name: "crop type" }));
+  fireEvent.click(screen.getByRole("button", { name: "crop-type" }));
 
   expect(screen.getByText(/Saving replaces/)).toBeTruthy();
   expect(action).not.toHaveBeenCalled();
@@ -42,11 +42,11 @@ test("choosing a match only stages the merge; Keep goes back", () => {
 
 test("Save merge sends the merge with its target", async () => {
   const action = renderQueue();
-  fireEvent.click(screen.getByRole("button", { name: "crop type" }));
+  fireEvent.click(screen.getByRole("button", { name: "crop-type" }));
   fireEvent.click(screen.getByRole("button", { name: "Save merge" }));
 
   await waitFor(() => expect(action).toHaveBeenCalled());
-  expect(sent(action)).toEqual({ tag: "crop-types", decision: "merge", into: "crop type" });
+  expect(sent(action)).toEqual({ tag: "crop-types", decision: "merge", into: "crop-type" });
 });
 
 test("approve and reject act at once, and a refusal is shown", async () => {

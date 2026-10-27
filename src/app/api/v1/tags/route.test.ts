@@ -16,7 +16,7 @@ const suggest = () =>
     new NextRequest("http://localhost/api/v1/tags", {
       method: "POST",
       headers: { Authorization: "Bearer x" },
-      body: JSON.stringify({ tag_id: "sea ice" }),
+      body: JSON.stringify({ tag_id: "sea-ice" }),
     }),
     { params: Promise.resolve({}) }
   );
@@ -28,9 +28,9 @@ test.each([
   (getApiSession as jest.Mock).mockResolvedValue({ account: { account_id: "alice" } });
   (suggestTag as jest.Mock).mockResolvedValue({
     ok: true,
-    value: { tag: { tag_id: "sea ice" }, created },
+    value: { tag: { tag_id: "sea-ice" }, created },
   });
   const res = await suggest();
   expect(res.status).toBe(status);
-  await expect(res.json()).resolves.toEqual({ tag_id: "sea ice" });
+  await expect(res.json()).resolves.toEqual({ tag_id: "sea-ice" });
 });

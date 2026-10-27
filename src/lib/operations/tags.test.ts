@@ -83,9 +83,9 @@ describe("suggestTag", () => {
     const result = await suggestTag(ALICE, { tag_id: "  Sea   Ice " });
     expect(result).toEqual({
       ok: true,
-      value: { tag: pending("sea ice"), created: true },
+      value: { tag: pending("sea-ice"), created: true },
     });
-    expect(tagsTable.suggest).toHaveBeenCalledWith("sea ice", "alice");
+    expect(tagsTable.suggest).toHaveBeenCalledWith("sea-ice", "alice");
   });
 
   test("answers a tag that already exists, without suggesting it", async () => {
@@ -97,7 +97,7 @@ describe("suggestTag", () => {
   });
 
   test("refuses a visitor who isn't logged in", async () => {
-    expect(await suggestTag(null, { tag_id: "sea ice" })).toMatchObject({
+    expect(await suggestTag(null, { tag_id: "sea-ice" })).toMatchObject({
       error: "unauthenticated",
     });
   });
@@ -118,7 +118,7 @@ describe("suggestTag", () => {
       ...["a1", "a2", "a3", "a4", "a5"].map((t) => pending(t)),
       pending("b1", "bob"),
     ]);
-    expect(await suggestTag(ALICE, { tag_id: "sea ice" })).toMatchObject({
+    expect(await suggestTag(ALICE, { tag_id: "sea-ice" })).toMatchObject({
       error: "conflict",
     });
     expect(tagsTable.suggest).not.toHaveBeenCalled();

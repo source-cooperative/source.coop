@@ -8,36 +8,36 @@ const product = (tags?: string[]) =>
 beforeEach(() => {
   jest.spyOn(tagsTable, "listAll").mockResolvedValue([
     { tag_id: "ocean" },
-    { tag_id: "sea ice", pending: true },
+    { tag_id: "sea-ice", pending: true },
   ]);
 });
 
 test("takes pending tags off, leaving the rest of the product", async () => {
-  const [shown] = await hidePendingTags([product(["ocean", "sea ice"])]);
+  const [shown] = await hidePendingTags([product(["ocean", "sea-ice"])]);
   expect(shown.metadata).toEqual({ mirrors: {}, tags: ["ocean"] });
 });
 
 test("keeps them on a product `keep` picks", async () => {
-  const stored = product(["ocean", "sea ice"]);
+  const stored = product(["ocean", "sea-ice"]);
   expect(await hidePendingTags([stored], () => true)).toEqual([stored]);
 });
 
 test("the form gets approved tags, and only the product's own pending ones", () => {
   const tags = [
     { tag_id: "ocean" },
-    { tag_id: "sea ice", pending: true },
+    { tag_id: "sea-ice", pending: true },
     { tag_id: "someone else's", pending: true },
   ];
-  expect(tagProps(tags, ["ocean", "sea ice"])).toEqual({
+  expect(tagProps(tags, ["ocean", "sea-ice"])).toEqual({
     tagOptions: ["ocean"],
-    pendingTags: ["sea ice"],
+    pendingTags: ["sea-ice"],
   });
   expect(tagProps(tags).pendingTags).toEqual([]);
 });
 
 test("shows products as they are when the tag table can't be read", async () => {
   jest.spyOn(tagsTable, "listAll").mockRejectedValue(new Error("AccessDenied"));
-  const stored = [product(["ocean", "sea ice"])];
+  const stored = [product(["ocean", "sea-ice"])];
   expect(await hidePendingTags(stored)).toBe(stored);
 });
 

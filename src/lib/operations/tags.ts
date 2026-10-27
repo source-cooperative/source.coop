@@ -4,6 +4,7 @@ import { UserSession } from "@/types";
 import { isAdmin } from "@/lib/api/authz";
 import { productsTable, tagsTable, type Tag } from "@/lib/clients/database";
 import { adminTagsUrl } from "@/lib/urls";
+import { canonTag } from "@/lib/tags/canon";
 import { LOGGER } from "@/lib/logging";
 import {
   conflict,
@@ -19,7 +20,7 @@ import {
 } from "./result";
 
 const MAX_PENDING_PER_ACCOUNT = 5;
-const TAG_PATTERN = /^[a-z0-9](?:[a-z0-9 -]{0,38}[a-z0-9])?$/;
+const TAG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
 
 export const TagSchema = z
   .object({
@@ -54,19 +55,19 @@ export const SuggestTagSchema = z
   .object({
     tag_id: z
       .string()
-      // Before the pattern, so "  Sea   Ice " is the tag "sea ice".
-      .transform((tag) => tag.trim().toLowerCase().replace(/\s+/g, " "))
+      // Before the pattern, so "  Sea   Ice " is the tag "sea-ice".
+      .transform(canonTag)
       .pipe(
         z
           .string()
           .regex(
             TAG_PATTERN,
-            "Use up to 40 lowercase letters, digits, spaces or hyphens, starting and ending with a letter or digit."
+            "Use up to 40 lowercase letters, digits or hyphens, starting and ending with a letter or digit. Spaces become hyphens."
           )
       )
       .openapi({
         description:
-          "The tag to suggest. It is trimmed, lowercased and its spaces collapsed before it is checked.",
+          "The tag to suggest. It is trimmed and lowercased, and its spaces become hyphens, before it is checked: `Sea Ice` is suggested as `sea-ice`.",
       }),
   })
   .openapi("SuggestTag");

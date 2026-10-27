@@ -14,7 +14,7 @@ type Params = { tag_id: string };
 
 const params = z.object({
   tag_id: z.string().openapi({
-    description: "The tag, URL-encoded: `sea%20ice` for `sea ice`.",
+    description: "The tag, such as `sea-ice`.",
   }),
 });
 

@@ -13,11 +13,11 @@ const meta = {
   parameters: { layout: "padded" },
   args: {
     tags: [
-      { tag: "field boundaries", products: 113 },
+      { tag: "field-boundaries", products: 113 },
       { tag: "geoparquet", products: 101 },
       { tag: "sentinel-2", products: 25 },
       {
-        tag: "sea ice",
+        tag: "sea-ice",
         products: 2,
         suggested_by: "polar-lab",
         approved_by: "alukach",
