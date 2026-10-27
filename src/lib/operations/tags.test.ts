@@ -43,6 +43,26 @@ describe("listTags", () => {
     });
   });
 
+  test("shows admins who suggested and approved each tag", async () => {
+    const approved = {
+      tag_id: "ocean",
+      suggested_by: "noaa",
+      approved_by: "root",
+      approved_at: "2026-10-27T00:00:00.000Z",
+    };
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([approved, pending("sst")]);
+    (isAdmin as jest.Mock).mockReturnValue(true);
+    expect(await listTags(ALICE, {})).toEqual({
+      ok: true,
+      value: { items: [approved], next_cursor: null },
+    });
+    (isAdmin as jest.Mock).mockReturnValue(false);
+    expect(await listTags(ALICE, {})).toEqual({
+      ok: true,
+      value: { items: [{ tag_id: "ocean" }], next_cursor: null },
+    });
+  });
+
   test("lists pending tags only to admins", async () => {
     expect(await listTags(null, { pending: "true" })).toMatchObject({
       error: "unauthenticated",
@@ -126,12 +146,19 @@ describe("reviewing", () => {
     expect(tagsTable.delete).not.toHaveBeenCalled();
   });
 
-  test("approving keeps the tag on its products, and repeats harmlessly", async () => {
-    expect(await updateTag(ALICE, "sst", { pending: false })).toEqual({
+  test("approving records who approved, keeps who suggested, and repeats harmlessly", async () => {
+    const result = await updateTag(ALICE, "sst", { pending: false });
+    expect(result).toEqual({
       ok: true,
-      value: { tag_id: "sst" },
+      value: {
+        tag_id: "sst",
+        suggested_by: "alice",
+        suggested_at: "2026-10-26T00:00:00.000Z",
+        approved_by: "alice",
+        approved_at: expect.any(String),
+      },
     });
-    expect(tagsTable.approve).toHaveBeenCalledWith("sst");
+    expect(tagsTable.approve).toHaveBeenCalledWith("sst", "alice");
     expect(productsTable.setTags).not.toHaveBeenCalled();
 
     await updateTag(ALICE, "ocean", { pending: false });

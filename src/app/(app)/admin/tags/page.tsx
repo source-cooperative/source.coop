@@ -1,6 +1,7 @@
 import { Metadata } from "next";
-import { Box } from "@radix-ui/themes";
+import { Flex, Heading } from "@radix-ui/themes";
 import { FormTitle } from "@/components/core";
+import { AdminTagList } from "@/components/features/admin/AdminTagList";
 import { AdminTagSuggestions } from "@/components/features/admin/AdminTagSuggestions";
 import { productsTable } from "@/lib/clients/database";
 import { getPageSession } from "@/lib/api/utils";
@@ -28,30 +29,43 @@ export default async function AdminTagsPage() {
   const carrying = (tag: string) =>
     tagged.filter((p) => p.metadata.tags!.includes(tag));
   const approvedTags = approved.value.items.map((t) => t.tag_id);
+  const counted = approved.value.items.map((t) => ({
+    tag: t.tag_id,
+    products: carrying(t.tag_id).length,
+    suggested_by: t.suggested_by,
+    approved_by: t.approved_by,
+    approved_at: t.approved_at,
+  }));
 
   return (
-    <Box>
+    <Flex direction="column" gap="6">
       <FormTitle
         title="Tags"
         description="Review tags people have suggested. Approving adds a tag to the list everyone picks from; merging replaces it with an approved tag on every product that carries it; rejecting takes it off them."
       />
-      <AdminTagSuggestions
-        suggestions={pending.value.items.map((t) => ({
-          tag: t.tag_id,
-          suggested_by: t.suggested_by,
-          suggested_at: t.suggested_at,
-          products: carrying(t.tag_id).map(({ account_id, product_id }) => ({
-            account_id,
-            product_id,
-          })),
-          matches: similarTags(t.tag_id, approvedTags),
-        }))}
-        approved={approvedTags.map((tag) => ({
-          tag,
-          products: carrying(tag).length,
-        }))}
-        action={reviewTag}
-      />
-    </Box>
+      <Flex direction="column" gap="3">
+        <Heading size="4">
+          Awaiting review ({pending.value.items.length})
+        </Heading>
+        <AdminTagSuggestions
+          suggestions={pending.value.items.map((t) => ({
+            tag: t.tag_id,
+            suggested_by: t.suggested_by,
+            suggested_at: t.suggested_at,
+            products: carrying(t.tag_id).map(({ account_id, product_id }) => ({
+              account_id,
+              product_id,
+            })),
+            matches: similarTags(t.tag_id, approvedTags),
+          }))}
+          approved={counted}
+          action={reviewTag}
+        />
+      </Flex>
+      <Flex direction="column" gap="3">
+        <Heading size="4">All tags</Heading>
+        <AdminTagList tags={counted} />
+      </Flex>
+    </Flex>
   );
 }

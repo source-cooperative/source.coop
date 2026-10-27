@@ -15,8 +15,12 @@ import { BaseTable } from "./base";
 export interface Tag {
   tag_id: string;
   pending?: boolean;
+  /** Who suggested it and when. Tags seeded from the original cleanup have neither. */
   suggested_by?: string;
   suggested_at?: string;
+  /** Which admin approved it and when, once one has. */
+  approved_by?: string;
+  approved_at?: string;
 }
 
 /**
@@ -124,14 +128,20 @@ export class TagsTable extends BaseTable {
     }
   }
 
-  async approve(tag_id: string): Promise<void> {
+  /** Approves a tag, keeping who suggested it and recording who approved it. */
+  async approve(tag_id: string, approved_by: string): Promise<void> {
     try {
       await this.client.send(
         new UpdateCommand({
           TableName: this.table,
           Key: { tag_id },
-          UpdateExpression: "REMOVE pending, suggested_by, suggested_at",
+          UpdateExpression:
+            "REMOVE pending SET approved_by = :by, approved_at = :at",
           ConditionExpression: "attribute_exists(tag_id)",
+          ExpressionAttributeValues: {
+            ":by": approved_by,
+            ":at": new Date().toISOString(),
+          },
         })
       );
     } catch (error) {
