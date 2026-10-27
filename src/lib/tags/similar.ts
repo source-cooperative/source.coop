@@ -17,16 +17,25 @@ export function similarTags(
 }
 
 const squash = (s: string) => s.replace(/[^a-z0-9]/g, "");
+// Each word in the singular, roughly: boundaries → boundary, boxes → box,
+// crops → crop, while class stays class.
 const stems = (s: string) =>
   s
     .split(/[\s-]+/)
     .filter(Boolean)
-    .map((w) => w.replace(/(ies|es|s)$/, ""));
+    .map((w) =>
+      w
+        .replace(/ies$/, "y")
+        .replace(/(s|x|ch|sh)es$/, "$1")
+        .replace(/([^s])s$/, "$1")
+    );
 
 function likeness(a: string, b: string): number {
   const x = squash(a);
   const y = squash(b);
   if (x === y) return 1;
+  // The same words, one in the plural.
+  if (stems(a).join("-") === stems(b).join("-")) return 0.95;
   let score = 0;
   if (Math.min(x.length, y.length) > 3 && (x.includes(y) || y.includes(x))) {
     score = 0.85;
