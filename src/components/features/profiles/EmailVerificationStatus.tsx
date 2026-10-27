@@ -17,7 +17,7 @@ export function EmailVerificationStatus({ email }: EmailVerificationStatusProps)
       }
     >
       {email?.verified ? (
-        <CheckCircledIcon color="green" width="16" height="16" />
+        <CheckCircledIcon color="var(--grass-9)" width="16" height="16" />
       ) : (
         <MinusCircledIcon color="gray" width="16" height="16" />
       )}

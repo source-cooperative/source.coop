@@ -26,7 +26,7 @@ export function CopyToClipboard({ text }: CopyToClipboardProps) {
         type="button"
         size="1"
         variant="ghost"
-        color={copied ? "green" : "gray"}
+        color={copied ? "grass" : "gray"}
         onClick={() => copyToClipboard(text)}
         aria-label="Copy to clipboard"
       >

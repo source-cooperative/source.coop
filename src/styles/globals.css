@@ -30,18 +30,104 @@
   font-display: swap;
 }
 
+/* The brand palette (brand.json) is near-monochrome: Ink on Bone in light mode,
+   Bone on Ink in dark. Neither is pure black or white. Radix's whole gray scale
+   is rebuilt from the pair, so every surface, border and text color the
+   components draw comes from the brand rather than Radix's neutral gray.
+
+   Each step mixes the text color into the page color by about the share
+   Radix's own light and dark gray scales use at that step (one set of shares
+   serves both), and each alpha step is the text color at that
+   same share, so gray-N and gray-aN agree on the page. Declared on Radix's own
+   appearance selectors so a nested <Theme appearance> (ThemeInverseComponent)
+   flips the scale too; Grass (--grass-9 is exactly #46A758) stays the only
+   hue, reserved for live/available status. */
+:root {
+  --ink: #121a1b;
+  --bone: #efebea;
+}
+
+:root,
+.light,
+.light-theme {
+  --brand-page: var(--bone);
+  --brand-text: var(--ink);
+}
+
+.dark,
+.dark-theme {
+  --brand-page: var(--ink);
+  --brand-text: var(--bone);
+}
+
+:root,
+.light,
+.light-theme,
+.dark,
+.dark-theme {
+  --gray-1: var(--brand-page);
+  --gray-2: color-mix(in srgb, var(--brand-text) 2.5%, var(--brand-page));
+  --gray-3: color-mix(in srgb, var(--brand-text) 6.5%, var(--brand-page));
+  --gray-4: color-mix(in srgb, var(--brand-text) 10%, var(--brand-page));
+  --gray-5: color-mix(in srgb, var(--brand-text) 13.5%, var(--brand-page));
+  --gray-6: color-mix(in srgb, var(--brand-text) 17%, var(--brand-page));
+  --gray-7: color-mix(in srgb, var(--brand-text) 23%, var(--brand-page));
+  --gray-8: color-mix(in srgb, var(--brand-text) 32%, var(--brand-page));
+  --gray-9: color-mix(in srgb, var(--brand-text) 46%, var(--brand-page));
+  --gray-10: color-mix(in srgb, var(--brand-text) 51%, var(--brand-page));
+  --gray-11: color-mix(in srgb, var(--brand-text) 70%, var(--brand-page));
+  --gray-12: var(--brand-text);
+
+  --gray-a1: color-mix(in srgb, var(--brand-text) 1%, transparent);
+  --gray-a2: color-mix(in srgb, var(--brand-text) 2.5%, transparent);
+  --gray-a3: color-mix(in srgb, var(--brand-text) 6.5%, transparent);
+  --gray-a4: color-mix(in srgb, var(--brand-text) 10%, transparent);
+  --gray-a5: color-mix(in srgb, var(--brand-text) 13.5%, transparent);
+  --gray-a6: color-mix(in srgb, var(--brand-text) 17%, transparent);
+  --gray-a7: color-mix(in srgb, var(--brand-text) 23%, transparent);
+  --gray-a8: color-mix(in srgb, var(--brand-text) 32%, transparent);
+  --gray-a9: color-mix(in srgb, var(--brand-text) 46%, transparent);
+  --gray-a10: color-mix(in srgb, var(--brand-text) 51%, transparent);
+  --gray-a11: color-mix(in srgb, var(--brand-text) 70%, transparent);
+  --gray-a12: var(--brand-text);
+
+  --gray-contrast: var(--brand-page);
+  --gray-surface: color-mix(in srgb, var(--brand-page) 80%, transparent);
+  --gray-indicator: var(--brand-text);
+  --gray-track: var(--brand-text);
+}
+
+/* Radix's gray step 9 is a mid-gray, so a solid button would be a gray slab
+   with low-contrast text. The brand's solid control is Ink on Bone (Bone on
+   Ink in dark): step 12 with the page color as its contrast. */
+[data-accent-color="gray"] {
+  --accent-9: var(--gray-12);
+  --accent-10: var(--gray-11);
+  --accent-contrast: var(--gray-contrast);
+}
+
 :root .radix-themes {
   --default-font-family: var(--font-ibm-plex);
+  --default-font-size: 16px;
+  --default-line-height: 1.55;
   --code-font-family: "Berkeley Mono", Menlo, Consolas, monospace;
+  /* Berkeley Mono is both the display and the monospace face. */
+  --heading-font-family: var(--code-font-family);
+
+  /* Stated in terms of the scale so one value holds in both appearances. */
+  --color-background: var(--gray-1);
+  --color-panel-solid: var(--gray-2);
+  --color-panel-translucent: color-mix(in srgb, var(--gray-2) 70%, transparent);
+  --color-surface: var(--gray-1);
+  --color-overlay: color-mix(in srgb, var(--ink) 50%, transparent);
 
   /* Every Radix focus outline is `2px solid var(--focus-8)`, and --focus-8
-     defaults to --accent-8. With accentColor="gray" that is #bbbbbb: roughly
-     1.9:1 against a white page, where WCAG 2.1 asks 3:1 of a focus indicator.
-     On an input it landed a shade away from the #cecece border it was supposed
-     to stand out from.
+     defaults to --accent-8. With accentColor="gray" that is gray-8: roughly
+     2:1 against the page, where WCAG 2.1 asks 3:1 of a focus indicator, and a
+     shade away from the gray-7 input border it has to stand out from.
 
-     --accent-12 instead: #202020 here, ~15:1, and it inverts to near-white in
-     dark mode because it is a token rather than a literal. Overriding a
+     --accent-12 instead: Ink, ~15:1, and it inverts to Bone in dark mode
+     because it is a token rather than a literal. Overriding a
      --focus-N token is Radix's documented way to recolour focus; nothing here
      reaches into its internals. */
   --focus-8: var(--accent-12);
@@ -63,9 +149,11 @@ body {
   margin: 0;
 }
  
+/* Links are Ink, like the text around them: the brand marks interaction with
+   the underline, not a color shift, so hover only drops it. */
 a {
   text-decoration: underline;
-  color: var(--accent-11);
+  color: var(--gray-12);
   transition: all 0.2s ease;
 }
 
@@ -73,29 +161,21 @@ a:hover {
   text-decoration: none;
 }
 
-/* Light mode hover */
-:root:not([class~="dark"]) a:hover {
-  color: black !important;
+/* A Radix <Link> with no `color` gets data-accent-color="" and Radix paints
+   it --accent-a11, a muted gray; the brand's link color is Ink. A link given
+   an explicit color keeps it. NOTE: `.rt-Link` is a @radix-ui/themes internal
+   class (verified against themes 3.2.1). */
+.rt-Link[data-accent-color=""] {
+  color: var(--gray-12);
 }
 
-/* Dark mode hover */
-:root[class~="dark"] a:hover {
-  color: white !important;
-}
-
-/* Dropdown menu item links should inherit the item's color in every state,
-   overriding the global a/a:hover rules above so highlighted rows don't
-   render as dark text on a tinted background. Covers both a nested <a> and an
-   <a> rendered AS the menu item itself (Radix `asChild`). The :root-prefixed
-   hover selectors mirror the global hover rules' specificity so they win.
+/* Dropdown menu item links inherit the item's color in every state, so
+   highlighted rows don't render as Ink on a tinted background. Covers both a
+   nested <a> and an <a> rendered AS the menu item itself (Radix `asChild`).
    NOTE: `.rt-BaseMenuItem` is a @radix-ui/themes internal class (verified
    against themes 3.2.1); re-check these selectors when bumping themes. */
 .rt-BaseMenuItem a,
-a.rt-BaseMenuItem,
-:root:not([class~="dark"]) .rt-BaseMenuItem a:hover,
-:root[class~="dark"] .rt-BaseMenuItem a:hover,
-:root:not([class~="dark"]) a.rt-BaseMenuItem:hover,
-:root[class~="dark"] a.rt-BaseMenuItem:hover {
+a.rt-BaseMenuItem {
   color: inherit !important;
   text-decoration: none !important;
 }
@@ -125,11 +205,6 @@ a.rt-BaseMenuItem,
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-/* Dark mode override */
-:root[class~="dark"] {
-  --color-page-background: var(--gray-4) !important;
 }
 
 @keyframes spin {

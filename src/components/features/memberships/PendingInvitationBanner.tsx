@@ -69,7 +69,7 @@ export function PendingInvitationBanner({
     )[invitation.role] || invitation.role;
 
   return (
-    <Callout.Root color="blue" role="status">
+    <Callout.Root color="gray" role="status">
       <Callout.Icon>
         <InfoCircledIcon />
       </Callout.Icon>

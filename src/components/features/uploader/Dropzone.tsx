@@ -85,7 +85,7 @@ export function Dropzone({
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.65)",
+            backgroundColor: "rgba(18, 26, 27, 0.65)",
             borderRadius: "var(--radius-2)",
             display: "flex",
             alignItems: "center",
@@ -103,12 +103,12 @@ export function Dropzone({
               gap: "16px",
             }}
           >
-            <UploadIcon width={48} height={48} color="white" />
+            <UploadIcon width={48} height={48} color="var(--bone)" />
             <Text
               size="6"
               weight="medium"
               style={{
-                color: "white",
+                color: "var(--bone)",
               }}
             >
               Drop files here to upload

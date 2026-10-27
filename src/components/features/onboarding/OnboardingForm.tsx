@@ -34,7 +34,7 @@ export function OnboardingForm({ identityId }: { identityId: string }) {
           Checking username availability...
         </Text>
       ) : validationState.isValid === true ? (
-        <Text size="1" color="green">
+        <Text size="1" color="grass">
           ✓ Username is available
         </Text>
       ) : validationState.isValid === false && validationState.error ? (

@@ -62,10 +62,10 @@ export function ChecksumVerifier({
       )}
       {status === 'match' && (
         <Flex align="center" gap="1">
-          <Box style={{ color: 'var(--green-9)' }}>
+          <Box style={{ color: 'var(--grass-9)' }}>
             <CheckCircledIcon />
           </Box>
-          <Text size="1" color="green">Checksum verified</Text>
+          <Text size="1" color="grass">Checksum verified</Text>
         </Flex>
       )}
       {status === 'mismatch' && (

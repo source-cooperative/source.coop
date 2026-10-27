@@ -24,7 +24,7 @@ export function ActivityBadge() {
 
   return (
     <Badge
-      color="blue"
+      color="gray"
       size="1"
       style={{
         position: "absolute",
@@ -37,8 +37,8 @@ export function ActivityBadge() {
         justifyContent: "center",
         padding: "0 4px",
         borderRadius: "9px",
-        backgroundColor: "var(--blue-9)",
-        color: "white",
+        backgroundColor: "var(--gray-12)",
+        color: "var(--gray-1)",
       }}
     >
       {activeCount}

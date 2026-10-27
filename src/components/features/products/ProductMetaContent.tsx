@@ -16,9 +16,9 @@ export function ProductMetaContent({ product }: ProductMetaContentProps) {
           <Badge
             color={
               product.visibility === "public"
-                ? "green"
+                ? "grass"
                 : product.visibility === "unlisted"
-                ? "yellow"
+                ? "amber"
                 : "red"
             }
           >

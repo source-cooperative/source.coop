@@ -9,7 +9,7 @@ interface WelcomeCalloutProps {
 
 export function WelcomeCallout({ accountId }: WelcomeCalloutProps) {
   return (
-    <Callout.Root color="blue" mb="6">
+    <Callout.Root color="gray" mb="6">
       <Callout.Icon>
         <InfoCircledIcon />
       </Callout.Icon>

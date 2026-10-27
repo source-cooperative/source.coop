@@ -234,11 +234,11 @@ export function ProfileImageUpload({
           <Box
             p="3"
             style={{
-              backgroundColor: "var(--green-3)",
+              backgroundColor: "var(--grass-3)",
               borderRadius: "var(--radius-2)",
             }}
           >
-            <Text size="2" color="green">
+            <Text size="2" color="grass">
               ✓ {deleting ? "Profile image removed" : "Profile image uploaded"}{" "}
               successfully!
             </Text>

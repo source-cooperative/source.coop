@@ -50,7 +50,7 @@ export function OrganizationCreationForm({
           Checking account ID availability...
         </Text>
       ) : validationState.isValid === true ? (
-        <Text size="1" color="green">
+        <Text size="1" color="grass">
           ✓ Available
         </Text>
       ) : validationState.isValid === false && validationState.error ? (

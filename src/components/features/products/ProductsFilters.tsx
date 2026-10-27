@@ -109,7 +109,7 @@ export function ProductsFilters() {
       <Button
         size="1"
         variant={currentFeatured ? "solid" : "soft"}
-        color={currentFeatured ? "orange" : "gray"}
+        color="gray"
         onClick={toggleFeatured}
         disabled={isPending}
       >

@@ -258,7 +258,7 @@ export function GithubWorkflowFields({
         {trailing}
       </Flex>
       {found?.standard && (
-        <Callout.Root size="1" color="green" role="status">
+        <Callout.Root size="1" color="grass" role="status">
           <Callout.Icon>
             <CheckCircledIcon />
           </Callout.Icon>

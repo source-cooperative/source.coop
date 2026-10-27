@@ -457,7 +457,7 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
           <Card size="2">
             {state.bucketMinutes !== undefined &&
               breakdown.bucketMinutes !== state.bucketMinutes && (
-                <Text as="div" size="1" color="orange" mb="2">
+                <Text as="div" size="1" color="amber" mb="2">
                   Showing {bucketName(breakdown.bucketMinutes)} buckets — the
                   requested interval would draw more than {MAX_CHART_BUCKETS}{" "}
                   bars over this range.

@@ -104,11 +104,11 @@ export function GlobalUploadNotification() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "uploading":
-        return "blue";
+        return "gray";
       case "queued":
         return "gray";
       case "completed":
-        return "green";
+        return "grass";
       case "error":
         return "red";
       case "cancelled":
@@ -175,7 +175,7 @@ export function GlobalUploadNotification() {
               Uploads ({totalUploads})
             </Text>
             {uploadingCount > 0 && (
-              <Badge color="blue" variant="soft">
+              <Badge color="gray" variant="soft">
                 {uploadingCount} uploading
               </Badge>
             )}
@@ -251,7 +251,7 @@ export function GlobalUploadNotification() {
                             <IconButton
                               size="1"
                               variant="ghost"
-                              color="blue"
+                              color="gray"
                               onClick={() => retryUpload(upload.id)}
                             >
                               <ReloadIcon />
@@ -287,7 +287,7 @@ export function GlobalUploadNotification() {
 
                       <Link
                         size="1"
-                        color="blue"
+                        color="gray"
                         style={{ alignSelf: "flex-start" }}
                         asChild
                       >

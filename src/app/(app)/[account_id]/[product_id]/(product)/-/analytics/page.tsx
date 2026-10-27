@@ -88,7 +88,7 @@ export default async function ProductAnalyticsPage({
         {product.title || product_id}
       </Heading>
 
-      <Callout.Root color="blue" role="status" mb="4">
+      <Callout.Root color="gray" role="status" mb="4">
         <Callout.Icon>
           <InfoCircledIcon />
         </Callout.Icon>
