@@ -43,13 +43,13 @@ test("splits a suggestion whose every word is an approved tag", () => {
 });
 
 test("singular takes a plural word to the singular and leaves the rest", () => {
-  expect(["boundaries", "boxes", "crops", "areas"].map(singular)).toEqual([
-    "boundary",
-    "box",
-    "crop",
-    "area",
-  ]);
-  for (const word of ["class", "analysis", "status", "series", "gas"]) {
+  expect(
+    ["boundaries", "boxes", "classes", "crops", "areas", "databases", "houses", "licenses"].map(
+      singular
+    )
+  ).toEqual(["boundary", "box", "class", "crop", "area", "database", "house", "license"]);
+  expect(["analyses", "buses", "gases"].map(singular)).toEqual(["analysis", "bus", "gas"]);
+  for (const word of ["class", "analysis", "status", "series", "gas", "goes", "genomics"]) {
     expect(singular(word)).toBe(word);
   }
   expect(singularTag("building-footprints")).toBe("building-footprint");
