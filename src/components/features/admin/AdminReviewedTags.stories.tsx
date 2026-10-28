@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
 import { AdminReviewedTags } from "./AdminReviewedTags";
-import { storyAccounts } from "./story-accounts";
+import { storyAccounts } from "@/components/core/story-accounts";
 
 /**
  * Suggested tags an admin has decided, on the admin tags page, most recent

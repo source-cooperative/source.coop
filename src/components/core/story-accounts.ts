@@ -11,12 +11,14 @@ const account = (account_id: string, name: string, type: string, bio?: string) =
     metadata_public: bio ? { bio } : {},
   }) as unknown as PublicAccount;
 
-/** The accounts the admin tag stories name, for their cards on hover. */
+/** The accounts stories name, for their cards on hover. */
 export const storyAccounts: AccountsById = Object.fromEntries(
   [
     account("alukach", "Anthony Lukach", "individual", "Source Cooperative admin."),
     account("fiboa", "fiboa", "organization", "Field boundaries for AI and EO."),
     account("polar-lab", "Polar Lab", "organization"),
     account("ftw", "Fields of The World", "organization"),
+    account("miskatonic", "Miskatonic University", "organization", "Oceanography and acoustics."),
+    account("acoltrane", "Alice Coltrane", "individual"),
   ].map((a) => [a.account_id, a])
 );

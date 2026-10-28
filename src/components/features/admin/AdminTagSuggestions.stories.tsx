@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
 import { AdminTagSuggestions } from "./AdminTagSuggestions";
-import { storyAccounts } from "./story-accounts";
+import { storyAccounts } from "@/components/core/story-accounts";
 
 /**
  * The admin queue of suggested tags. Each suggestion shows who suggested it,

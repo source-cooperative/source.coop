@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
 import { AdminTagList } from "./AdminTagList";
-import { storyAccounts } from "./story-accounts";
+import { storyAccounts } from "@/components/core/story-accounts";
 
 /**
  * Every approved tag on the admin tags page, most used first, with how many

@@ -131,8 +131,11 @@ export function MembershipsTable({
                         Service account
                       </Badge>
                     </Flex>
+                  ) : memberAccount ? (
+                    <AvatarLinkCompact account={memberAccount} size="1" />
                   ) : (
-                    <AvatarLinkCompact account={memberAccount!} size="1" />
+                    // A member whose account is gone, such as a deleted one.
+                    <Text size="2">{membership.account_id}</Text>
                   )}
                 </Table.Cell>
                 <Table.Cell>

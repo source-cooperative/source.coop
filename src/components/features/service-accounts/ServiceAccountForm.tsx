@@ -21,6 +21,7 @@ import {
   type Product,
 } from "@/types";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
+import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
 import { GrantProductDialog } from "./GrantProductDialog";
 import { AddSignInMenu, SIGN_IN_DESCRIPTION } from "./AddSignInMenu";
 import type { ApiKeyDraft } from "./IssueApiKeyDialog";
@@ -37,6 +38,8 @@ function RemoveButton({ label, onRemove }: { label: string; onRemove: () => void
 
 interface ServiceAccountFormProps {
   ownerAccountId: string;
+  /** The owner's account, for its card on hover. */
+  accounts?: AccountsById;
   products: Pick<Product, "product_id" | "title">[];
   /** The data proxy's origin, shown as the audience a trusted workflow's token must carry. */
   proxyOrigin?: string;
@@ -51,9 +54,11 @@ interface ServiceAccountFormProps {
  */
 export function ServiceAccountForm({
   ownerAccountId,
+  accounts,
   products,
   proxyOrigin,
 }: ServiceAccountFormProps) {
+  const owner = <AccountMention id={ownerAccountId} accounts={accounts} />;
   const [state, formAction, pending] = useActionState(
     createServiceAccount,
     IDLE_SERVICE_ACCOUNT_FORM_STATE
@@ -90,7 +95,7 @@ export function ServiceAccountForm({
       <Flex direction="column" gap="6">
         <SectionHeader
           title="Who it is"
-          description={`Owned by ${ownerAccountId}; whoever manages that account manages this one.`}
+          description={<>Owned by {owner}; whoever manages that account manages this one.</>}
         >
           <Flex direction="column" gap="4">
             <Field label="Name" htmlFor="sa-name" required errors={state.fieldErrors.name}>
@@ -231,7 +236,11 @@ export function ServiceAccountForm({
 
         <SectionHeader
           title="Can reach"
-          description={`Products ${ownerAccountId} owns that it may read or write. Each grant is an ordinary membership, revoked the same way as a person's.`}
+          description={
+            <>
+              Products {owner} owns that it may read or write. Each grant is an ordinary membership, revoked the same way as a person&apos;s.
+            </>
+          }
           rightButton={
             <GrantProductDialog
               ownerAccountId={ownerAccountId}
@@ -245,6 +254,7 @@ export function ServiceAccountForm({
           ))}
           <ProductAccessList
             ownerAccountId={ownerAccountId}
+            accounts={accounts}
             products={products}
             access={grants}
             onChange={setGrant}
