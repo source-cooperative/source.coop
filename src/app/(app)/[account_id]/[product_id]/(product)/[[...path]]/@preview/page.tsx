@@ -26,7 +26,7 @@ function previewCard(
   children: ReactNode,
 ) {
   return (
-    <Card mt="4">
+    <Card id="preview" mt="4">
       <ObjectPreviewCard viewerUrl={viewerUrl} label={label}>
         {children}
       </ObjectPreviewCard>

@@ -11,9 +11,15 @@ interface MarkdownViewerProps {
   content: string;
 }
 
+// Namespaces every id the markdown produces, so a heading can never share an
+// id with the page around it (e.g. a README "Contents" heading and the
+// product page's #contents card). It is rehype-sanitize's clobberPrefix,
+// which already prefixes ids written as raw HTML, and GitHub's.
+const ID_PREFIX = "user-content-";
+
 // Utility function to convert heading text to URL-friendly ID
 function generateHeadingId(text: string): string {
-  return text
+  return ID_PREFIX + text
     .toLowerCase()
     .replace(/[^\w\s-]/g, "") // Remove special characters except spaces and hyphens
     .replace(/\s+/g, "-") // Replace spaces with hyphens
@@ -104,7 +110,16 @@ export function MarkdownViewer({ content }: MarkdownViewerProps) {
           </Text>
         ),
         a: ({ href, children }) => (
-          <RadixLink href={href} underline="always">
+          // Authors write in-document links against the unprefixed slug
+          // (`[Install](#install)`), as they would on GitHub.
+          <RadixLink
+            href={
+              href?.startsWith("#") && href !== "#"
+                ? `#${ID_PREFIX}${href.slice(1)}`
+                : href
+            }
+            underline="always"
+          >
             {children}
           </RadixLink>
         ),
