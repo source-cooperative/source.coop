@@ -1,6 +1,7 @@
 /** @jest-environment node */
 import { productsTable, tagsTable } from "@/lib/clients/database";
 import { isAdmin } from "@/lib/api/authz";
+import { revalidatePath } from "next/cache";
 import { deleteTag, listTags, suggestTag, updateTag } from "./tags";
 
 jest.mock("@/lib/clients/database", () => {
@@ -47,8 +48,9 @@ beforeEach(() => {
     decide: tag_id,
     ...decision,
   }));
-  (tagsTable.reopenItem as jest.Mock).mockImplementation((tag_id, previous) => ({
+  (tagsTable.reopenItem as jest.Mock).mockImplementation((tag_id, reviewed_at, previous) => ({
     reopen: tag_id,
+    reviewed_at,
     previous,
   }));
   (tagsTable.createItem as jest.Mock).mockImplementation((tag_id) => ({ create: tag_id }));
@@ -283,13 +285,14 @@ describe("reviewing", () => {
     ]);
   });
 
-  test.each([[""], ["sst"], ["-"], ["pending-one"], ["ocean", ""]])(
+  test.each([[""], ["sst"], ["-"], ["pending-one"], ["rejected-one"], ["ocean", ""]])(
     "merging refuses %p",
     async (...replace_with) => {
       (tagsTable.listAll as jest.Mock).mockResolvedValue([
         { tag_id: "ocean" },
         pending("sst"),
         pending("pending-one", "bob"),
+        { tag_id: "rejected-one", outcome: "rejected", changed: [] },
       ]);
       expect(await deleteTag(ALICE, "sst", { replace_with })).toMatchObject({
         error: "invalid",
@@ -392,6 +395,8 @@ describe("merging or removing an approved tag", () => {
       error: "conflict",
       message: expect.stringContaining("Only 99 of 150 products were updated"),
     });
+    // The decision landed, so the page shows it, and its Undo.
+    expect(revalidatePath).toHaveBeenCalled();
     const batches = (tagsTable.transact as jest.Mock).mock.calls.map(([items]) => items);
     expect(batches.map((b) => b.length)).toEqual([100, 51]);
     // The decision leads, so whatever changed can be undone.
@@ -446,7 +451,7 @@ describe("undoing a decision", () => {
     expect(written()).toEqual([
       { product: "a/p1", from: ["ocean"], to: ["ocean", "sst"] },
       { product: "b/p2", from: ["climate", "ocean"], to: ["climate", "sst"] },
-      { reopen: "sst", previous: undefined },
+      { reopen: "sst", reviewed_at: "2026-10-27T00:00:00.000Z", previous: undefined },
     ]);
   });
 
@@ -457,7 +462,7 @@ describe("undoing a decision", () => {
       ok: true,
       value: { tag_id: "sst", outcome: "approved", reviewed_by: "bob" },
     });
-    expect(written().at(-1)).toEqual({ reopen: "sst", previous });
+    expect(written().at(-1)).toEqual({ reopen: "sst", reviewed_at: "2026-10-27T00:00:00.000Z", previous });
   });
 
   test("a product saved since leaves the decision standing", async () => {
@@ -469,10 +474,27 @@ describe("undoing a decision", () => {
     });
   });
 
+  test("an undo names its decision, so a second click doesn't undo the one before", async () => {
+    const previous = { outcome: "approved", reviewed_by: "bob", reviewed_at: "2026-10-01T00:00:00.000Z" };
+    // As after the first undo: the merge is gone and the approval is back.
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([{ tag_id: "sst", ...previous }]);
+    expect(
+      await updateTag(ALICE, "sst", { pending: true, reviewed_at: "2026-10-27T00:00:00.000Z" })
+    ).toMatchObject({ error: "conflict" });
+    expect(tagsTable.transact).not.toHaveBeenCalled();
+  });
+
+  test("a product saved with no tags since can still be restored", async () => {
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([merged()]);
+    (productsTable.fetchById as jest.Mock).mockResolvedValue({ metadata: {} });
+    await updateTag(ALICE, "sst", { pending: true });
+    expect(written()[0]).toEqual({ product: "a/p1", from: [], to: ["sst"] });
+  });
+
   test("an approval only reopens the tag", async () => {
     (tagsTable.listAll as jest.Mock).mockResolvedValue([decided({ outcome: "approved" })]);
     expect(await updateTag(ALICE, "sst", { pending: true })).toMatchObject({ ok: true });
-    expect(written()).toEqual([{ reopen: "sst", previous: undefined }]);
+    expect(written()).toEqual([{ reopen: "sst", reviewed_at: "2026-10-27T00:00:00.000Z", previous: undefined }]);
   });
 
   test("a tag nobody decided has no decision to undo", async () => {

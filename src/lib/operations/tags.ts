@@ -128,6 +128,10 @@ export const UpdateTagSchema = z
     category: z.enum(TAG_CATEGORY_IDS).optional().openapi({
       description: "The category to approve the tag into. Approving requires it.",
     }),
+    reviewed_at: z.string().datetime().optional().openapi({
+      description:
+        "With `pending: true`, the `reviewed_at` of the decision to undo. A tag decided again since, or already undone, returns 409 rather than undoing the decision before it.",
+    }),
   })
   .openapi("UpdateTag");
 
@@ -137,7 +141,7 @@ export const DeleteTagQuerySchema = z.object({
     .optional()
     .openapi({
       description:
-        "Tags to put in this one's place on every product that carries it. Repeat it to merge into several, as `?replace_with=field&replace_with=boundaries` for `field-boundaries`. A spelling the list lacks is added to it as an approved tag, which renames the tag. Without it, the tag is just taken off them.",
+        "Tags to put in this one's place on every product that carries it. Repeat it to merge into several, as `?replace_with=field&replace_with=boundaries` for `field-boundaries`. A spelling never used is added to the list, which renames the tag; a merged or rejected tag can't be one until that decision is undone. Without it, the tag is just taken off them.",
     }),
   approved: z.enum(["true", "false"]).optional().openapi({
     description:
@@ -267,7 +271,7 @@ export async function updateTag(
   if (!parsed.success) return fromZodError(parsed.error);
   const tag = (await tagsTable.listAll()).find((t) => t.tag_id === tag_id);
   if (!tag) return notFound(`Tag "${tag_id}" not found`);
-  if (parsed.data.pending) return undoDecision(session!, tag);
+  if (parsed.data.pending) return undoDecision(session!, tag, parsed.data.reviewed_at);
 
   if (isListed(tag)) return ok(tag);
   if (!tag.pending) {
@@ -317,12 +321,18 @@ const RACED = "changed while this was being saved, so nothing was changed. Reloa
  * Undoing a merge or rejection also reverses what it did to each product it
  * rewrote: the tag goes back on, and the tags the merge added come off again,
  * leaving any the product had before. An approval changed no product, so
- * undoing it only reopens the tag.
+ * undoing it only reopens the tag. Given `reviewed_at`, only the decision made
+ * then is undone: undoing an approved tag's merge leaves it approved, so a
+ * second click would otherwise undo the approval too.
  */
 async function undoDecision(
   session: UserSession,
-  tag: Tag
+  tag: Tag,
+  reviewed_at?: string
 ): Promise<OperationResult<Tag>> {
+  if (reviewed_at && reviewed_at !== tag.reviewed_at) {
+    return conflict(`"${tag.tag_id}" has been decided or undone since. Reload and try again.`);
+  }
   if (tag.pending) return ok(tag);
   if (!tag.outcome) {
     return conflict(`"${tag.tag_id}" has no decision to undo`);
@@ -343,8 +353,13 @@ async function undoDecision(
   });
   // The tag's record goes last, so until every product is restored the
   // decision stands and undoing again finishes the job.
-  const written = await commit([...writes, tagsTable.reopenItem(tag.tag_id, tag.previous)]);
+  const written = await commit([
+    ...writes,
+    tagsTable.reopenItem(tag.tag_id, tag.reviewed_at, tag.previous),
+  ]);
   if (written !== undefined) {
+    // Some products changed, so the page should show them as they are now.
+    if (written) revalidatePath(adminTagsUrl());
     return conflict(
       written
         ? `Only ${written} of ${writes.length} products were restored, because one changed meanwhile. Undo again to finish.`
@@ -374,8 +389,12 @@ function badTarget(tag_id: string, target: string, tags: Tag[]): string | undefi
   if (!target) return "Choose a tag to merge into";
   if (target === tag_id) return `"${tag_id}" can't be merged into itself`;
   if (!TAG_PATTERN.test(target)) return `"${target}" isn't a tag: ${PATTERN_RULE}`;
-  if (tags.some((t) => t.tag_id === target && t.pending)) {
-    return `"${target}" is awaiting review; review it first`;
+  const existing = tags.find((t) => t.tag_id === target);
+  if (existing?.pending) return `"${target}" is awaiting review; review it first`;
+  // Its record holds what undoing that decision needs, which adding the tag
+  // afresh would overwrite.
+  if (existing && !isListed(existing)) {
+    return `"${target}" was ${existing.outcome}; undo that first, or choose another tag`;
   }
 }
 
@@ -409,9 +428,7 @@ export async function deleteTag(
     const problem = badTarget(tag_id, target, tags);
     if (problem) return invalid(problem, "replace_with");
   }
-  const created = replace_with.filter(
-    (target) => !tags.some((t) => t.tag_id === target && isListed(t))
-  );
+  const created = replace_with.filter((target) => !tags.some((t) => t.tag_id === target));
 
   const carrying = await productsTable.listByTag(tag_id);
   const changed: TagChange[] = carrying.map((p) => ({
@@ -446,6 +463,9 @@ export async function deleteTag(
     ),
   ]);
   if (written !== undefined) {
+    // The decision and some products changed, so the page should show the
+    // decision, with the Undo the message points to.
+    if (written) revalidatePath(adminTagsUrl());
     return conflict(
       written
         ? `Only ${written - 1 - created.length} of ${carrying.length} products were updated, because one changed meanwhile. Undo this, then try again.`

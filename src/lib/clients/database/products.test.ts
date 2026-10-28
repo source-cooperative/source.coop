@@ -86,9 +86,7 @@ describe("ProductsTable search", () => {
       const updateCommand = mockSend.mock.calls[0][0];
       const values = updateCommand.input.ExpressionAttributeValues;
       expect(values[":search_text"]).toBeDefined();
-      expect(values[":search_text"]).toBe(
-        values[":search_text"].toLowerCase()
-      );
+      expect(values[":search_text"]).toBe(values[":search_text"].toLowerCase());
       expect(values[":search_text"]).toContain("ftw");
       expect(values[":search_text"]).toContain("uppercase description");
     });
@@ -113,7 +111,8 @@ describe("ProductsTable search", () => {
       });
       const productWithSearchText = {
         ...product,
-        search_text: "fields of the world (ftw) a global benchmark dataset for field boundary delineation kerner-lab fields-of-the-world",
+        search_text:
+          "fields of the world (ftw) a global benchmark dataset for field boundary delineation kerner-lab fields-of-the-world",
       };
 
       mockSend.mockResolvedValue({
@@ -212,7 +211,14 @@ describe("ProductsTable account attachment", () => {
     disabled: false,
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
-    emails: [{ address: "lab@example.com", is_primary: true, verified: true, added_at: "2024-01-01T00:00:00Z" }],
+    emails: [
+      {
+        address: "lab@example.com",
+        is_primary: true,
+        verified: true,
+        added_at: "2024-01-01T00:00:00Z",
+      },
+    ],
     identity_id: "ory-kerner",
     flags: ["admin"],
     metadata_private: { note: "secret" },
@@ -232,17 +238,23 @@ describe("ProductsTable account attachment", () => {
 
   beforeEach(() => {
     mockSend = jest.fn();
-    table = new ProductsTable({ client: { send: mockSend } as unknown as DynamoDBDocumentClient });
+    table = new ProductsTable({
+      client: { send: mockSend } as unknown as DynamoDBDocumentClient,
+    });
   });
 
   it("attaches only the public view to a fetched product", async () => {
     mockSend.mockResolvedValue({ Item: makeProduct() });
     (accountsTable.fetchById as jest.Mock).mockResolvedValueOnce(account);
-    expect((await table.fetchById("kerner-lab", "fields-of-the-world"))?.account).toEqual(expected);
+    expect(
+      (await table.fetchById("kerner-lab", "fields-of-the-world"))?.account,
+    ).toEqual(expected);
   });
 
   it("attaches only the public view to listed products", async () => {
-    (accountsTable.fetchManyByIds as jest.Mock).mockResolvedValueOnce([account]);
+    (accountsTable.fetchManyByIds as jest.Mock).mockResolvedValueOnce([
+      account,
+    ]);
     const [product] = await table.attachAccounts([makeProduct()]);
     expect(product.account).toEqual(expected);
   });
@@ -257,12 +269,31 @@ describe("ProductsTable account attachment", () => {
   it("returns nothing for a fetched product whose account can't be found", async () => {
     mockSend.mockResolvedValue({ Item: makeProduct() });
     (accountsTable.fetchById as jest.Mock).mockResolvedValueOnce(null);
-    expect(await table.fetchById("kerner-lab", "fields-of-the-world")).toBeNull();
+    expect(
+      await table.fetchById("kerner-lab", "fields-of-the-world"),
+    ).toBeNull();
   });
 
   it("keeps a full account from passing as a public one", () => {
     // @ts-expect-error a full account carries emails, flags and its Ory identity
     const leak: PublicAccount = account;
     expect(leak).toBe(account);
+  });
+});
+
+describe("setTagsItem", () => {
+  const table = new ProductsTable({ client: {} as DynamoDBDocumentClient });
+
+  it("applies only while the product's tags are still as read", () => {
+    expect(
+      table.setTagsItem("a", "p", ["ocean"], ["sea"]).Update
+        ?.ConditionExpression,
+    ).toBe("metadata.tags = :from");
+  });
+
+  it("matches a product saved with no tags, which may have no tags attribute", () => {
+    expect(
+      table.setTagsItem("a", "p", [], ["sst"]).Update?.ConditionExpression,
+    ).toBe("attribute_not_exists(metadata.tags) OR metadata.tags = :from");
   });
 });

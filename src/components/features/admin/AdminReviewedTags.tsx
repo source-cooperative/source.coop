@@ -97,6 +97,8 @@ function ReviewedRow({
       const form = new FormData();
       form.set("tag", tag.tag);
       form.set("decision", "undo");
+      // Names the decision shown, so a second click doesn't undo the one before.
+      if (tag.reviewed_at) form.set("reviewed_at", tag.reviewed_at);
       setError((await action(form)).error ?? "");
     });
 

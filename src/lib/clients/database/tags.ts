@@ -216,11 +216,11 @@ export class TagsTable extends BaseTable {
   }
 
   /**
-   * A transaction write undoing a decision: the tag goes back to its
-   * `previous` review if it had one, or else back awaiting review. Applies
-   * only while the tag has a decision to undo.
+   * A transaction write undoing the decision made at `reviewed_at`: the tag
+   * goes back to its `previous` review if it had one, or else back awaiting
+   * review. Applies only while that decision still stands.
    */
-  reopenItem(tag_id: string, previous?: Tag["previous"]): TransactItem {
+  reopenItem(tag_id: string, reviewed_at: string | undefined, previous?: Tag["previous"]): TransactItem {
     const restore: Record<string, unknown> = previous ?? { pending: true };
     const { set, values } = setting(restore);
     // A tag back awaiting review loses the category it was approved into; one
@@ -234,23 +234,30 @@ export class TagsTable extends BaseTable {
         TableName: this.table,
         Key: { tag_id },
         UpdateExpression: `${set ? `SET ${set} ` : ""}REMOVE ${remove.join(", ")}`,
-        ConditionExpression: "attribute_exists(outcome)",
-        ...(set && { ExpressionAttributeValues: values }),
+        ConditionExpression: reviewed_at
+          ? "attribute_exists(outcome) AND reviewed_at = :decided_at"
+          : "attribute_exists(outcome)",
+        ...((set || reviewed_at) && {
+          ExpressionAttributeValues: {
+            ...values,
+            ...(reviewed_at && { ":decided_at": reviewed_at }),
+          },
+        }),
       },
     };
   }
 
   /**
-   * A transaction write adding an approved tag, for an admin renaming a tag
-   * to a spelling the list lacks. Applies only where no tag of that name is
-   * in use; a merged or rejected one is replaced, as a suggestion would. It
-   * takes the `category` of the tag it renames, if that had one.
+   * A transaction write adding a tag to the list, for an admin renaming a tag
+   * to a spelling never used. It records who added it but no `outcome`, as a
+   * seeded tag has none: it was nobody's suggestion, so there is no decision
+   * on it to show or undo. It takes the `category` of the tag it renames, if
+   * that had one. Applies only while no tag of that name exists.
    */
   createItem(tag_id: string, reviewed_by: string, category?: TagCategory): TransactItem {
     const tag: Tag = {
       tag_id,
       ...(category && { category }),
-      outcome: "approved",
       reviewed_by,
       reviewed_at: new Date().toISOString(),
     };
@@ -258,9 +265,7 @@ export class TagsTable extends BaseTable {
       Put: {
         TableName: this.table,
         Item: tag,
-        ConditionExpression:
-          "attribute_not_exists(tag_id) OR outcome = :merged OR outcome = :rejected",
-        ExpressionAttributeValues: { ":merged": "merged", ":rejected": "rejected" },
+        ConditionExpression: "attribute_not_exists(tag_id)",
       },
     };
   }
