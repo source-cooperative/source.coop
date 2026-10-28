@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { storyAccounts } from "@/components/core/story-accounts";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { fn } from "storybook/test";
 import { MembershipRole } from "@/types";
@@ -20,6 +21,7 @@ const meta = {
   parameters: { layout: "padded" },
   args: {
     ownerAccountId: "miskatonic",
+    accounts: storyAccounts,
     onChange: fn(),
     products: [
       { product_id: "climate-data", title: "Climate Data" },

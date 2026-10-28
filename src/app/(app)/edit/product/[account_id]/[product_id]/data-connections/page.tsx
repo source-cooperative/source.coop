@@ -5,6 +5,7 @@ import {
   listUsableDataConnections,
 } from "@/lib/data-connections";
 import { accountsTable, productsTable, dataConnectionsTable } from "@/lib/clients";
+import { publicView } from "@/lib/operations/accounts";
 import { notFound } from "next/navigation";
 import { ProductMirrorsManager } from "@/components/features/data-connections";
 import { toDataConnectionOption } from "@/components/features/data-connections/redact";
@@ -99,6 +100,7 @@ export default async function ProductDataConnectionsPage({
       ownedConnectionIds={ownedConnectionIds}
       connectionInfo={connectionInfo}
       editablePrefixConnectionIds={editablePrefixConnectionIds}
+      accounts={ownerAccount ? { [ownerAccount.account_id]: publicView(ownerAccount) } : {}}
     />
   );
 }

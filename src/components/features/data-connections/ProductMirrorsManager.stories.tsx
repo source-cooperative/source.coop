@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { storyAccounts } from "@/components/core/story-accounts";
 import { ProductMirrorsManager } from "./ProductMirrorsManager";
 import type { Product } from "@/types";
 
@@ -79,6 +80,7 @@ const base = {
   isAdmin: false,
   ownedConnectionIds: ["miskatonic-archive"],
   editablePrefixConnectionIds: ["miskatonic-archive"],
+  accounts: storyAccounts,
 };
 
 /** Two mirrors, one of them primary, with the prefix editable on the owned one. */
