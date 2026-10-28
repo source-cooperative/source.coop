@@ -11,7 +11,11 @@ jest.mock("@/lib/files", () => ({ getExtension: jest.fn() }));
 jest.mock("@radix-ui/themes", () => ({ Code: () => null, Text: () => null }));
 jest.mock("./PreviewIframe", () => ({}));
 
-import { fileTypeLabel } from "./ObjectPreviewExternal";
+// The COG tiling probe calls fetch; make it fail fast so fileTypeLabel tests
+// that exercise tif/tiff stay deterministic without real network calls.
+global.fetch = jest.fn().mockRejectedValue(new Error("fetch is mocked"));
+
+import { fileTypeLabel, getIframeSrc, parseCogTiling } from "./ObjectPreviewExternal";
 import { DuckDBConnection } from "@duckdb/node-api";
 
 const sourceUrl = "https://data.source.coop/account/product/file";
@@ -89,5 +93,167 @@ describe("fileTypeLabel", () => {
       );
       await expect(fileTypeLabel(sourceUrl, "parquet")).resolves.toBe("Parquet");
     });
+  });
+});
+
+// Helper: build a mock fetch Response whose arrayBuffer() returns the given bytes.
+function mockFetchResponse(bytes: Buffer) {
+  (global.fetch as jest.Mock).mockResolvedValueOnce({
+    ok: true,
+    status: 206,
+    arrayBuffer: () => Promise.resolve(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)),
+  });
+}
+
+describe("getIframeSrc", () => {
+  describe("tif/tiff", () => {
+    it("returns null for a regular TIFF (IFD beyond probe)", async () => {
+      // Simulate a non-COG TIFF: valid header but IFD offset points past the buffer.
+      const buf = Buffer.alloc(64);
+      buf.writeUInt16LE(0x4949, 0);
+      buf.writeUInt16LE(42, 2);
+      buf.writeUInt32LE(0xffff, 4); // IFD beyond probe
+      mockFetchResponse(buf);
+      await expect(getIframeSrc(sourceUrl, "tif")).resolves.toBeNull();
+    });
+
+    it("returns the cog-viewer URL when the probe returns null (multi-tile COG)", async () => {
+      // Probe fails → null → not "tiff" → show viewer.
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("network"));
+      await expect(getIframeSrc(sourceUrl, "tiff")).resolves.toMatch(/cog-viewer/);
+    });
+
+    it("returns the cog-viewer URL and does not buffer body on a 200 response", async () => {
+      // Origin ignored Range header → 200 instead of 206. The probe must not
+      // read the body (which could be a multi-GB TIFF) and must return null so
+      // the viewer is still offered.
+      const cancel = jest.fn().mockResolvedValue(undefined);
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        body: { cancel },
+        arrayBuffer: jest.fn(), // must not be called
+      });
+      await expect(getIframeSrc(sourceUrl, "tif")).resolves.toMatch(/cog-viewer/);
+      expect(cancel).toHaveBeenCalled();
+    });
+  });
+});
+
+// Build a minimal standard TIFF buffer (little-endian, magic=42) with the
+// given IFD entries. Each entry is { tag, value }; type is always LONG.
+function buildTiff(entries: { tag: number; value: number }[]): Buffer {
+  const headerSize = 8;
+  const countSize = 2;
+  const entrySize = 12;
+  const size = headerSize + countSize + entries.length * entrySize;
+  const buf = Buffer.alloc(size);
+  buf.writeUInt16LE(0x4949, 0); // II
+  buf.writeUInt16LE(42, 2);     // TIFF magic
+  buf.writeUInt32LE(8, 4);      // IFD at offset 8
+  buf.writeUInt16LE(entries.length, 8);
+  for (let i = 0; i < entries.length; i++) {
+    const base = 10 + i * entrySize;
+    buf.writeUInt16LE(entries[i].tag, base);
+    buf.writeUInt16LE(4, base + 2);           // type LONG
+    buf.writeUInt32LE(1, base + 4);           // count 1
+    buf.writeUInt32LE(entries[i].value, base + 8);
+  }
+  return buf;
+}
+
+describe("parseCogTiling", () => {
+  it("returns null for an empty buffer", () => {
+    expect(parseCogTiling(Buffer.alloc(0))).toBeNull();
+  });
+
+  it("returns null for a non-TIFF buffer", () => {
+    expect(parseCogTiling(Buffer.from("not a tiff file"))).toBeNull();
+  });
+
+  it("returns null for a BigTIFF buffer shorter than 16 bytes", () => {
+    // BigTIFF needs 16 bytes for the header (II/MM + 43 + 2 + 2 + 8-byte offset).
+    // A 12-byte buffer would throw a RangeError if not guarded.
+    const buf = Buffer.alloc(12);
+    buf.writeUInt16LE(0x4949, 0); // II
+    buf.writeUInt16LE(43, 2);     // BigTIFF magic
+    expect(parseCogTiling(buf)).toBeNull();
+  });
+
+  it("returns 'tiff' when the IFD offset points past the buffer (IFD at end of file)", () => {
+    // A regular TIFF writes its IFD at the end of the file; only the first 8 KB
+    // of the file is probed, so the IFD offset will be beyond buf.length.
+    const buf = Buffer.alloc(64);
+    buf.writeUInt16LE(0x4949, 0); // II (little-endian)
+    buf.writeUInt16LE(42, 2);     // TIFF magic
+    buf.writeUInt32LE(0xffff, 4); // IFD offset far beyond the buffer
+    expect(parseCogTiling(buf)).toBe("tiff");
+  });
+
+  it("returns 'striped' when RowsPerStrip is present and no tile tags", () => {
+    const buf = buildTiff([
+      { tag: 256, value: 1024 }, // ImageWidth
+      { tag: 257, value: 1024 }, // ImageLength
+      { tag: 278, value: 256 },  // RowsPerStrip
+    ]);
+    expect(parseCogTiling(buf)).toBe("striped");
+  });
+
+  it("returns null for a normally-tiled COG (multiple tiles)", () => {
+    const buf = buildTiff([
+      { tag: 256, value: 1024 }, // ImageWidth
+      { tag: 257, value: 1024 }, // ImageLength
+      { tag: 322, value: 256 },  // TileWidth
+      { tag: 323, value: 256 },  // TileLength
+    ]);
+    expect(parseCogTiling(buf)).toBeNull();
+  });
+
+  it("returns 'single-tile' when the tile covers the full image", () => {
+    const buf = buildTiff([
+      { tag: 256, value: 256 },  // ImageWidth
+      { tag: 257, value: 256 },  // ImageLength
+      { tag: 322, value: 256 },  // TileWidth == ImageWidth
+      { tag: 323, value: 256 },  // TileLength == ImageLength
+    ]);
+    expect(parseCogTiling(buf)).toBe("single-tile");
+  });
+
+  it("returns 'single-tile' when a larger tile covers a smaller image", () => {
+    // A 512×512 tile wrapping a 300×300 image is still a single tile.
+    const buf = buildTiff([
+      { tag: 256, value: 300 },  // ImageWidth
+      { tag: 257, value: 300 },  // ImageLength
+      { tag: 322, value: 512 },  // TileWidth > ImageWidth
+      { tag: 323, value: 512 },  // TileLength > ImageLength
+    ]);
+    expect(parseCogTiling(buf)).toBe("single-tile");
+  });
+
+  it("returns null when tile tags are present but no image dimensions", () => {
+    // Can't determine single-tile without dimensions; treat as multi-tile.
+    const buf = buildTiff([
+      { tag: 322, value: 256 },
+      { tag: 323, value: 256 },
+    ]);
+    expect(parseCogTiling(buf)).toBeNull();
+  });
+
+  it("handles SHORT-typed tags (type=3)", () => {
+    // Build a buffer where ImageWidth/ImageLength are SHORT (type=3)
+    const buf = buildTiff([
+      { tag: 256, value: 512 },
+      { tag: 257, value: 512 },
+      { tag: 322, value: 256 },
+      { tag: 323, value: 256 },
+    ]);
+    // Rewrite the type fields to SHORT for ImageWidth and ImageLength
+    // Entry 0 at base=10: type at base+2
+    buf.writeUInt16LE(3, 12); // ImageWidth → SHORT
+    buf.writeUInt16LE(3, 24); // ImageLength → SHORT
+    // SHORT values use read16, so the 2-byte value at the value field:
+    // The value 512 = 0x200 was written as LONG (4 bytes), but as SHORT we
+    // read only the first 2 bytes, which is still 0x200 in LE. Result is same.
+    expect(parseCogTiling(buf)).toBeNull(); // 512×512 image, 256×256 tiles → 4 tiles
   });
 });
