@@ -32,6 +32,40 @@ export const SERVICE_ACCOUNT_ID_REGEX = new RegExp(`^${ID_PART}--${ID_PART}$`);
 export const MAX_SERVICE_ACCOUNT_ID_LENGTH = MAX_ID_LENGTH * 2 + 2;
 // Any account's id: a person's or organization's, or a service account's.
 export const ACCOUNT_ID_REGEX = new RegExp(`^${ID_PART}(?:--${ID_PART})?$`);
+// Ids no new person or organization may take. An account's pages live at
+// `/{account_id}`, and Next.js serves a static route ahead of that dynamic one,
+// so an account named after a route, a redirect, an Ory proxy prefix or a
+// `public/` directory would exist but its pages would never be reached. The
+// rest are held for routes the app is likely to grow. Existing accounts are
+// unaffected: only creation checks this.
+export const RESERVED_ACCOUNT_IDS: ReadonlySet<string> = new Set([
+  // Routes under src/app
+  "admin",
+  "api",
+  "edit",
+  "email-verified",
+  "logout",
+  "onboarding",
+  "products",
+  // Redirects and proxies in src/middleware.ts
+  "featured",
+  "repositories",
+  "self-service",
+  "sessions",
+  // Directories under public/
+  "favicon",
+  "img",
+  "logo",
+  // Held for future routes
+  "source",
+  "tags",
+  "explain",
+  "docs",
+  "settings",
+  "login",
+]);
+export const isReservedAccountId = (id: string) =>
+  RESERVED_ACCOUNT_IDS.has(id.toLowerCase());
 export const serviceAccountId = (owner_account_id: string, local_id: string) =>
   `${owner_account_id}--${local_id}`;
 // Like ID_REGEX but permits consecutive hyphens, so an account-owned connection
