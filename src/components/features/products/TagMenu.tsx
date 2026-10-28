@@ -1,15 +1,28 @@
 "use client";
 
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { Box, Flex, Kbd, Text, TextField } from "@radix-ui/themes";
+import { Box, Flex, Kbd, Link, Text, TextField } from "@radix-ui/themes";
 import { CheckIcon, MagnifyingGlassIcon, PlusIcon } from "@radix-ui/react-icons";
 
 export interface TagMenuItem {
   tag: string;
   /** Shown at the row's right, such as how many products carry it. */
   detail?: string;
+  /** The detail's colour, amber for a tag awaiting review as elsewhere. */
+  detailColor?: "gray" | "amber";
   /** Checked, in a menu that picks several. */
   selected?: boolean;
+  /** Chooses the row instead of `onChoose(tag)`, for a row that isn't one tag. */
+  onChoose?: () => void;
+}
+
+export interface TagMenuSection {
+  title: string;
+  /** Said under the title, such as what the group's tags have in common. */
+  description?: string;
+  items: TagMenuItem[];
+  /** A link in the group's heading, such as adding every row at once. */
+  action?: { label: string; onChoose: () => void };
 }
 
 interface TagMenuProps {
@@ -20,7 +33,7 @@ interface TagMenuProps {
    * The tags, in titled groups, each optionally described under its title;
    * an empty group is left out.
    */
-  sections: { title: string; description?: string; items: TagMenuItem[] }[];
+  sections: TagMenuSection[];
   onChoose: (tag: string) => void;
   /** A last row that isn't a tag, such as suggesting a new one. */
   action?: { label: ReactNode; onChoose: () => void };
@@ -31,6 +44,12 @@ interface TagMenuProps {
   /** Footer text beside the key hints. */
   hint?: string;
 }
+
+/**
+ * A `<button>` inside a Radix `Link`, rid of the button's own chrome but
+ * nothing more, so the link's type and colour still apply.
+ */
+export const LINK_BUTTON = { background: "none", border: 0, padding: 0, cursor: "pointer" } as const;
 
 const ROW = {
   display: "flex",
@@ -61,7 +80,7 @@ export function TagMenu({
   const id = useId();
   const groups = sections.filter((s) => s.items.length);
   const choices = [
-    ...groups.flatMap((g) => g.items.map((item) => () => onChoose(item.tag))),
+    ...groups.flatMap((g) => g.items.map((item) => item.onChoose ?? (() => onChoose(item.tag)))),
     ...(action ? [action.onChoose] : []),
   ];
   const [active, setActive] = useState(0);
@@ -137,15 +156,26 @@ export function TagMenu({
             aria-label={group.title}
             aria-describedby={group.description ? `${id}-group-${g}` : undefined}
           >
-            <Text
-              as="div"
-              size="1"
-              weight="medium"
-              color="gray"
+            <Flex
+              justify="between"
+              align="center"
               style={{ padding: "var(--space-2) var(--space-3) var(--space-1)" }}
             >
-              {group.title}
-            </Text>
+              <Text size="1" weight="medium" color="gray">
+                {group.title}
+              </Text>
+              {group.action && (
+                <Link size="1" weight="medium" asChild>
+                  <button
+                    type="button"
+                    onClick={group.action.onChoose}
+                    style={LINK_BUTTON}
+                  >
+                    {group.action.label}
+                  </button>
+                </Link>
+              )}
+            </Flex>
             {group.description && (
               <Text
                 as="div"
@@ -171,7 +201,11 @@ export function TagMenu({
                     {item.tag}
                   </Text>
                   {item.detail && (
-                    <Text size="1" color="gray" style={{ fontVariantNumeric: "tabular-nums" }}>
+                    <Text
+                      size="1"
+                      color={item.detailColor ?? "gray"}
+                      style={{ fontVariantNumeric: "tabular-nums" }}
+                    >
                       {item.detail}
                     </Text>
                   )}
