@@ -17,18 +17,22 @@ export function similarTags(
 }
 
 const squash = (s: string) => s.replace(/[^a-z0-9]/g, "");
-// Each word in the singular, roughly: boundaries → boundary, boxes → box,
-// crops → crop, while class stays class.
-const stems = (s: string) =>
-  s
-    .split(/[\s-]+/)
-    .filter(Boolean)
-    .map((w) =>
-      w
+/**
+ * A word in the singular, roughly: boundaries → boundary, boxes → box,
+ * crops → crop, while class, analysis, status, series and gas stay.
+ */
+export const singular = (w: string) =>
+  w.length < 4 || /(ss|is|us)$|^(series|species|news)$/.test(w)
+    ? w
+    : w
         .replace(/ies$/, "y")
-        .replace(/(s|x|ch|sh)es$/, "$1")
-        .replace(/([^s])s$/, "$1")
-    );
+        .replace(/(s|x|z|ch|sh)es$/, "$1")
+        .replace(/([^s])s$/, "$1");
+
+/** A tag with its last word in the singular: `building-footprints` is `building-footprint`. */
+export const singularTag = (tag: string) => tag.replace(/[a-z0-9]+$/, singular);
+
+const stems = (s: string) => s.split(/[\s-]+/).filter(Boolean).map(singular);
 
 function likeness(a: string, b: string): number {
   const x = squash(a);

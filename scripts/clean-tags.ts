@@ -37,7 +37,7 @@ import { TAG_CATEGORIES, type TagCategory } from "../src/lib/tags/categories";
 
 const MIN_USES = 2;
 
-const FIBOA = ["fiboa", "field", "boundaries", "geoparquet", "vector", "pmtiles"];
+const FIBOA = ["fiboa", "field", "boundary", "geoparquet", "vector", "pmtiles"];
 
 /**
  * Raw tag → canonical tags. An empty list drops the tag. Keys and tags are
@@ -56,11 +56,11 @@ const ALIASES: Record<string, string[]> = {
   lowcoder: [], lacuna: [], wadhwaniai: [], pacificspatial: [],
 
   // Spelling, plurals and synonyms.
-  "field boundaries": ["field", "boundaries"],
-  "field boundary": ["field", "boundaries"],
-  fieldboundaries: ["field", "boundaries"],
-  "field boundarie": ["field", "boundaries"],
-  boundary: ["field", "boundaries"],
+  "field boundaries": ["field", "boundary"],
+  "field boundary": ["field", "boundary"],
+  fieldboundaries: ["field", "boundary"],
+  "field boundarie": ["field", "boundary"],
+  boundary: ["field", "boundary"],
   ftw: ["fields of the world"],
   fieldsoftheworld: ["fields of the world"],
   sentinel: ["sentinel-2"],
@@ -78,14 +78,12 @@ const ALIASES: Record<string, string[]> = {
   "deep learning": ["machine learning"],
   "self-supervised": ["machine learning"],
   xai: ["machine learning"],
-  "foundational model": ["foundation models"],
-  embedding: ["embeddings"],
-  crop: ["crops"],
+  "foundational model": ["foundation model"],
   croptype: ["crop type"],
   cdl: ["crop type", "united states"],
-  maize: ["crops"],
-  wheat: ["crops"],
-  cotton: ["crops"],
+  maize: ["crop"],
+  wheat: ["crop"],
+  cotton: ["crop"],
   farmland: ["agriculture"],
   landcover: ["land cover"],
   lulc: ["land cover", "land use"],
@@ -112,24 +110,22 @@ const ALIASES: Record<string, string[]> = {
   era5: ["reanalysis", "climate"],
   "tropical storm": ["weather"],
   temperature: ["weather"],
-  aerosol: ["aerosols"],
-  dust: ["aerosols"],
+  dust: ["aerosol"],
   "climate change": ["climate"],
   emissions: ["carbon"],
   "carbon emissions": ["carbon"],
   "net zero": ["carbon"],
-  "forest carbon": ["forests", "carbon"],
+  "forest carbon": ["forest", "carbon"],
   cdr: ["carbon dioxide removal"],
-  forest: ["forests"],
-  trees: ["forests"],
-  deforestation: ["forests"],
+  trees: ["forest"],
+  deforestation: ["forest"],
   fire: ["wildfire"],
   "live fuel moisture": ["wildfire"],
   "species distribution model": ["biodiversity"],
   beetles: ["biodiversity"],
   ticks: ["biodiversity"],
-  fish: ["fisheries"],
-  fishbase: ["fisheries"],
+  fish: ["fishery"],
+  fishbase: ["fishery"],
   "southern ocean": ["ocean"],
   aquatics: ["ocean"],
   hydrography: ["hydrology"],
@@ -146,23 +142,21 @@ const ALIASES: Record<string, string[]> = {
   "topographic map": ["elevation"],
   contour: ["elevation"],
   "lidar 3dtiles mago": ["lidar"],
-  "building footprint": ["building footprints"],
-  buildings: ["building footprints"],
-  building: ["building footprints"],
+  buildings: ["building footprint"],
+  building: ["building footprint"],
   overture: ["overture maps"],
   overturemaps: ["overture maps"],
   osm: ["openstreetmap"],
-  poi: ["places"],
-  pois: ["places"],
-  businesses: ["places"],
+  poi: ["place"],
+  pois: ["place"],
+  businesses: ["place"],
   roads: ["transportation"],
   "taxi zones": ["transportation"],
-  "political boundaries": ["admin", "boundaries"],
-  admin: ["admin", "boundaries"],
-  boundaries: ["admin", "boundaries"],
+  "political boundaries": ["admin", "boundary"],
+  admin: ["admin", "boundary"],
+  boundaries: ["admin", "boundary"],
   timeseries: ["time series"],
   multitemporal: ["time series"],
-  observation: ["observations"],
   "energy use": ["energy"],
   "energy use by fuel": ["energy"],
   "energy transition": ["energy"],
@@ -185,6 +179,18 @@ const ALIASES: Record<string, string[]> = {
   "ground-truthed": ["ground truth"],
   youthmasppers: ["youthmappers"],
   sixpac: ["sigpac"],
+
+  // Tags are singular: a plural, as typed or as the corpus once spelled it,
+  // becomes its singular. Names (overture maps, eurocrops) and words with no
+  // singular (time series, natural gas) stay as they are.
+  aerosols: ["aerosol"], corridors: ["corridor"], crops: ["crop"],
+  embeddings: ["embedding"], exports: ["export"], fisheries: ["fishery"],
+  forests: ["forest"], "foundation models": ["foundation model"],
+  "building footprints": ["building footprint"], imports: ["import"],
+  labels: ["label"], "landscape elements": ["landscape element"],
+  observations: ["observation"], places: ["place"],
+  "protected areas": ["protected area"], tiles: ["tile"],
+  wetlands: ["wetland"],
 
   // Places below country level, to their country.
   us: ["united states"], usa: ["united states"], nyc: ["united states"],
@@ -215,7 +221,7 @@ const ALIASES: Record<string, string[]> = {
   "luxembourg fiboa field flik boundaries geoparquet vector pmtiles": ["luxembourg", ...FIBOA],
   "ireland fiboa field boundarie geoparquet vector pmtiles": ["ireland", ...FIBOA],
   "belgium wallonia fiboa field boundaries geoparquet vector pmtiles": ["belgium", ...FIBOA],
-  "boundary vector agriculture": ["field", "boundaries", "vector", "agriculture"],
+  "boundary vector agriculture": ["field", "boundary", "vector", "agriculture"],
   "geozarr": ["zarr"],
 };
 const LOOKUP = new Map<string, string[]>();
@@ -234,7 +240,7 @@ for (const [raw, tags] of Object.entries(ALIASES)) {
 /** Kept in the corpus however few products carry them. */
 const KEEP = new Set([
   /** domain */
-  "elevation", "forests", "hydrology",
+  "elevation", "forest", "hydrology",
   /** feature type */
   /** place */
   "africa", "antarctica", "austria", "belgium", "brazil", "cambodia",
