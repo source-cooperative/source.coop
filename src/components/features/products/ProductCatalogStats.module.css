@@ -28,8 +28,8 @@
   width: min(100%, max(50%, 20rem));
 }
 
-/* The sidebar card's table: extension, then object count and byte volume,
-   each followed by its share in a narrow gray column. */
+/* The sidebar card's table: extension, byte volume, then object count
+   followed by its share in a narrow gray column. */
 .tableWrap {
   margin-top: var(--space-3);
   overflow-x: auto;
@@ -66,12 +66,13 @@
   overflow-wrap: break-word;
 }
 
-.table thead th:first-child {
-  display: table-cell;
-}
-
-.table thead th > div {
-  display: inline-block;
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .table .share {

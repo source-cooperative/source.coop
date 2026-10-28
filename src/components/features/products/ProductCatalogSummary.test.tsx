@@ -27,7 +27,7 @@ it("renders the current product's statistics without including other products", 
   expect(screen.getByRole("img")).toHaveAccessibleName("Object types by byte volume: tif 75%, json 25%");
 });
 
-it("tables each type's object count and byte volume, ordered by byte volume", () => {
+it("tables each type's byte volume and object count, ordered by byte volume", () => {
   catalogHook.mockReturnValue(new Map([
     ["org/data", {
       account_id: "org", product_id: "data", total_bytes: 2048, object_count: 4,
@@ -37,9 +37,9 @@ it("tables each type's object count and byte volume, ordered by byte volume", ()
   renderSummary();
   const rows = screen.getAllByRole("row").slice(1);
   expect(rows.map((row) => [...row.children].map((cell) => cell.textContent)))
-    .toEqual([["tif", "1", "25%", "1.5 KB", "75%"], ["json", "3", "75%", "512 B", "25%"]]);
-  expect(screen.getByRole("columnheader", { name: "Objects" })).toBeInTheDocument();
+    .toEqual([["tif", "1.5 KB", "1", "25%"], ["json", "512 B", "3", "75%"]]);
   expect(screen.getByRole("columnheader", { name: "Bytes" })).toBeInTheDocument();
+  expect(screen.getByRole("columnheader", { name: "Objects" })).toBeInTheDocument();
 });
 
 it("highlights a type in both the bar and the table when either is hovered", () => {

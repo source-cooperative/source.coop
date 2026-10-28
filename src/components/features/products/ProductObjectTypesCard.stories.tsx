@@ -6,8 +6,9 @@ import { ProductObjectTypesCard } from "./ProductCatalogSummary";
 /**
  * The Object types card in a product page's sidebar, between Details and
  * Analytics. It gives the product's byte volume and object count, a bar of its
- * object types by byte volume, and a table with each type's object count and
- * byte volume, each with its share of the total.
+ * object types by byte volume, and a table with each type's byte volume and
+ * object count. The bar already shows each type's share of the bytes, so the
+ * table gives the share of the objects, which can differ a lot.
  *
  * The three largest types each get a segment and a row, and everything else
  * is "other", so the card never needs more than four fills. Types are told

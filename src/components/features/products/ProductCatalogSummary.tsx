@@ -31,7 +31,9 @@ const share = (value?: number) => (value === undefined ? "" : formatShare(value)
 
 /**
  * Sidebar card breaking a product's objects down by type: a bar by byte
- * volume, then a table giving each type's object count and byte volume.
+ * volume, then a table giving each type's byte volume, and its object count
+ * with that count's share. The bar already shows the byte shares; the object
+ * shares can differ from them a lot, so the table carries those.
  */
 export function ProductObjectTypesCard({ entry }: { entry?: CatalogEntry }) {
   // One index for the bar and the table, so hovering either lights both.
@@ -71,11 +73,13 @@ export function ProductObjectTypesCard({ entry }: { entry?: CatalogEntry }) {
                 (three columns start at the md breakpoint). */}
             <Box className={styles.tableWrap}>
               <table className={styles.table} onMouseLeave={() => setHovered(null)}>
-                <thead>
+                {/* For screen readers only: sighted readers tell the columns
+                    apart by their units, and the card stays uncluttered. */}
+                <thead className={styles.visuallyHidden}>
                   <tr>
-                    <th scope="col"><MonoLabel>Extension</MonoLabel></th>
-                    <th scope="col" colSpan={2}><MonoLabel>Objects</MonoLabel></th>
-                    <th scope="col" colSpan={2}><MonoLabel>Bytes</MonoLabel></th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Bytes</th>
+                    <th scope="col" colSpan={2}>Objects</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -85,10 +89,9 @@ export function ProductObjectTypesCard({ entry }: { entry?: CatalogEntry }) {
                         <ObjectTypeSwatch index={index} hovered={hovered} />
                         <Text color={index === hovered ? "green" : undefined}>{row.label}</Text>
                       </th>
+                      <td>{bytes(row.bytes)}</td>
                       <td title={exact(row.objects)}>{count(row.objects)}</td>
                       <td className={styles.share}>{share(row.objectShare)}</td>
-                      <td>{bytes(row.bytes)}</td>
-                      <td className={styles.share}>{share(row.byteShare)}</td>
                     </tr>
                   ))}
                 </tbody>

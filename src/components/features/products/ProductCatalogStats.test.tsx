@@ -129,17 +129,17 @@ it("compacts object counts to one decimal and three digits at most", () => {
 });
 
 describe("objectTypeRows", () => {
-  it("gives each segment both measures, with shares of each total", () => {
+  it("gives each segment both measures, with the object count's share", () => {
     const rows = objectTypeRows(entry, objectTypeSegments(entry, "bytes"));
-    expect(rows[0]).toEqual({ label: "tif", objects: 50, bytes: 4096, objectShare: 0.5, byteShare: 0.4 });
+    expect(rows[0]).toEqual({ label: "tif", objects: 50, bytes: 4096, objectShare: 0.5 });
     // other: what tif, parquet and json leave of each total
-    expect(rows[3]).toEqual({ label: "other", objects: 15, bytes: 3072, objectShare: 0.15, byteShare: 0.3 });
+    expect(rows[3]).toEqual({ label: "other", objects: 15, bytes: 3072, objectShare: 0.15 });
   });
 
   it("leaves a measure the catalog lacks undefined", () => {
     const counts = { ...entry, ext_bytes: undefined, total_bytes: undefined };
     const [tif] = objectTypeRows(counts, objectTypeSegments(counts, "objects"));
-    expect(tif).toEqual({ label: "tif", objects: 50, bytes: undefined, objectShare: 0.5, byteShare: undefined });
+    expect(tif).toEqual({ label: "tif", objects: 50, bytes: undefined, objectShare: 0.5 });
   });
 });
 

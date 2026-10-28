@@ -77,11 +77,11 @@ export interface ObjectTypeRow {
   objects?: number;
   bytes?: number;
   objectShare?: number;
-  byteShare?: number;
 }
 
 /**
- * Both measures for each of the bar's segments, for the sidebar card's table.
+ * Both measures for each of the bar's segments, and the object count's share,
+ * for the sidebar card's table.
  * "other" is whatever the listed extensions leave of each total. A value the
  * catalog doesn't have is left undefined rather than guessed.
  */
@@ -104,8 +104,7 @@ export function objectTypeRows(
   const bytesOf = column(entry.ext_bytes, entry.total_bytes);
   return segments.map(({ label, extension }) => {
     const o = objectsOf(extension);
-    const b = bytesOf(extension);
-    return { label, objects: o.value, bytes: b.value, objectShare: o.share, byteShare: b.share };
+    return { label, objects: o.value, bytes: bytesOf(extension).value, objectShare: o.share };
   });
 }
 
