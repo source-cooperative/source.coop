@@ -101,6 +101,16 @@ export const Suggesting: Story = {
 };
 
 /**
+ * Filtering for a plural lists its singular tag too, and the offer to suggest
+ * the plural comes with a hint under the list that tags are usually singular.
+ * The plural can still be suggested.
+ */
+export const SuggestingPlural: Story = {
+  args: { defaultValue: ["acoustics"] },
+  play: ({ canvasElement }) => openAndFilter(canvasElement, "hydrophones"),
+};
+
+/**
  * A tag suggested but not yet saved. It shows as new, with a reminder that it
  * is only suggested once the product is saved.
  */

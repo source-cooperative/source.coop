@@ -63,7 +63,8 @@ export function TagPicker({
 
   // In the tags' own spelling, so "sea ice" finds and suggests "sea-ice".
   const query = canonTag(filter);
-  // Tags are singular, so "forests" finds "forest" too.
+  // Tags are singular, so "forests" finds "forest" too. With no query both
+  // are "", which matches every tag, as it should.
   const single = singularTag(query);
   const matches = options.filter((tag) => tag.includes(query) || tag.includes(single));
   // Offered even when other tags partly match: someone after "ocean
