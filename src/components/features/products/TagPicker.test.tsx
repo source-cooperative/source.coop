@@ -173,3 +173,55 @@ test("without suggestName there's no way to suggest", () => {
   filterFor("sea ice");
   expect(screen.queryByRole("option", { name: /^Suggest/ })).toBeNull();
 });
+
+describe("tags suggested from the product's data", () => {
+  const renderRecommended = (suggestName?: string, defaultValue: string[] = []) =>
+    render(
+      <Theme>
+        <TagPicker
+          name="tags"
+          options={["agriculture", "boundaries", "field", "ocean"]}
+          defaultValue={defaultValue}
+          suggestName={suggestName}
+          recommended={["Agriculture", "field-boundaries", "land-parcels", "ocean"]}
+        />
+      </Theme>
+    );
+  const offered = () =>
+    within(screen.getByRole("group", { name: "Suggested from this product's data" }))
+      .getAllByRole("button")
+      .map((b) => b.textContent);
+
+  test("offers each keyword as the tags it matches, or as a new one", () => {
+    renderRecommended("suggest_tags", ["ocean"]);
+    // ocean is already on the product, so it isn't offered.
+    expect(offered()).toEqual([
+      "agriculture",
+      "field + boundaries",
+      "land-parcels (new)",
+      "Add the 2 existing tags",
+    ]);
+  });
+
+  test("a click adds the matched tags, or suggests a new one", () => {
+    const { container } = renderRecommended("suggest_tags");
+    fireEvent.click(screen.getByRole("button", { name: "field + boundaries" }));
+    fireEvent.click(screen.getByRole("button", { name: "land-parcels (new)" }));
+    expect(submitted(container)).toEqual(["field", "boundaries"]);
+    expect(submitted(container, "suggest_tags")).toEqual(["land-parcels"]);
+    expect(screen.queryByRole("button", { name: "field + boundaries" })).toBeNull();
+  });
+
+  test("adding the existing tags at once suggests nothing", () => {
+    const { container } = renderRecommended("suggest_tags");
+    fireEvent.click(screen.getByRole("button", { name: "Add the 3 existing tags" }));
+    expect(submitted(container)).toEqual(["agriculture", "field", "boundaries", "ocean"]);
+    expect(submitted(container, "suggest_tags")).toEqual([]);
+  });
+
+  test("without suggestName only matches are offered", () => {
+    renderRecommended();
+    expect(offered()).not.toContain("land-parcels (new)");
+    expect(offered()).toContain("Add all");
+  });
+});
