@@ -1,0 +1,52 @@
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { userEvent, within } from "storybook/test";
+import { AdminTagList } from "./AdminTagList";
+import { storyAccounts } from "@/components/core/story-accounts";
+
+/**
+ * Every approved tag on the admin tags page, most used first, with how many
+ * products carry each and where it came from: who suggested it and which
+ * admin approved it, or the initial import that seeded the list. Each tag
+ * links to the product list filtered by it.
+ */
+const meta = {
+  title: "Features/Admin/AdminTagList",
+  component: AdminTagList,
+  parameters: { layout: "padded" },
+  args: {
+    accounts: storyAccounts,
+    tags: [
+      { tag: "field-boundaries", products: 113 },
+      { tag: "geoparquet", products: 101 },
+      { tag: "sentinel-2", products: 25 },
+      {
+        tag: "sea-ice",
+        products: 2,
+        suggested_by: "polar-lab",
+        reviewed_by: "alukach",
+        reviewed_at: "2026-10-27T15:04:00Z",
+      },
+      { tag: "climate", products: 17 },
+      { tag: "ocean", products: 5 },
+    ],
+  },
+} satisfies Meta<typeof AdminTagList>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+/** Seeded tags and one approved from a suggestion. */
+export const AllTags: Story = {};
+
+/** Narrowed by the filter box. */
+export const Filtered: Story = {
+  play: async ({ canvasElement }) => {
+    await userEvent.type(
+      within(canvasElement).getByPlaceholderText("Filter 6 tags"),
+      "ice"
+    );
+  },
+};
+
+/** Before any tag has been approved or seeded. */
+export const Empty: Story = { args: { tags: [] } };

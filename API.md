@@ -94,6 +94,11 @@ between the two, so nothing above it sees the stored name.
 | `PUT` | replace a whole resource at once (no endpoint uses it yet) | the resource as set |
 | `DELETE` | delete | the resource as it was |
 
+A create whose resource is named by its own content, so that a second request
+can only mean the same thing, answers 200 and the existing resource rather
+than 409. Retrying it is then safe without an `Idempotency-Key` (#708).
+`POST /tags` is one: suggesting a tag that exists answers that tag.
+
 Deactivating is not deleting: it is `PATCH { "disabled": true }`, for products
 and accounts alike. A `DELETE` that can't delete answers 409 and says what to
 do instead.

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { storyAccounts } from "@/components/core/story-accounts";
 import { ServiceAccountDetail } from "./ServiceAccountDetail";
 import { handOffIssuedKey } from "./IssuedApiKeyDialog";
 import {
@@ -35,6 +36,7 @@ const meta = {
   parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
   args: {
     proxyOrigin: "https://data.source.coop",
+    accounts: storyAccounts,
     products: [
       { product_id: "climate-data", title: "Climate Data" },
       { product_id: "reference-data", title: "Reference Data" },

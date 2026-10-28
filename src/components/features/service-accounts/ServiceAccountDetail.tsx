@@ -37,6 +37,7 @@ import { ExampleUsage, GITHUB_WORKFLOW_INTRO } from "./ExampleUsage";
 import { githubWorkflow } from "@/lib/services/service-account-usage";
 import { IssuedApiKeyDialog } from "./IssuedApiKeyDialog";
 import { ApiKeyList } from "./ApiKeyList";
+import type { AccountsById } from "@/components/core/AccountMention";
 
 const issuerLabel = (issuer: string) =>
   issuer === GITHUB_ACTIONS_ISSUER ? "GitHub Actions" : issuer;
@@ -129,8 +130,11 @@ export function ServiceAccountDetail({
   summary,
   products,
   proxyOrigin,
+  accounts,
 }: {
   summary: ServiceAccountSummary;
+  /** The owner, and whoever issued or revoked a key, for their cards on hover. */
+  accounts?: AccountsById;
   /** The owner's products, each of which it may reach. */
   products: Pick<Product, "product_id" | "title">[];
   /** The data proxy software signs in to; without it, no example usage is shown. */
@@ -252,7 +256,12 @@ export function ServiceAccountDetail({
                 <Text size="1" weight="medium" color="gray">
                   API keys
                 </Text>
-                <ApiKeyList accountId={account.account_id} keys={keys} proxyOrigin={proxyOrigin} />
+                <ApiKeyList
+                  accountId={account.account_id}
+                  keys={keys}
+                  proxyOrigin={proxyOrigin}
+                  accounts={accounts}
+                />
               </Flex>
             )}
           </Flex>
@@ -275,6 +284,7 @@ export function ServiceAccountDetail({
       >
         <ProductAccessList
           ownerAccountId={account.owner_account_id}
+          accounts={accounts}
           products={products}
           access={access}
           onChange={setAccess}

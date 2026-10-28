@@ -31,6 +31,8 @@ jest.mock("@/lib/clients/database", () => ({
     listByUser: jest.fn(),
   },
   isIndividualAccount: jest.fn(),
+  // No product here has tags awaiting review.
+  hidePendingTags: async (products: unknown[]) => products,
 }));
 
 // Mock Ory dependencies to prevent Next.js context errors
