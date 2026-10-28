@@ -103,6 +103,12 @@ test("an existing tag can't be suggested", () => {
   expect(screen.queryByRole("option", { name: /^Suggest/ })).toBeNull();
 });
 
+test("a tag the product already carries, though not on the list, can't be suggested", () => {
+  renderPicker(["sea-ice"], "suggest_tags");
+  filterFor("sea ice");
+  expect(screen.queryByRole("option", { name: /^Suggest/ })).toBeNull();
+});
+
 test("without suggestName there's no way to suggest", () => {
   renderPicker();
   filterFor("sea ice");

@@ -30,8 +30,14 @@ export default async function AdminTagsPage() {
 
   // ponytail: one scan of every tagged product, grouped here; a per-tag count
   // on the tags table if the products table outgrows a page render.
-  const carrying = (tag: string) =>
-    tagged.filter((p) => p.metadata.tags!.includes(tag));
+  const byTag = new Map<string, typeof tagged>();
+  for (const p of tagged) {
+    for (const t of p.metadata.tags!) {
+      if (!byTag.has(t)) byTag.set(t, []);
+      byTag.get(t)!.push(p);
+    }
+  }
+  const carrying = (tag: string) => byTag.get(tag) ?? [];
   // Everyone named on the page, for their account cards on hover; public
   // views only, since they go to the browser.
   const named = [...pending.value.items, ...approved.value.items, ...reviewed.value.items]

@@ -167,6 +167,21 @@ describe("listProducts", () => {
     );
   });
 
+  test("filtering by a pending tag doesn't reveal which products carry it", async () => {
+    const tagged = product();
+    tagged.metadata = { ...tagged.metadata, tags: ["ocean", "secret-project"] };
+    (productsTable.listPublic as jest.Mock).mockResolvedValue({ products: [tagged] });
+    // As for a caller who may not see the pending tag.
+    (hidePendingTags as jest.Mock).mockImplementation(async (products) =>
+      products.map((p: typeof tagged) => ({ ...p, metadata: { ...p.metadata, tags: ["ocean"] } }))
+    );
+
+    const hidden = await listProducts(null, { tags: "secret-project" });
+    expect(hidden.ok && hidden.value.items).toEqual([]);
+    const shown = await listProducts(null, { tags: "ocean" });
+    expect(shown.ok && shown.value.items).toHaveLength(1);
+  });
+
   test("hides public products the caller may not list", async () => {
     (productsTable.listPublic as jest.Mock).mockResolvedValue({ products: [product()] });
     allowExcept(Actions.ListRepository);

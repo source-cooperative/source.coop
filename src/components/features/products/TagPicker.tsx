@@ -47,7 +47,11 @@ export function TagPicker({
   // Offered even when other tags partly match: someone after "ocean
   // acidification" shouldn't have to settle for "ocean".
   const canSuggest =
-    suggestName && query && !options.includes(query) && !fresh.includes(query);
+    suggestName &&
+    query &&
+    !options.includes(query) &&
+    !tags.includes(query) &&
+    !fresh.includes(query);
 
   const item = (tag: string) => ({ tag, selected: tags.includes(tag) });
   const toggle = (tag: string, on: boolean) =>

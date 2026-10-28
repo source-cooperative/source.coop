@@ -34,14 +34,14 @@ function likeness(a: string, b: string): number {
   const x = squash(a);
   const y = squash(b);
   if (x === y) return 1;
+  const wa = stems(a);
+  const wb = stems(b);
   // The same words, one in the plural.
-  if (stems(a).join("-") === stems(b).join("-")) return 0.95;
+  if (wa.join("-") === wb.join("-")) return 0.95;
   let score = 0;
   if (Math.min(x.length, y.length) > 3 && (x.includes(y) || y.includes(x))) {
     score = 0.85;
   }
-  const wa = stems(a);
-  const wb = stems(b);
   const shared = wa.filter((w) => wb.includes(w)).length;
   if (shared) {
     score = Math.max(score, 0.45 + (0.4 * shared) / Math.max(wa.length, wb.length));

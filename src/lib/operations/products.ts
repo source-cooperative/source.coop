@@ -251,21 +251,25 @@ export async function listProducts(
     );
   }
 
+  // In the spelling tags are stored in, so `?tags=New Zealand` finds them.
+  const wanted = tags?.split(",").map(canonTag).filter(Boolean) ?? [];
   const result = await productsTable.listPublic(limit, start, {
     search: q,
-    // In the spelling tags are stored in, so `?tags=New Zealand` finds them.
-    tags: tags?.split(",").map(canonTag).filter(Boolean).join(",") || undefined,
+    tags: wanted.join(",") || undefined,
     featuredOnly,
   });
+  const visible = await hidePendingTags(
+    await productsTable.attachAccounts(
+      result.products.filter((p) => isAuthorized(session, p, Actions.ListRepository))
+    ),
+    editsTags(session)
+  );
   return ok(
     page(
       session,
-      await hidePendingTags(
-        await productsTable.attachAccounts(
-          result.products.filter((p) => isAuthorized(session, p, Actions.ListRepository))
-        ),
-        editsTags(session)
-      ),
+      // Matched again on the tags the caller sees, so filtering by a pending
+      // tag doesn't reveal which products carry it.
+      visible.filter((p) => wanted.every((t) => p.metadata?.tags?.includes(t))),
       result.lastEvaluatedKey
     )
   );

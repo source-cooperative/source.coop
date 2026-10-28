@@ -31,8 +31,8 @@ registry.registerPath({
     body: { content: { "application/json": { schema: UpdateTagSchema } } },
   },
   responses: {
-    200: json("The tag, approved.", TagSchema),
-    ...errors(400, 401, 403, 404),
+    200: json("The tag, approved or back awaiting review.", TagSchema),
+    ...errors(400, 401, 403, 404, 409),
   },
 });
 
@@ -50,7 +50,7 @@ registry.registerPath({
   security: bearer,
   request: { params, query: DeleteTagQuerySchema },
   responses: {
-    200: json("The tag as it was before it was deleted.", TagSchema),
+    200: json("The tag, with the decision recorded on it.", TagSchema),
     ...errors(400, 401, 403, 404, 409),
   },
 });
