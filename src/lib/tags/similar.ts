@@ -17,17 +17,32 @@ export function similarTags(
 }
 
 const squash = (s: string) => s.replace(/[^a-z0-9]/g, "");
+// Words the rules in `singular` get wrong, with their singular.
+const IRREGULAR = new Map([
+  ["analyses", "analysis"],
+  ["buses", "bus"],
+  ["cookies", "cookie"],
+  ["gases", "gas"],
+  ["goes", "goes"],
+  ["movies", "movie"],
+  ["news", "news"],
+  ["series", "series"],
+  ["species", "species"],
+]);
+
 /**
  * A word in the singular, roughly: boundaries → boundary, boxes → box,
- * crops → crop, while class, analysis, status, series and gas stay.
+ * databases → database, while class, analysis, status, genomics and series
+ * stay.
  */
 export const singular = (w: string) =>
-  w.length < 4 || /(ss|is|us)$|^(series|species|news)$/.test(w)
+  IRREGULAR.get(w) ??
+  (w.length < 4 || /(ss|is|us|ics)$/.test(w)
     ? w
     : w
         .replace(/ies$/, "y")
-        .replace(/(s|x|z|ch|sh)es$/, "$1")
-        .replace(/([^s])s$/, "$1");
+        .replace(/(x|z|ch|sh|ss)es$/, "$1")
+        .replace(/([^s])s$/, "$1"));
 
 /** A tag with its last word in the singular: `building-footprints` is `building-footprint`. */
 export const singularTag = (tag: string) => tag.replace(/[a-z0-9]+$/, singular);
