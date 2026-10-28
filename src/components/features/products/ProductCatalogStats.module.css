@@ -66,13 +66,12 @@
   overflow-wrap: break-word;
 }
 
-.visuallyHidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+.table thead th:first-child {
+  display: table-cell;
+}
+
+.table thead th > div {
+  display: inline-block;
 }
 
 .table .share {

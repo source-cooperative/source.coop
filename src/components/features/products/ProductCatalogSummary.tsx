@@ -73,13 +73,11 @@ export function ProductObjectTypesCard({ entry }: { entry?: CatalogEntry }) {
                 (three columns start at the md breakpoint). */}
             <Box className={styles.tableWrap}>
               <table className={styles.table} onMouseLeave={() => setHovered(null)}>
-                {/* For screen readers only: sighted readers tell the columns
-                    apart by their units, and the card stays uncluttered. */}
-                <thead className={styles.visuallyHidden}>
+                <thead>
                   <tr>
-                    <th scope="col">Type</th>
-                    <th scope="col">Bytes</th>
-                    <th scope="col" colSpan={2}>Objects</th>
+                    <th scope="col"><MonoLabel>Extension</MonoLabel></th>
+                    <th scope="col"><MonoLabel>Bytes</MonoLabel></th>
+                    <th scope="col" colSpan={2}><MonoLabel>Objects</MonoLabel></th>
                   </tr>
                 </thead>
                 <tbody>
