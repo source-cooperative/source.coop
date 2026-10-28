@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useDebounce } from "./useDebounce";
+import { isReservedAccountId } from "@/types/shared";
 
 // Helper function to validate URL slug format
 function isValidUrlSlug(slug: string): boolean {
@@ -74,6 +75,15 @@ function useIdValidation(id: string, options: UseIdValidationOptions) {
         isLoading: false,
         error:
           "Account ID must be a valid URL slug (lowercase letters, numbers, and hyphens only)",
+      });
+      return;
+    }
+
+    if (!isProductValidation && isReservedAccountId(debouncedId)) {
+      setValidationState({
+        isValid: false,
+        isLoading: false,
+        error: "That account ID is reserved",
       });
       return;
     }

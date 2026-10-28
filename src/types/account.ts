@@ -20,6 +20,7 @@ import {
   AccountFlagsSchema,
   MIN_NAME_LENGTH,
   MAX_NAME_LENGTH,
+  isReservedAccountId,
 } from "./shared";
 
 extendZodWithOpenApi(z);
@@ -201,24 +202,22 @@ export const PublicAccountSchema = z
 
 export type PublicAccount = z.infer<typeof PublicAccountSchema>;
 
+const NewIdSchema = z
+  .string()
+  .min(MIN_ID_LENGTH, `Account ID must be at least ${MIN_ID_LENGTH} characters`)
+  .max(MAX_ID_LENGTH, `Account ID must not exceed ${MAX_ID_LENGTH} characters`)
+  .toLowerCase()
+  .regex(
+    ID_REGEX,
+    "Account ID may not begin or end with a hyphen OR contain consecutive hyphens"
+  );
+
 export const AccountCreationRequestSchema = z
   .object({
-    account_id: z
-      .string()
-      .min(
-        MIN_ID_LENGTH,
-        `Account ID must be at least ${MIN_ID_LENGTH} characters`
-      )
-      .max(
-        MAX_ID_LENGTH,
-        `Account ID must not exceed ${MAX_ID_LENGTH} characters`
-      )
-      .toLowerCase()
-      .regex(
-        ID_REGEX,
-        "Account ID may not begin or end with a hyphen OR contain consecutive hyphens"
-      )
-      .openapi({ example: "account-id" }),
+    account_id: NewIdSchema.refine(
+      (id) => !isReservedAccountId(id),
+      "That account ID is reserved"
+    ).openapi({ example: "account-id" }),
     type: z.nativeEnum(AccountType, {
       errorMap: () => ({ message: "Invalid account type" }),
     }),
@@ -254,7 +253,9 @@ export type OrganizationCreationRequest = z.infer<
  */
 export const ServiceAccountCreationRequestSchema =
   AccountCreationRequestSchema.pick({ name: true }).extend({
-    local_id: AccountCreationRequestSchema.shape.account_id,
+    // Not checked against the reserved ids: the owner's id prefixes it, so it
+    // never stands alone at `/{account_id}`.
+    local_id: NewIdSchema.openapi({ example: "nightly-sync" }),
     owner_account_id: z.string(),
   });
 
