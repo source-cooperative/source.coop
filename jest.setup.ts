@@ -45,6 +45,7 @@ jest.mock("@/lib/config", () => ({
         frontendUrl: "http://localhost:4000",
       },
       accessToken: "test-token",
+      oauth2: { audience: "" },
       routes: {
         login: "http://localhost:4000/self-service/login/browser",
         logout: "http://localhost:4000/self-service/logout/browser",

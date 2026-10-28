@@ -1,5 +1,10 @@
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
-import { accountsTable, getPageSession, membershipsTable } from "@/lib";
+import {
+  accountsTable,
+  getPageSession,
+  membershipsTable,
+  tagsTable,
+} from "@/lib";
 import { canCreateProductForAccount, isAuthorized } from "@/lib/api/authz";
 import { listUsableDataConnections } from "@/lib/data-connections";
 import { Actions, DataConnectionObjectSchema, MembershipState } from "@/types";
@@ -58,11 +63,13 @@ export default async function NewProductPage({
   );
 
   // Strip credentials before handing connections to the client component.
-  const dataConnections = (await listUsableDataConnections(session)).map(
-    (connection) =>
-      DataConnectionObjectSchema.omit({ authentication: true }).parse(
-        connection
-      )
+  const dataConnections = (
+    await listUsableDataConnections(
+      session,
+      potentialOwnerAccounts.map((account) => account.account_id)
+    )
+  ).map((connection) =>
+    DataConnectionObjectSchema.omit({ authentication: true }).parse(connection)
   );
 
   return (
@@ -75,6 +82,7 @@ export default async function NewProductPage({
       <ProductCreationForm
         potentialOwnerAccounts={potentialOwnerAccounts}
         dataConnections={dataConnections}
+        tagOptions={await tagsTable.listAll()}
         defaultOwnerId={
           // Preselect the owner from ?owner=… (e.g. "New product" opened from an
           // org's menu), but only if the user can actually own products there.

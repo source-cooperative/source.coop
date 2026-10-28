@@ -12,7 +12,7 @@ import type {
 import { formatBytes } from "@/lib/format";
 import { objectUrl } from "@/lib/urls";
 import {
-  DownloadsChart,
+  RequestsChart,
   HELP,
   HoverCaption,
   MonoLabel,
@@ -34,8 +34,8 @@ interface ProductAnalyticsViewProps {
 
 /**
  * Full product analytics page body (issue #257 mock): stats row with daily
- * average, downloads chart beside a by-country ranking, and a top-files
- * table. Same DOWNLOADS/USERS tab pair as the compact card.
+ * average, requests chart beside a by-country ranking, and a top-files
+ * table. Same REQUESTS/USERS tab pair as the compact card.
  */
 export function ProductAnalyticsView({
   accountId,
@@ -54,11 +54,11 @@ export function ProductAnalyticsView({
   );
 
   return (
-    <Tabs.Root defaultValue="downloads">
+    <Tabs.Root defaultValue="requests">
       <Tabs.List size="1">
-        <Tabs.Trigger value="downloads">
+        <Tabs.Trigger value="requests">
           <Text size="1" style={mono({ letterSpacing: "0.03em" })}>
-            DOWNLOADS
+            REQUESTS
           </Text>
         </Tabs.Trigger>
         <Tabs.Trigger value="users">
@@ -68,11 +68,11 @@ export function ProductAnalyticsView({
         </Tabs.Trigger>
       </Tabs.List>
 
-      <Tabs.Content value="downloads">
+      <Tabs.Content value="requests">
         <StatRow mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
           <Stat
-            label="Downloads"
-            help={HELP.downloads}
+            label="Requests"
+            help={HELP.requests}
             value={numberFormat.format(Math.round(shown.requests))}
           />
           <Stat
@@ -95,7 +95,7 @@ export function ProductAnalyticsView({
         <Grid columns={{ initial: "1", md: "5" }} gap="6" mt="4">
           <Box style={{ gridColumn: "span 3" }}>
             <HoverCaption days={days} hovered={hovered} />
-            <DownloadsChart
+            <RequestsChart
               days={days}
               hovered={hovered}
               onHover={setHovered}
@@ -176,7 +176,7 @@ export function ProductAnalyticsView({
           <MonoLabel>Top files</MonoLabel>
           {!breakdowns || breakdowns.files.length === 0 ? (
             <Text as="div" size="1" color="gray" mt="2">
-              No file downloads in this period.
+              No file requests in this period.
             </Text>
           ) : (
             <Table.Root size="1" mt="2">
@@ -186,7 +186,7 @@ export function ProductAnalyticsView({
                     <MonoLabel>File</MonoLabel>
                   </Table.ColumnHeaderCell>
                   <Table.ColumnHeaderCell justify="end">
-                    <MonoLabel help={HELP.downloads}>Downloads</MonoLabel>
+                    <MonoLabel help={HELP.requests}>Requests</MonoLabel>
                   </Table.ColumnHeaderCell>
                   <Table.ColumnHeaderCell justify="end">
                     <MonoLabel help={HELP.served}>Data served</MonoLabel>

@@ -14,6 +14,7 @@ import { TrashIcon } from "@radix-ui/react-icons";
 import { Field, FormActions, SectionHeader } from "@/components/core";
 import { ItemList } from "@/components/core/ItemList";
 import { createServiceAccount } from "@/lib/actions/service-accounts";
+import { useFormChanges } from "@/hooks/useFormChanges";
 import {
   IDLE_SERVICE_ACCOUNT_FORM_STATE,
   slugifyToId,
@@ -68,6 +69,7 @@ export function ServiceAccountForm({
       return access ? { ...rest, [product_id]: access } : rest;
     });
   const [apiKey, setApiKey] = useState<ApiKeyDraft | null>(null);
+  const { formRef, dirty } = useFormChanges(state.success && state);
 
   // A rejected id opens the field, so the error sits beside something to fix.
   const showIdField = editingId || !!state.fieldErrors.local_id;
@@ -83,7 +85,7 @@ export function ServiceAccountForm({
   }, [state.issued, router]);
 
   return (
-    <form action={formAction}>
+    <form ref={formRef} action={formAction}>
       <input type="hidden" name="owner_account_id" value={ownerAccountId} />
       <Flex direction="column" gap="6">
         <SectionHeader
@@ -254,6 +256,7 @@ export function ServiceAccountForm({
           pending={pending}
           message={state.message}
           success={state.success}
+          unsaved={dirty}
         />
       </Flex>
     </form>

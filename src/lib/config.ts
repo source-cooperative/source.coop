@@ -48,6 +48,15 @@ export const CONFIG = {
     accessToken: process.env.ORY_PROJECT_API_KEY || "",
 
     oauth2: {
+      // Ory's OAuth2 issuer, which signs the access tokens the API accepts
+      // (see src/lib/api/ory-access-token.ts). Each deployment's SDK URL is its
+      // project's issuer domain.
+      issuer: process.env.NEXT_PUBLIC_ORY_SDK_URL || "",
+      // The audience the API's bearer tokens must name; unset, the request's
+      // own origin. Vercel previews set it to staging's origin, so a staging
+      // CLI login works on every preview. That grants previews nothing: they
+      // already run with staging's credentials.
+      audience: process.env.API_AUDIENCE || "",
       clientId: process.env.ORY_OAUTH2_CLIENT_ID || "",
       clientSecret: process.env.ORY_OAUTH2_CLIENT_SECRET || "",
       // Virtual redirect_uri for the headless OAuth2 flow. Hydra validates it

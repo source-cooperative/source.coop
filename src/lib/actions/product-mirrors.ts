@@ -1,560 +1,91 @@
 "use server";
 
-import { LOGGER } from "@/lib/logging";
-import { canManageAccount } from "../api/authz";
 import { getPageSession } from "../api/utils";
-import { accountsTable, productsTable, dataConnectionsTable } from "../clients";
-import { ProductMirror, resolveMirrorPrefix } from "@/types";
+import { LOGGER } from "@/lib/logging";
 import { FormState } from "@/components/core/DynamicForm";
-import { revalidatePath } from "next/cache";
-import { editProductDataConnectionsUrl } from "@/lib/urls";
-import {
-  canManageDataConnection,
-  canUseDataConnectionFor,
-} from "@/lib/data-connections";
+import * as ops from "@/lib/operations/mirrors";
+import { OperationResult, toFormState } from "@/lib/operations/result";
+
+/** The fields every mirror form carries; an absent one reads as "". */
+const fields = (formData: FormData) => {
+  const field = (name: string) => String(formData.get(name) ?? "");
+  return {
+    account_id: field("account_id"),
+    product_id: field("product_id"),
+    connection_id: field("connection_id"),
+    field,
+  };
+};
 
 /**
- * A product's mirrors are the *owning account's* storage, so managing them is
- * gated on administering that account (owner/maintainer of the org, the
- * individual account itself, or an admin) — not on `PutRepository`, which a
- * membership scoped to this one product also satisfies.
- *
- * Returns the message to report when the caller is not permitted, or null when
- * they are.
+ * The operation's result as form state. A failure it throws becomes a message
+ * on the row rather than an error page in place of every mirror.
  */
-const NOT_ACCOUNT_MANAGER_MESSAGE =
-  "Only owners and maintainers of the owning account can manage this product's data connections";
-
-async function denyUnlessAccountManager(
-  session: Awaited<ReturnType<typeof getPageSession>>,
-  accountId: string
-): Promise<string | null> {
-  const account = await accountsTable.fetchById(accountId);
-  if (!account || !canManageAccount(session, account)) {
-    return NOT_ACCOUNT_MANAGER_MESSAGE;
+async function run(
+  formData: FormData,
+  successMessage: string,
+  operation: () => Promise<OperationResult<unknown>>
+): Promise<FormState<unknown>> {
+  try {
+    return toFormState(await operation(), formData, successMessage);
+  } catch (error) {
+    const { account_id, product_id, connection_id } = fields(formData);
+    LOGGER.error("Error changing product mirrors", {
+      operation: "product-mirrors",
+      error,
+      metadata: { account_id, product_id, connection_id },
+    });
+    return {
+      success: false,
+      data: formData,
+      message: "Failed to save. Please try again.",
+      fieldErrors: {},
+    };
   }
-  return null;
-}
-
-// These three actions fetch → mutate → productsTable.update(). The update is an
-// optimistic compare-and-swap on the product's updated_at, so two people editing
-// the same product's mirrors concurrently can't silently clobber each other —
-// the second write fails and the action reports a conflict instead.
-const CONCURRENT_EDIT_MESSAGE =
-  "This product was modified by someone else. Please reload and try again.";
-
-function isConcurrentEdit(error: unknown): boolean {
-  return (
-    error instanceof Error &&
-    error.name === "ConditionalCheckFailedException"
-  );
 }
 
 export async function addProductMirror(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
-  const session = await getPageSession();
-
-  if (!session?.identity_id) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Unauthenticated",
-      success: false,
-    };
-  }
-
-  const accountId = formData.get("account_id") as string;
-  const productId = formData.get("product_id") as string;
-  const connectionId = formData.get("connection_id") as string;
-
-  if (!accountId || !productId || !connectionId) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Missing required fields",
-      success: false,
-    };
-  }
-
-  try {
-    // Authorize before any product/connection I/O, so an unprivileged caller
-    // can't probe which products or connections exist.
-    const denied = await denyUnlessAccountManager(session, accountId);
-    if (denied) {
-      return { fieldErrors: {}, data: formData, message: denied, success: false };
-    }
-
-    const product = await productsTable.fetchById(accountId, productId);
-    if (!product) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Product not found",
-        success: false,
-      };
-    }
-
-    const connection = await dataConnectionsTable.fetchById(connectionId);
-    if (!connection) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Data connection not found",
-        success: false,
-      };
-    }
-
-    // The connection must be available to this account: system-level (unowned)
-    // or owned by it, and usable at all (not flag-gated).
-    if (!canUseDataConnectionFor(session, connection, accountId)) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "This data connection is not available for this account",
-        success: false,
-      };
-    }
-
-    if (product.metadata.mirrors[connectionId]) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "This data connection is already associated with this product",
-        success: false,
-      };
-    }
-
-    const prefix = resolveMirrorPrefix(
-      connection.prefix_template,
-      accountId,
-      productId
-    );
-
-    const isFirst = Object.keys(product.metadata.mirrors).length === 0;
-
-    const mirror: ProductMirror = {
-      connection_id: connectionId,
-      prefix,
-      is_primary: isFirst,
-    };
-
-    const updatedProduct = {
-      ...product,
-      metadata: {
-        ...product.metadata,
-        mirrors: { ...product.metadata.mirrors, [connectionId]: mirror },
-        primary_mirror: isFirst ? connectionId : product.metadata.primary_mirror,
-      },
-    };
-
-    await productsTable.update(updatedProduct, {
-      expectedUpdatedAt: product.updated_at,
-    });
-
-    LOGGER.info("Successfully added product mirror", {
-      operation: "addProductMirror",
-      metadata: { accountId, productId, connectionId },
-    });
-
-    revalidatePath(editProductDataConnectionsUrl(accountId, productId));
-
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Data connection added successfully!",
-      success: true,
-    };
-  } catch (error) {
-    if (isConcurrentEdit(error)) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: CONCURRENT_EDIT_MESSAGE,
-        success: false,
-      };
-    }
-    LOGGER.error("Error adding product mirror", {
-      operation: "addProductMirror",
-      error,
-    });
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Failed to add data connection. Please try again.",
-      success: false,
-    };
-  }
+  const { account_id, product_id, connection_id } = fields(formData);
+  return run(formData, "Data connection added successfully!", async () =>
+    ops.addMirror(await getPageSession(), account_id, product_id, {
+      connection_id,
+    })
+  );
 }
 
 export async function removeProductMirror(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
-  const session = await getPageSession();
-
-  if (!session?.identity_id) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Unauthenticated",
-      success: false,
-    };
-  }
-
-  const accountId = formData.get("account_id") as string;
-  const productId = formData.get("product_id") as string;
-  const mirrorKey = formData.get("mirror_key") as string;
-
-  if (!accountId || !productId || !mirrorKey) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Missing required fields",
-      success: false,
-    };
-  }
-
-  try {
-    const denied = await denyUnlessAccountManager(session, accountId);
-    if (denied) {
-      return { fieldErrors: {}, data: formData, message: denied, success: false };
-    }
-
-    const product = await productsTable.fetchById(accountId, productId);
-    if (!product) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Product not found",
-        success: false,
-      };
-    }
-
-    if (!product.metadata.mirrors[mirrorKey]) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Mirror not found",
-        success: false,
-      };
-    }
-
-    const remainingMirrors = { ...product.metadata.mirrors };
-    delete remainingMirrors[mirrorKey];
-
-    // If we removed the primary, promote the first remaining mirror (if any).
-    let primaryMirror = product.metadata.primary_mirror;
-    if (primaryMirror === mirrorKey) {
-      const [nextPrimary] = Object.keys(remainingMirrors);
-      primaryMirror = nextPrimary ?? "";
-      if (nextPrimary) {
-        remainingMirrors[nextPrimary] = {
-          ...remainingMirrors[nextPrimary],
-          is_primary: true,
-        };
-      }
-    }
-
-    const updatedProduct = {
-      ...product,
-      metadata: {
-        ...product.metadata,
-        mirrors: remainingMirrors,
-        primary_mirror: primaryMirror,
-      },
-    };
-
-    await productsTable.update(updatedProduct, {
-      expectedUpdatedAt: product.updated_at,
-    });
-
-    LOGGER.info("Successfully removed product mirror", {
-      operation: "removeProductMirror",
-      metadata: { accountId, productId, mirrorKey },
-    });
-
-    revalidatePath(editProductDataConnectionsUrl(accountId, productId));
-
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Data connection removed successfully!",
-      success: true,
-    };
-  } catch (error) {
-    if (isConcurrentEdit(error)) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: CONCURRENT_EDIT_MESSAGE,
-        success: false,
-      };
-    }
-    LOGGER.error("Error removing product mirror", {
-      operation: "removeProductMirror",
-      error,
-    });
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Failed to remove data connection. Please try again.",
-      success: false,
-    };
-  }
+  const { account_id, product_id, connection_id } = fields(formData);
+  return run(formData, "Data connection removed successfully!", async () =>
+    ops.removeMirror(await getPageSession(), account_id, product_id, connection_id)
+  );
 }
 
-// Editing a mirror's prefix is the *intersection* of the account gate the three
-// actions above use AND managing the underlying connection
-// (canManageDataConnection). Admins satisfy both.
-//
-// The connection half is not redundant: a prefix says where in the bucket this
-// product's data lives, so on a shared system-level connection an unrestricted
-// prefix would let one account point its product at another's objects. Only
-// someone who controls the connection may re-point a mirror on it.
 export async function updateMirrorPrefix(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
-  const session = await getPageSession();
-
-  if (!session?.identity_id) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Unauthenticated",
-      success: false,
-    };
-  }
-
-  const accountId = formData.get("account_id") as string;
-  const productId = formData.get("product_id") as string;
-  const mirrorKey = formData.get("mirror_key") as string;
-  const rawPrefix = ((formData.get("prefix") as string) || "").trim();
-
-  if (!accountId || !productId || !mirrorKey) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Missing required fields",
-      success: false,
-    };
-  }
-
-  // This is the only path where prefix is free-form user input (elsewhere it's
-  // machine-generated by resolveMirrorPrefix). Keys are built by literal
-  // concatenation (`${prefix}${key}`), so reject traversal/leading-slash and
-  // force a trailing separator — without it "acct/prod" also matches keys under
-  // "acct/prod2/" on a shared connection.
-  // ponytail: no cross-product collision scan; managing the connection already
-  // grants broad access. Add a scan if prefix overlap becomes a real problem.
-  if (rawPrefix.includes("..") || rawPrefix.startsWith("/")) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Prefix can't start with '/' or contain '..'",
-      success: false,
-    };
-  }
-  const prefix =
-    !rawPrefix || rawPrefix.endsWith("/") ? rawPrefix : `${rawPrefix}/`;
-
-  try {
-    const denied = await denyUnlessAccountManager(session, accountId);
-    if (denied) {
-      return { fieldErrors: {}, data: formData, message: denied, success: false };
-    }
-
-    const product = await productsTable.fetchById(accountId, productId);
-    if (!product) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Product not found",
-        success: false,
-      };
-    }
-
-    const existing = product.metadata.mirrors[mirrorKey];
-    if (!existing) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Mirror not found",
-        success: false,
-      };
-    }
-
-    // Account side authorized above; also require managing the connection.
-    const connection = await dataConnectionsTable.fetchById(
-      existing.connection_id
-    );
-    if (!connection || !(await canManageDataConnection(session, connection))) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message:
-          "You must be able to manage both this account and the data connection to edit its prefix",
-        success: false,
-      };
-    }
-
-    const updatedProduct = {
-      ...product,
-      metadata: {
-        ...product.metadata,
-        mirrors: {
-          ...product.metadata.mirrors,
-          [mirrorKey]: { ...existing, prefix },
-        },
-      },
-    };
-
-    await productsTable.update(updatedProduct, {
-      expectedUpdatedAt: product.updated_at,
-    });
-
-    LOGGER.info("Successfully updated mirror prefix", {
-      operation: "updateMirrorPrefix",
-      metadata: { accountId, productId, mirrorKey },
-    });
-
-    revalidatePath(editProductDataConnectionsUrl(accountId, productId));
-
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Prefix updated successfully!",
-      success: true,
-    };
-  } catch (error) {
-    if (isConcurrentEdit(error)) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: CONCURRENT_EDIT_MESSAGE,
-        success: false,
-      };
-    }
-    LOGGER.error("Error updating mirror prefix", {
-      operation: "updateMirrorPrefix",
-      error,
-    });
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Failed to update prefix. Please try again.",
-      success: false,
-    };
-  }
+  const { account_id, product_id, connection_id, field } = fields(formData);
+  return run(formData, "Prefix updated successfully!", async () =>
+    ops.updateMirror(await getPageSession(), account_id, product_id, connection_id, {
+      prefix: field("prefix"),
+    })
+  );
 }
 
 export async function setPrimaryMirror(
   _prevState: FormState<unknown>,
   formData: FormData
 ): Promise<FormState<unknown>> {
-  const session = await getPageSession();
-
-  if (!session?.identity_id) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Unauthenticated",
-      success: false,
-    };
-  }
-
-  const accountId = formData.get("account_id") as string;
-  const productId = formData.get("product_id") as string;
-  const mirrorKey = formData.get("mirror_key") as string;
-
-  if (!accountId || !productId || !mirrorKey) {
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Missing required fields",
-      success: false,
-    };
-  }
-
-  try {
-    const denied = await denyUnlessAccountManager(session, accountId);
-    if (denied) {
-      return { fieldErrors: {}, data: formData, message: denied, success: false };
-    }
-
-    const product = await productsTable.fetchById(accountId, productId);
-    if (!product) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Product not found",
-        success: false,
-      };
-    }
-
-    if (!product.metadata.mirrors[mirrorKey]) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: "Mirror not found",
-        success: false,
-      };
-    }
-
-    const updatedMirrors = { ...product.metadata.mirrors };
-    for (const key of Object.keys(updatedMirrors)) {
-      updatedMirrors[key] = {
-        ...updatedMirrors[key],
-        is_primary: key === mirrorKey,
-      };
-    }
-
-    const updatedProduct = {
-      ...product,
-      metadata: {
-        ...product.metadata,
-        mirrors: updatedMirrors,
-        primary_mirror: mirrorKey,
-      },
-    };
-
-    await productsTable.update(updatedProduct, {
-      expectedUpdatedAt: product.updated_at,
-    });
-
-    LOGGER.info("Successfully set primary mirror", {
-      operation: "setPrimaryMirror",
-      metadata: { accountId, productId, mirrorKey },
-    });
-
-    revalidatePath(editProductDataConnectionsUrl(accountId, productId));
-
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Primary mirror updated successfully!",
-      success: true,
-    };
-  } catch (error) {
-    if (isConcurrentEdit(error)) {
-      return {
-        fieldErrors: {},
-        data: formData,
-        message: CONCURRENT_EDIT_MESSAGE,
-        success: false,
-      };
-    }
-    LOGGER.error("Error setting primary mirror", {
-      operation: "setPrimaryMirror",
-      error,
-    });
-    return {
-      fieldErrors: {},
-      data: formData,
-      message: "Failed to update primary mirror. Please try again.",
-      success: false,
-    };
-  }
+  const { account_id, product_id, connection_id } = fields(formData);
+  return run(formData, "Primary mirror updated successfully!", async () =>
+    ops.updateMirror(await getPageSession(), account_id, product_id, connection_id, {
+      is_primary: true,
+    })
+  );
 }

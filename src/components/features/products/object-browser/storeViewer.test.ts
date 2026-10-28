@@ -44,12 +44,16 @@ describe("storeViewerUrl", () => {
     (probeStore as jest.Mock).mockResolvedValue({
       renderable: true,
       format: "icechunk",
+      icechunkVersion: 2,
     });
 
-    await expect(storeViewerUrl(args)).resolves.toBe(
-      "https://source-cooperative.github.io/zarr-viewer/?url=" +
+    await expect(storeViewerUrl(args)).resolves.toEqual({
+      url:
+        "https://source-cooperative.github.io/zarr-viewer/?url=" +
         encodeURIComponent("https://data.source.coop/bkr/gfs/gfs.icechunk"),
-    );
+      format: "icechunk",
+      icechunkVersion: 2,
+    });
     // Reuses the request's already-resolved creds instead of re-reading the cookie.
     expect(getStorageClient).toHaveBeenCalledWith(creds);
   });

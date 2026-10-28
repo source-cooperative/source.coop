@@ -12,7 +12,7 @@ interface UsageCardProps {
 
 /**
  * Server component: fetches recent usage and renders the analytics card —
- * the same downloads summary for every viewer (the full analytics page is
+ * the same requests summary for every viewer (the full analytics page is
  * reached via the manager-only ANALYTICS tab). Renders nothing when
  * analytics is unconfigured or the query fails, so the page never depends
  * on the analytics backend. Render inside <Suspense>.

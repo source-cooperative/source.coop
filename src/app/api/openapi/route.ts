@@ -1,38 +1,38 @@
-import { StatusCodes } from "http-status-codes";
-import { NextRequest, NextResponse } from "next/server";
-import { OpenApiGeneratorV3 } from "@asteasolutions/zod-to-openapi";
-import {
-  DataConnectionObjectSchema,
-  MembershipInvitationSchema,
-  MembershipSchema,
-} from "@/types";
-import { AccountSchema } from "@/types/account";
+import { NextResponse } from "next/server";
+import { generateDocument } from "@/lib/api/openapi";
 
-export async function GET(_req: NextRequest) {
-  const generator = new OpenApiGeneratorV3([
-    AccountSchema,
-    MembershipSchema,
-    MembershipInvitationSchema,
-    DataConnectionObjectSchema,
-  ]);
+// Each route registers its own path when its module loads. A route missing
+// from this list is missing from the document, which route-coverage.test.ts
+// catches.
+import "../v1/accounts/[account_id]/route";
+import "../v1/accounts/[account_id]/keys/route";
+import "../v1/accounts/[account_id]/keys/[key_id]/route";
+import "../v1/accounts/[account_id]/service-accounts/route";
+import "../v1/accounts/[account_id]/trusts/route";
+import "../v1/accounts/[account_id]/trusts/exchanges/route";
+import "../v1/data-connections/route";
+import "../v1/data-connections/[data_connection_id]/route";
+import "../v1/memberships/route";
+import "../v1/memberships/[membership_id]/route";
+import "../v1/products/route";
+import "../v1/products/featured/route";
+import "../v1/products/[account_id]/route";
+import "../v1/products/[account_id]/[product_id]/route";
+import "../v1/products/[account_id]/[product_id]/permissions/route";
+import "../v1/products/[account_id]/[product_id]/mirrors/route";
+import "../v1/products/[account_id]/[product_id]/mirrors/[connection_id]/route";
+import "../v1/secret-scanning/github/route";
+import "../v1/service-account-keys/exchanges/route";
+import "../v1/service-account-keys/revocations/route";
+import "../v1/whoami/route";
 
-  const openapiSpecification = {
-    openapi: "3.0.0",
-    info: {
-      title: "Source Cooperative API",
-      version: "1.0.0",
-    },
-    servers: [
-      {
-        url: "https://source.coop/api/v1",
-        description: "Source Cooperative",
-      },
-    ],
-    paths: {},
-    components: {
-      schemas: generator.generateComponents().components?.schemas || {},
-    },
-  };
+// The registry is complete once the imports above have run, so the document
+// is built once per instance rather than per request.
+const document = generateDocument();
 
-  return NextResponse.json(openapiSpecification, { status: StatusCodes.OK });
+// api.docs.source.coop renders this document from its own origin.
+export function GET() {
+  return NextResponse.json(document, {
+    headers: { "Access-Control-Allow-Origin": "*" },
+  });
 }

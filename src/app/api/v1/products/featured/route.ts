@@ -1,44 +1,26 @@
-import { NextRequest, NextResponse } from "next/server";
-import { Actions } from "@/types";
-import { isAuthorized } from "@/lib/api/authz";
-import { StatusCodes } from "http-status-codes";
-import { getApiSession } from "@/lib/api/utils";
-import { productsTable } from "@/lib/clients/database/products";
+import { ProductResponseSchema } from "@/types";
+import { z } from "zod";
+import { withApiSession, toResponse } from "@/lib/api/handler";
+import { errors, json, optionalBearer, registry } from "@/lib/api/openapi";
+import { listProducts } from "@/lib/operations/products";
+import { ok } from "@/lib/operations/result";
 
-/**
- * @openapi
- * /products/featured:
- *   get:
- *     tags: [Products]
- *     summary: Get featured products
- *     description: Retrieves a list of featured products that the user is authorized to view.
- *     responses:
- *       200:
- *         description: Successfully retrieved featured products
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/RepositoryList'
- *       500:
- *         description: Internal server error
- */
-export async function GET(request: NextRequest) {
-  try {
-    const session = await getApiSession(request);
-    const { products } = await productsTable.listPublic(10);
-    const filteredProducts = products.filter((repository) =>
-      isAuthorized(session, repository, Actions.GetRepository)
-    );
-    return NextResponse.json(
-      { products: filteredProducts },
-      { status: StatusCodes.OK }
-    );
-  } catch (err: unknown) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+registry.registerPath({
+  method: "get",
+  path: "/products/featured",
+  tags: ["Products"],
+  summary: "List featured products",
+  description:
+    "Up to ten featured products, as `{ \"products\": [...] }`. Kept for the clients that already call it; use `GET /products?featured=true`, which pages.",
+  deprecated: true,
+  security: optionalBearer,
+  responses: {
+    200: json("The featured products.", z.object({ products: z.array(ProductResponseSchema) })),
+    ...errors(400),
+  },
+});
+
+export const GET = withApiSession(async ({ session }) => {
+  const result = await listProducts(session, { featured: "true", limit: "10" });
+  return toResponse(result.ok ? ok({ products: result.value.items }) : result);
+});

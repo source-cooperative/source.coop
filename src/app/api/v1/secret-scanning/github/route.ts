@@ -1,64 +1,55 @@
-/**
- * @openapi
- * /secret-scanning/github:
- *   post:
- *     tags: [Accounts]
- *     summary: Revoke the API keys GitHub finds in public
- *     description: |
- *       The endpoint of GitHub's secret-scanning partner program (https://docs.github.com/en/code-security/tutorials/secret-scanning-partner-program). When GitHub finds tokens matching the API-key pattern in public, in a repository, gist, issue or npm package, it posts them here, signed with one of the keys at https://api.github.com/meta/public_keys/secret_scanning. Nothing in the body is read until that signature verifies. Every API key reported is then revoked, exactly as its holder could revoke it, and the answer labels each one for GitHub: `true_positive` for a key that exists, whether revoked now or before, and `false_positive` for one that does not. Tokens that are not API keys, including any whose checksum fails, are left out without a lookup.
- *     security: []
- *     parameters:
- *       - in: header
- *         name: Github-Public-Key-Identifier
- *         required: true
- *         schema:
- *           type: string
- *       - in: header
- *         name: Github-Public-Key-Signature
- *         required: true
- *         description: Base64 DER ECDSA signature, P-256 with SHA-256, of the raw body
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: array
- *             items:
- *               type: object
- *               required: [token, type]
- *               properties:
- *                 token:
- *                   type: string
- *                 type:
- *                   type: string
- *                 url:
- *                   type: string
- *                 source:
- *                   type: string
- *     responses:
- *       200:
- *         description: One `{token_raw, token_type, label}` per API key reported
- *       400:
- *         description: Bad Request
- *       401:
- *         description: A signature that is missing, bad, or cannot be checked
- */
 import { verify } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 import { revokeLeakedKey } from "@/lib/accounts/service-account-keys";
 import { LOGGER } from "@/lib/logging";
 import { isApiKey } from "@/types";
+import { toResponse, withProblems } from "@/lib/api/handler";
+import { errors, internal, json, registry } from "@/lib/api/openapi";
+import { invalid, unauthenticated } from "@/lib/operations/result";
 
 const GITHUB_KEYS_URL = "https://api.github.com/meta/public_keys/secret_scanning";
 
 // url and source are only logged: an odd one must not cost a batch its revocations.
 const MatchesSchema = z.array(
-  z.object({ token: z.string(), type: z.string(), url: z.unknown(), source: z.unknown() })
+  z.object({
+    token: z.string(),
+    type: z.string(),
+    url: z.unknown().openapi({ type: "string" }),
+    source: z.unknown().openapi({ type: "string" }),
+  })
 );
+
+const FeedbackSchema = z.array(
+  z.object({
+    token_raw: z.string(),
+    token_type: z.string(),
+    label: z.enum(["true_positive", "false_positive"]),
+  })
+);
+
+registry.registerPath({
+  method: "post",
+  path: "/secret-scanning/github",
+  ...internal,
+  summary: "Revoke the API keys GitHub finds in public",
+  description:
+    "The endpoint of [GitHub's secret-scanning partner program](https://docs.github.com/en/code-security/tutorials/secret-scanning-partner-program), which only GitHub can call. When GitHub finds tokens matching the API-key pattern in public, in a repository, gist, issue or npm package, it posts them here, signed with one of the keys at https://api.github.com/meta/public_keys/secret_scanning. Nothing in the body is read until that signature verifies. Every API key reported is revoked, exactly as its holder could revoke it, and labelled for GitHub: `true_positive` for a key that exists, whether revoked now or before, and `false_positive` for one that does not. Tokens that are not API keys, including any whose checksum fails, are left out without a lookup. To revoke a key you hold, use `POST /service-account-keys/revocations`.",
+  security: [],
+  request: {
+    headers: z.object({
+      "Github-Public-Key-Identifier": z.string(),
+      "Github-Public-Key-Signature": z
+        .string()
+        .openapi({ description: "Base64 DER ECDSA signature, P-256 with SHA-256, of the raw body." }),
+    }),
+    body: { content: { "application/json": { schema: MatchesSchema } } },
+  },
+  responses: {
+    200: json("One label per API key reported.", FeedbackSchema),
+    ...errors(400, 401),
+  },
+});
 
 // GitHub's signing keys by identifier, for the life of the instance, and when
 // they were last fetched or tried.
@@ -113,7 +104,7 @@ async function signedByGitHub(
   return false;
 }
 
-export async function POST(request: NextRequest) {
+async function receiveMatches(request: NextRequest) {
   // The signature covers the bytes as sent, not the JSON they parse to.
   const body = Buffer.from(await request.clone().arrayBuffer());
   const signed = await signedByGitHub(
@@ -122,14 +113,11 @@ export async function POST(request: NextRequest) {
     body
   );
   if (!signed) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: StatusCodes.UNAUTHORIZED });
+    return toResponse(unauthenticated());
   }
   const parsed = MatchesSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Expected an array of matches" },
-      { status: StatusCodes.BAD_REQUEST }
-    );
+    return toResponse(invalid("Expected an array of matches"));
   }
   const feedback = await Promise.all(
     parsed.data
@@ -144,3 +132,5 @@ export async function POST(request: NextRequest) {
   );
   return NextResponse.json(feedback);
 }
+
+export const POST = withProblems(receiveMatches);

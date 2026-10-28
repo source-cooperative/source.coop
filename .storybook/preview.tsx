@@ -74,7 +74,8 @@ const preview: Preview = {
             "Account page",
             "Settings",
             [
-              "Details",
+              "Profiles",
+              "Products",
               "Data connections",
               "Permissions",
               "Service accounts",

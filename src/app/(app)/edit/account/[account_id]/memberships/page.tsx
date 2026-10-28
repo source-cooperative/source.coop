@@ -45,7 +45,7 @@ export default async function MembershipsPage({ params }: PageProps) {
   const memberships = await membershipsTable.listByAccount(account_id);
   const activeMemberships = memberships
     .filter(
-      (membership) => !membership.repository_id // Only show organization-level memberships, not repository-specific ones
+      (membership) => !membership.product_id // Only show organization-level memberships, not repository-specific ones
     )
     .sort((a, b) => {
       // Define role hierarchy: Owners > Maintainers > Writers > Readers

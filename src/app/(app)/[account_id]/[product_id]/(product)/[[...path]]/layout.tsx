@@ -11,6 +11,7 @@
 import { Suspense } from "react";
 import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
 import { ProductSummaryCard } from "@/components/features/products/ProductSummaryCard";
+import { ProductCatalogSummary } from "@/components/features/products/ProductCatalogSummary";
 import { ProductMetaCard } from "@/components/features/products/ProductMetaCard";
 import { ProductContentsCard } from "@/components/features/products/object-browser/ProductContentsCard";
 import {
@@ -140,7 +141,13 @@ export default async function ProductLayout({
 
         <Flex width="100%" className="product-meta" direction="column" gap="4">
           <ProductMetaCard product={product} />
-          {/* Public downloads summary, the same for every viewer (managers
+
+          {/* Whole-product object types from the metadata catalog, fetched
+              client-side; absent until it loads or when the product has no
+              entry. */}
+          <ProductCatalogSummary accountId={account_id} productId={product_id} />
+
+          {/* Public requests summary, the same for every viewer (managers
               reach /-/analytics via the ANALYTICS tab). Streams in after
               the page shell; hidden when analytics is off. The skeleton
               reserves the card's space so warm-cache data fills in instead

@@ -4,7 +4,7 @@ import { LOGGER } from "@/lib/logging";
 import { fileSourceUrl } from "@/lib/urls";
 import { getStorageClient } from "@/lib/clients/storage";
 import type { ProxyCredentials } from "@/lib/actions/proxy-credentials";
-import { probeStore } from "@/lib/stores/probe";
+import { probeStore, type StoreFormat } from "@/lib/stores/probe";
 
 interface StoreViewerArgs {
   account_id: string;
@@ -21,11 +21,28 @@ interface StoreViewerArgs {
   creds: ProxyCredentials | null;
 }
 
+export interface StoreViewerResult {
+  url: string;
+  format: StoreFormat;
+  icechunkVersion?: 1 | 2;
+}
+
+export function storeLabelFromResult({
+  format,
+  icechunkVersion,
+}: StoreViewerResult): string {
+  if (format === "icechunk") {
+    const prefix = icechunkVersion ? `Icechunk v${icechunkVersion}` : "Icechunk";
+    return `${prefix} · Zarr v3`;
+  }
+  return format === "zarr2" ? "Zarr v2" : "Zarr v3";
+}
+
 /**
- * The external zarr-viewer URL for a `.zarr` / `.icechunk` store, or `null`
- * when cheap server-side checks say the store isn't actually renderable (see
- * `probeStore`). `null` means the preview card is skipped entirely; the normal
- * directory listing is shown regardless, so the store's files stay browsable.
+ * The external zarr-viewer URL and detected store format for a `.zarr` /
+ * `.icechunk` store, or `null` when cheap server-side checks say the store
+ * isn't actually renderable (see `probeStore`). `null` means the preview card
+ * is skipped entirely; the normal directory listing is shown regardless.
  */
 export async function storeViewerUrl({
   account_id,
@@ -33,7 +50,7 @@ export async function storeViewerUrl({
   object_path,
   extension,
   creds,
-}: StoreViewerArgs): Promise<string | null> {
+}: StoreViewerArgs): Promise<StoreViewerResult | null> {
   const s3 = await getStorageClient(creds);
   const probe = await probeStore({
     s3,
@@ -61,5 +78,9 @@ export async function storeViewerUrl({
   const url = encodeURIComponent(
     fileSourceUrl({ account_id, product_id, object_path }),
   );
-  return `https://source-cooperative.github.io/zarr-viewer/?url=${url}`;
+  return {
+    url: `https://source-cooperative.github.io/zarr-viewer/?url=${url}`,
+    format: probe.format!,
+    icechunkVersion: probe.icechunkVersion,
+  };
 }

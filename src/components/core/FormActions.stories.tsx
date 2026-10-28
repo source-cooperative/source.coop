@@ -54,3 +54,24 @@ export const WithError: Story = {
 export const WithSuccess: Story = {
   args: { submitLabel: "Save", message: "Saved", success: true },
 };
+
+/**
+ * Nothing changed since the form loaded or last saved, so there is nothing to
+ * save and the button waits.
+ */
+export const NothingToSave: Story = {
+  args: { submitLabel: "Save", unsaved: false },
+};
+
+/** The form holds changes it hasn't saved, and says so beside the button. */
+export const UnsavedChanges: Story = {
+  args: { submitLabel: "Save", unsaved: true },
+};
+
+/**
+ * Edited again after a save: the unsaved changes replace the old "Saved",
+ * which no longer describes the form.
+ */
+export const UnsavedAfterSaving: Story = {
+  args: { submitLabel: "Save", message: "Saved", success: true, unsaved: true },
+};

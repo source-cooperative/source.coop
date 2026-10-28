@@ -17,6 +17,16 @@ down are not the state someone may be in the middle of debugging. When a local
 lookup comes back empty, the cause is in the code far more often than in the
 data.
 
+## Glossary
+
+When communicating about the system, use these terms:
+
+* objects (not files) - the system is object storage based, as such data is stored
+  as objects rather than files.
+* requests (not downloads) - the system is built to work with cloud native formats
+  meaning that clients will send many byte requests rather than download the entire
+  object. As such, we shouldn't assume that a request downloads the entire file.
+
 ## Storybook
 
 Stories are published at [ui.source.coop](https://ui.source.coop). Run it locally
@@ -49,6 +59,14 @@ the real layout has, so it invents overflow the page doesn't have.
 The JSDoc above `meta`, and above each story export, is published prose on
 ui.source.coop — not a code comment. Write it for a reader.
 
+## Account names
+
+Wherever the UI names an account, show it with its card on hover:
+`DisplayNameLink` or `AvatarLinkCompact`, or `AccountInfoHoverCard` around
+anything else. A tooltip can't hold the card, so keep names out of tooltips.
+Look up every account a page names in one `fetchManyByIds` call, pass the
+browser its `publicView`, and show an id that doesn't resolve as plain text.
+
 ## Docs and ADRs
 
 Two repositories outside this one hold prose that a change here can quietly
@@ -68,11 +86,36 @@ a decision, not the code that implements it, so a change that merely implements
 one leaves it alone. A change that moves the decision needs a new ADR, or an
 amendment to the one it supersedes, in that repository.
 
-The PR description says which way it went: name the doc or ADR the change
-affects and link the PR carrying that update, or name the ones you checked and
-say why they still hold. "Checked the data-proxy ADRs; 005 still describes the
-model" is worth writing, because silence reads the same whether the docs were
-checked or forgotten.
+[`public/llms.txt`](public/llms.txt) is the same documentation written for AI
+agents, and it lives in this repository, so it ships in the same PR as the
+change that dates it. A new feature an agent could use — a public endpoint, a
+new way to read or publish data, a new docs page worth pointing at — gets a line
+there, and a renamed docs slug, moved endpoint or removed feature gets its line
+fixed. Every URL in the file should resolve in production without auth.
+
+The PR description says which way it went: name the doc, ADR or `llms.txt`
+line the change affects and link the PR carrying that update, or name the ones
+you checked and say why they still hold. "Checked the data-proxy ADRs; 005 still
+describes the model" is worth writing, because silence reads the same whether
+the docs were checked or forgotten.
+
+## API
+
+Read [API.md](API.md) before adding or changing an endpoint under `/api/v1`. It
+covers the operations layer every route goes through, how a route documents
+itself, the shapes of lists, errors and methods, and which consumers a change
+has to stay compatible with.
+
+Every error the API answers is an RFC 9457 problem, served as
+`application/problem+json` and built from the table in
+`src/lib/api/problems.ts`. Answer one through `toResponse` or
+`problemResponse`, never a hand-built error body. API.md's "Errors" says why.
+
+New functionality ships with its `/api/v1` endpoint in the same PR, and an
+issue that plans it names the endpoint. A feature only the UI can reach is one
+that scripts, the CLI and agents can't use. The UI and the endpoint go through
+one operation, so the two can't disagree about a rule — see API.md's "One
+operation, thin adapters".
 
 ## Pull requests
 

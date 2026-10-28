@@ -8,27 +8,32 @@ import {
 import { canManageServiceAccount } from "@/lib/api/authz";
 import { accountsTable } from "@/lib/clients";
 
-const SERVICE_ACCOUNT_ROLES = [MembershipRole.ReadData, MembershipRole.WriteData];
+export const SERVICE_ACCOUNT_ROLES = [MembershipRole.ReadData, MembershipRole.WriteData];
 
 /**
  * Why `account` may not hold `role` on `target`, or null if it may. Only a
  * service account is constrained: it reads or writes products its owner
- * holds, and nothing else. Every other account passes.
+ * holds, and nothing else, and takes no new access while it is disabled.
+ * Every other account passes.
  */
 export function serviceAccountGrantProblem(
   account: Account,
-  target: { membership_account_id: string; repository_id?: string },
+  target: { membership_account_id: string; product_id?: string },
   role: MembershipRole
 ): string | null {
   if (!isServiceAccount(account)) {
     return null;
+  }
+  // Disabled means frozen: enabling it must not bring access granted meanwhile.
+  if (account.disabled) {
+    return "That service account is disabled";
   }
   if (!SERVICE_ACCOUNT_ROLES.includes(role)) {
     return "A service account can only be granted read_data or write_data";
   }
   if (
     target.membership_account_id !== account.owner_account_id ||
-    !target.repository_id
+    !target.product_id
   ) {
     return "A service account can only be granted access to products owned by its owner";
   }
