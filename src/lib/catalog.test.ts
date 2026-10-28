@@ -12,6 +12,15 @@ it("indexes products by account and product, ignoring unrelated catalog fields",
   expect(catalog.get("missing/data")).toBeUndefined();
 });
 
+it("keeps a product's keywords, and drops malformed ones without the entry", () => {
+  const catalog = parseCatalog([
+    JSON.stringify({ ...entry, keywords: ["agriculture", "remote-sensing"] }),
+    JSON.stringify({ ...entry, product_id: "odd", keywords: "agriculture" }),
+  ].join("\n"));
+  expect(catalog.get("org/data")?.keywords).toEqual(["agriculture", "remote-sensing"]);
+  expect(catalog.get("org/odd")).toEqual({ ...entry, product_id: "odd" });
+});
+
 it("skips malformed lines and invalid identities without losing valid entries", () => {
   expect(parseCatalog(`\nnull\n{bad json\n{}\n${JSON.stringify(entry)}\n`).size).toBe(1);
 });

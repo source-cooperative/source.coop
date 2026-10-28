@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button, Flex, IconButton, Popover } from "@radix-ui/themes";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import { Badge, Button, Flex, IconButton, Popover, Text } from "@radix-ui/themes";
+import { Cross2Icon, PlusIcon } from "@radix-ui/react-icons";
 import type { ControlProps } from "@/components/core/DynamicForm";
 import { canonTag } from "@/lib/tags/canon";
 import { TAG_CATEGORIES, type TagCategory } from "@/lib/tags/categories";
+import { recommendTags, type RecommendedTag } from "@/lib/tags/recommend";
 import { TagMenu } from "./TagMenu";
 
 interface TagPickerProps extends Partial<ControlProps> {
@@ -25,6 +26,8 @@ interface TagPickerProps extends Partial<ControlProps> {
    * one.
    */
   suggestName?: string;
+  /** Keywords read from the product's data, offered as tags to add in a click. */
+  recommended?: string[];
 }
 
 export function TagPicker({
@@ -34,6 +37,7 @@ export function TagPicker({
   defaultValue = [],
   pending = [],
   suggestName,
+  recommended = [],
   ...controlProps
 }: TagPickerProps) {
   // Some products carry an empty tag from before tags were picked from a list.
@@ -86,6 +90,19 @@ export function TagPicker({
     setFresh((fresh) => [...fresh, query]);
     setFilter("");
   };
+
+  // Offered until added; a keyword no approved tag fits is only offered where
+  // the form can suggest it.
+  const offered = recommendTags(recommended, options).filter(({ keyword, tags: these }) =>
+    these
+      ? these.some((t) => !tags.includes(t))
+      : suggestName && !tags.includes(keyword) && !fresh.includes(keyword)
+  );
+  const matched = offered.filter((r) => r.tags);
+  const adopt = ({ keyword, tags: these }: RecommendedTag) =>
+    these
+      ? setTags((tags) => [...new Set([...tags, ...these])])
+      : setFresh((fresh) => [...fresh, keyword]);
 
   const chip = (tag: string, isNew: boolean) => {
     const label = isNew ? "new" : pending.includes(tag) ? "pending" : null;
@@ -164,6 +181,38 @@ export function TagPicker({
           />
         </Popover.Content>
       </Popover.Root>
+      {offered.length > 0 && (
+        <Flex gap="2" wrap="wrap" align="center" role="group" aria-label="Suggested from this product's data">
+          <Text size="1" color="gray">
+            Suggested from this product&apos;s data:
+          </Text>
+          {offered.map((r) => (
+            <Button
+              key={r.keyword}
+              type="button"
+              size="1"
+              variant="outline"
+              color="gray"
+              title={
+                r.tags
+                  ? `Add ${r.tags.join(" and ")}`
+                  : `Suggest “${r.keyword}” as a new tag, for review when you save`
+              }
+              onClick={() => adopt(r)}
+            >
+              <PlusIcon aria-hidden />
+              {r.tags ? r.tags.join(" + ") : `${r.keyword} (new)`}
+            </Button>
+          ))}
+          {matched.length > 1 && (
+            <Button type="button" size="1" variant="ghost" onClick={() => matched.forEach(adopt)}>
+              {matched.length === offered.length
+                ? "Add all"
+                : `Add the ${matched.length} existing tags`}
+            </Button>
+          )}
+        </Flex>
+      )}
     </Flex>
   );
 }
