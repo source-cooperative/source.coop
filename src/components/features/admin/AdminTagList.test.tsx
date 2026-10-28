@@ -51,9 +51,9 @@ test("each tag links to the product list filtered by it", () => {
 test("splits a tag into an approved one and a new name", async () => {
   const action = renderList();
   const popover = await openChange("field-boundaries");
-  await userEvent.click(popover.getByRole("button", { name: /^boundaries/ }));
+  await userEvent.click(popover.getByRole("option", { name: /^boundaries/ }));
   await userEvent.type(popover.getByPlaceholderText(/type a new name/), "Field");
-  await userEvent.click(popover.getByRole("button", { name: "Add new tag “field”" }));
+  await userEvent.click(popover.getByRole("option", { name: "Add new tag “field”" }));
   await userEvent.click(popover.getByRole("button", { name: "Save" }));
 
   expect(sent(action)).toEqual({

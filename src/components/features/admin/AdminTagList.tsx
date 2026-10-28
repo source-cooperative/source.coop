@@ -7,6 +7,7 @@ import { Cross2Icon } from "@radix-ui/react-icons";
 import { productListUrl } from "@/lib/urls";
 import { canonTag } from "@/lib/tags/canon";
 import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
+import { TagMenu } from "@/components/features/products/TagMenu";
 
 export interface ApprovedTag {
   tag: string;
@@ -178,8 +179,8 @@ function ChangeTag({
           Change
         </Button>
       </Popover.Trigger>
-      <Popover.Content width="320px" aria-label={`Change ${tag.tag}`}>
-        <Flex direction="column" gap="3">
+      <Popover.Content width="320px" aria-label={`Change ${tag.tag}`} style={{ padding: 0 }}>
+        <Flex direction="column" gap="2" p="3">
           <Text size="2">
             Replace <b>{tag.tag}</b> on {plural(tag.products, "product")} with:
           </Text>
@@ -201,36 +202,31 @@ function ChangeTag({
               ))}
             </Flex>
           )}
-          <TextField.Root
-            size="2"
+        </Flex>
+        <div style={{ borderTop: "1px solid var(--gray-a5)" }}>
+          <TagMenu
+            query={filter}
+            onQueryChange={setFilter}
             placeholder="Find a tag, or type a new name"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+            sections={[
+              {
+                title: query ? `Matching “${query}”` : "All tags",
+                items: shown.map((t) => ({ tag: t.tag, detail: plural(t.products, "product") })),
+              },
+            ]}
+            onChoose={add}
+            action={
+              isNew
+                ? {
+                    label: into.length ? `Add new tag “${query}”` : `Rename to “${query}”`,
+                    onChoose: () => add(query),
+                  }
+                : undefined
+            }
+            empty={`No other tag matches “${filter}”.`}
           />
-          {/* ponytail: renders every approved tag; fine to a few hundred. */}
-          <Flex direction="column" style={{ maxHeight: 200, overflowY: "auto" }}>
-            {isNew && (
-              <Button type="button" size="2" variant="ghost" onClick={() => add(query)}>
-                {into.length ? `Add new tag “${query}”` : `Rename to “${query}”`}
-              </Button>
-            )}
-            {shown.map((t) => (
-              <Button
-                key={t.tag}
-                type="button"
-                size="2"
-                variant="ghost"
-                color="gray"
-                style={{ justifyContent: "space-between" }}
-                onClick={() => add(t.tag)}
-              >
-                <span>{t.tag}</span>
-                <Text size="1" color="gray">
-                  {plural(t.products, "product")}
-                </Text>
-              </Button>
-            ))}
-          </Flex>
+        </div>
+        <Flex direction="column" gap="2" p="3" style={{ borderTop: "1px solid var(--gray-a5)" }}>
           <Flex gap="2" align="center">
             <Button
               type="button"

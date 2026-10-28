@@ -74,9 +74,9 @@ export const Split: Story = {
     const popover = await openChange(canvasElement, "field-boundaries");
     const find = popover.getByPlaceholderText("Find a tag, or type a new name");
     await userEvent.type(find, "Field");
-    await userEvent.click(popover.getByRole("button", { name: "Rename to “field”" }));
+    await userEvent.click(popover.getByRole("option", { name: "Rename to “field”" }));
     await userEvent.type(find, "boundaries");
-    await userEvent.click(popover.getByRole("button", { name: "Add new tag “boundaries”" }));
+    await userEvent.click(popover.getByRole("option", { name: "Add new tag “boundaries”" }));
   },
 };
 
@@ -90,7 +90,7 @@ export const Refused: Story = {
   },
   play: async ({ canvasElement }) => {
     const popover = await openChange(canvasElement, "ocean");
-    await userEvent.click(popover.getByRole("button", { name: /climate/ }));
+    await userEvent.click(popover.getByRole("option", { name: /climate/ }));
     await userEvent.click(popover.getByRole("button", { name: "Save" }));
   },
 };
