@@ -62,7 +62,7 @@ export default async function AdminTagsPage() {
     <Flex direction="column" gap="6">
       <FormTitle
         title="Tags"
-        description="Review tags people have suggested. Approving adds a tag, in the category you choose, to the list everyone picks from; merging replaces it with an approved tag on every product that carries it; rejecting takes it off them."
+        description="Review tags people have suggested, and change approved ones. Approving adds a tag, in the category you choose, to the list everyone picks from; merging replaces a tag with others on every product that carries it, and a new name renames it; rejecting or removing takes it off them. Every decision can be undone."
       />
       <Flex direction="column" gap="3">
         <Heading size="4">
@@ -95,6 +95,7 @@ export default async function AdminTagsPage() {
             reviewed_at: t.reviewed_at,
             suggested_by: t.suggested_by,
             merged_into: t.merged_into,
+            wasListed: !!t.previous,
             products: (t.changed ?? carrying(t.tag_id)).map(({ account_id, product_id }) => ({
               account_id,
               product_id,
@@ -106,7 +107,7 @@ export default async function AdminTagsPage() {
       </Flex>
       <Flex direction="column" gap="3">
         <Heading size="4">All tags</Heading>
-        <AdminTagList tags={counted} accounts={accounts} />
+        <AdminTagList tags={counted} action={reviewTag} accounts={accounts} />
       </Flex>
     </Flex>
   );

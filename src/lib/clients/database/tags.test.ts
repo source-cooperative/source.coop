@@ -60,3 +60,48 @@ test("says whether any tag is pending, and no when the table can't be read", asy
   jest.spyOn(tagsTable, "listAll").mockRejectedValue(new Error("AccessDenied"));
   expect(await anyPendingTags()).toBe(false);
 });
+
+describe("decision writes", () => {
+  test("deciding a suggestion applies only while it is pending", () => {
+    const { Update } = tagsTable.decideItem("sst", { outcome: "rejected", reviewed_by: "root" });
+    expect(Update).toMatchObject({
+      UpdateExpression:
+        "REMOVE pending SET outcome = :outcome, reviewed_by = :reviewed_by, reviewed_at = :reviewed_at",
+      ConditionExpression: "pending = :true",
+      ExpressionAttributeValues: { ":true": true, ":outcome": "rejected" },
+    });
+  });
+
+  test("deciding an approved tag applies only while it is on the list", () => {
+    const { Update } = tagsTable.decideItem("ocean", {
+      outcome: "merged",
+      reviewed_by: "root",
+      previous: {},
+    });
+    expect(Update?.ConditionExpression).toContain("attribute_not_exists(pending)");
+    expect(Update?.ExpressionAttributeValues).toMatchObject({
+      ":approved": "approved",
+      ":previous": {},
+    });
+    expect(Update?.ExpressionAttributeValues).not.toHaveProperty(":true");
+  });
+
+  test.each([
+    [
+      undefined,
+      "SET pending = :pending REMOVE outcome, reviewed_by, reviewed_at, merged_into, changed, previous, category",
+    ],
+    [{}, "REMOVE outcome, reviewed_by, reviewed_at, merged_into, changed, previous"],
+    [
+      { outcome: "approved" as const, reviewed_by: "bob", reviewed_at: "2026-10-01T00:00:00Z" },
+      "SET outcome = :outcome, reviewed_by = :reviewed_by, reviewed_at = :reviewed_at REMOVE merged_into, changed, previous",
+    ],
+  ])("undoing with previous %p restores it", (previous, expression) => {
+    const { Update } = tagsTable.reopenItem("sst", previous);
+    expect(Update?.UpdateExpression).toBe(expression);
+    // DynamoDB refuses values the expression doesn't use.
+    expect(Object.keys(Update?.ExpressionAttributeValues ?? {})).toEqual(
+      expression.match(/:\w+/g) ?? []
+    );
+  });
+});

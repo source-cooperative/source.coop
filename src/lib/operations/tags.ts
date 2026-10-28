@@ -10,6 +10,7 @@ import {
   type Tag,
   type TagChange,
 } from "@/lib/clients/database";
+import { MAX_TRANSACTION_ITEMS, type TransactItem } from "@/lib/clients/database/base";
 import { adminTagsUrl } from "@/lib/urls";
 import { canonTag } from "@/lib/tags/canon";
 import { TAG_CATEGORY_IDS } from "@/lib/tags/categories";
@@ -29,6 +30,8 @@ import {
 
 const MAX_PENDING_PER_ACCOUNT = 5;
 const TAG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
+const PATTERN_RULE =
+  "Use up to 40 lowercase letters, digits or hyphens, starting and ending with a letter or digit. Spaces become hyphens.";
 
 export const TagSchema = z
   .object({
@@ -49,7 +52,7 @@ export const TagSchema = z
     }),
     outcome: z.enum(["approved", "merged", "rejected"]).optional().openapi({
       description:
-        "An admin's decision on a suggested tag. A merged or rejected tag is off the list and off every product, but stays on record. Only admins see it.",
+        "An admin's latest decision on the tag. A merged or rejected tag is off the list and off every product, but stays on record. Only admins see it.",
     }),
     reviewed_by: z.string().optional().openapi({
       description: "The admin who decided. Only admins see it.",
@@ -72,6 +75,17 @@ export const TagSchema = z
       .openapi({
         description:
           "The products a merge or rejection rewrote, and the tags each gained by it, which undoing the decision reverses. Only admins see it.",
+      }),
+    previous: z
+      .object({
+        outcome: z.literal("approved").optional(),
+        reviewed_by: z.string().optional(),
+        reviewed_at: z.string().datetime().optional(),
+      })
+      .optional()
+      .openapi({
+        description:
+          "For an approved tag an admin merged or removed, its review before that, which undoing restores. Empty for a tag from the initial import. Only admins see it.",
       }),
   })
   .openapi("Tag");
@@ -96,10 +110,7 @@ export const SuggestTagSchema = z
       .pipe(
         z
           .string()
-          .regex(
-            TAG_PATTERN,
-            "Use up to 40 lowercase letters, digits or hyphens, starting and ending with a letter or digit. Spaces become hyphens."
-          )
+          .regex(TAG_PATTERN, PATTERN_RULE)
       )
       .openapi({
         description:
@@ -126,8 +137,12 @@ export const DeleteTagQuerySchema = z.object({
     .optional()
     .openapi({
       description:
-        "Approved tags to put in this one's place on every product that carries it. Repeat it to merge into several, as `?replace_with=field&replace_with=boundaries` for `field-boundaries`. Without it, the tag is just taken off them.",
+        "Tags to put in this one's place on every product that carries it. Repeat it to merge into several, as `?replace_with=field&replace_with=boundaries` for `field-boundaries`. A spelling the list lacks is added to it as an approved tag, which renames the tag. Without it, the tag is just taken off them.",
     }),
+  approved: z.enum(["true", "false"]).optional().openapi({
+    description:
+      "`true` merges or removes an approved tag instead of one awaiting review. Each refuses a tag in the other state, so a form left open after the tag changed can't act on it.",
+  }),
 });
 
 /**
@@ -261,7 +276,11 @@ export async function updateTag(
   const { category } = parsed.data;
   if (!category) return invalid("Choose a category to approve the tag into", "category");
   const reviewed_by = session!.account!.account_id;
-  if (!(await tagsTable.decide(tag_id, { outcome: "approved", reviewed_by, category }))) {
+  if (
+    !(await tagsTable.transact([
+      tagsTable.decideItem(tag_id, { outcome: "approved", reviewed_by, category }),
+    ]))
+  ) {
     return conflict(`"${tag_id}" is not awaiting review`);
   }
   revalidatePath(adminTagsUrl());
@@ -276,10 +295,29 @@ export async function updateTag(
 }
 
 /**
- * Puts a decided tag back awaiting review. Undoing a merge or rejection also
- * reverses what it did to each product it rewrote: the tag goes back on, and
- * the tags the merge added come off again, leaving any the product had before.
- * An approval changed no product, so undoing it only reopens the tag.
+ * Applies writes in order, in as few transactions as DynamoDB allows, each
+ * all or nothing. Answers how many had been written when one was refused, a
+ * condition having failed or another write having raced it, or undefined
+ * when every one was. Callers order the writes so that whatever repairs the
+ * products is recorded before any product changes.
+ */
+async function commit(items: TransactItem[]): Promise<number | undefined> {
+  // ponytail: past one transaction the whole isn't atomic, only each batch;
+  // a tag on 100+ products is rare, and a refused batch is reported.
+  for (let i = 0; i < items.length; i += MAX_TRANSACTION_ITEMS) {
+    if (!(await tagsTable.transact(items.slice(i, i + MAX_TRANSACTION_ITEMS)))) return i;
+  }
+}
+
+const RACED = "changed while this was being saved, so nothing was changed. Reload and try again.";
+
+/**
+ * Undoes a decision. A suggestion goes back awaiting review; an approved or
+ * seeded tag an admin merged or removed goes back on the list as it was.
+ * Undoing a merge or rejection also reverses what it did to each product it
+ * rewrote: the tag goes back on, and the tags the merge added come off again,
+ * leaving any the product had before. An approval changed no product, so
+ * undoing it only reopens the tag.
  */
 async function undoDecision(
   session: UserSession,
@@ -287,20 +325,31 @@ async function undoDecision(
 ): Promise<OperationResult<Tag>> {
   if (tag.pending) return ok(tag);
   if (!tag.outcome) {
-    return conflict(`"${tag.tag_id}" wasn't suggested, so there is no decision to undo`);
-  }
-  // ponytail: one write per product and no transaction; a failure partway
-  // leaves the decision standing, and undoing again finishes the job.
-  for (const { account_id, product_id, added } of tag.changed ?? []) {
-    const product = await productsTable.fetchById(account_id, product_id);
-    if (!product) continue;
-    const tags = (product.metadata.tags ?? []).filter((t) => !added.includes(t));
-    await productsTable.setTags(account_id, product_id, [
-      ...new Set([...tags, tag.tag_id]),
-    ]);
-  }
-  if (!(await tagsTable.reopen(tag.tag_id))) {
     return conflict(`"${tag.tag_id}" has no decision to undo`);
+  }
+  const restoring = (
+    await Promise.all(
+      (tag.changed ?? []).map(async (change) => ({
+        change,
+        product: await productsTable.fetchById(change.account_id, change.product_id),
+      }))
+    )
+  ).filter(({ product }) => product);
+  const writes = restoring.map(({ change: { account_id, product_id, added }, product }) => {
+    const tags = product!.metadata.tags ?? [];
+    return productsTable.setTagsItem(account_id, product_id, tags, [
+      ...new Set([...tags.filter((t) => !added.includes(t)), tag.tag_id]),
+    ]);
+  });
+  // The tag's record goes last, so until every product is restored the
+  // decision stands and undoing again finishes the job.
+  const written = await commit([...writes, tagsTable.reopenItem(tag.tag_id, tag.previous)]);
+  if (written !== undefined) {
+    return conflict(
+      written
+        ? `Only ${written} of ${writes.length} products were restored, because one changed meanwhile. Undo again to finish.`
+        : `"${tag.tag_id}" or one of its products ${RACED}`
+    );
   }
   LOGGER.info("Tag decision undone", {
     operation: "updateTag",
@@ -308,25 +357,36 @@ async function undoDecision(
       tag_id: tag.tag_id,
       outcome: tag.outcome,
       by: session.account!.account_id,
-      products: tag.changed?.length ?? 0,
+      products: writes.length,
     },
   });
   revalidatePath(adminTagsUrl());
-  return ok({
-    tag_id: tag.tag_id,
-    pending: true,
-    suggested_by: tag.suggested_by,
-    suggested_at: tag.suggested_at,
-  });
+  const { tag_id, suggested_by, suggested_at } = tag;
+  return ok(
+    tag.previous
+      ? { tag_id, suggested_by, suggested_at, ...tag.previous }
+      : { tag_id, pending: true, suggested_by, suggested_at }
+  );
+}
+
+/** Why a tag can't replace `tag_id`, if it can't. */
+function badTarget(tag_id: string, target: string, tags: Tag[]): string | undefined {
+  if (!target) return "Choose a tag to merge into";
+  if (target === tag_id) return `"${tag_id}" can't be merged into itself`;
+  if (!TAG_PATTERN.test(target)) return `"${target}" isn't a tag: ${PATTERN_RULE}`;
+  if (tags.some((t) => t.tag_id === target && t.pending)) {
+    return `"${target}" is awaiting review; review it first`;
+  }
 }
 
 /**
- * Rejects a pending tag, taking it off every product that carries it, or
- * merges it into one or more approved tags by putting those in its place.
- * The tag stays on record with the decision and what it did to each product,
- * so `PATCH` with `pending: true` can undo it. Only a pending tag can be
- * decided: refusing any other keeps a review form left open after another
- * admin decided from deciding again.
+ * Takes a tag off every product that carries it, or merges it into others by
+ * putting those in its place. A target the list lacks is added to it, which
+ * renames the tag. By default the tag must be awaiting review, which this
+ * rejects or merges; with `approved: true`, it must be on the list. Refusing
+ * the other state keeps a form left open after another admin acted from
+ * acting again. The tag stays on record with the decision and what it did to
+ * each product, so `PATCH` with `pending: true` can undo it.
  */
 export async function deleteTag(
   session: UserSession | null,
@@ -336,24 +396,22 @@ export async function deleteTag(
   if (!isAdmin(session)) return deny(session, "Only admins may review tags");
   const parsed = DeleteTagQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
-  const replace_with = [...new Set(parsed.data.replace_with ?? [])];
+  const replace_with = [...new Set((parsed.data.replace_with ?? []).map(canonTag))];
+  const approved = parsed.data.approved === "true";
 
   const tags = await tagsTable.listAll();
   const tag = tags.find((t) => t.tag_id === tag_id);
   if (!tag) return notFound(`Tag "${tag_id}" not found`);
-  if (!tag.pending) return conflict(`"${tag_id}" is not awaiting review`);
-  if (replace_with.some((target) => !target)) {
-    return invalid("Choose a tag to merge into", "replace_with");
+  if (approved ? !isListed(tag) : !tag.pending) {
+    return conflict(`"${tag_id}" is not ${approved ? "an approved tag" : "awaiting review"}`);
   }
-  const unapproved = replace_with.filter(
+  for (const target of replace_with) {
+    const problem = badTarget(tag_id, target, tags);
+    if (problem) return invalid(problem, "replace_with");
+  }
+  const created = replace_with.filter(
     (target) => !tags.some((t) => t.tag_id === target && isListed(t))
   );
-  if (unapproved.length) {
-    return invalid(
-      `Not approved tags: ${unapproved.map((t) => `"${t}"`).join(", ")}`,
-      "replace_with"
-    );
-  }
 
   const carrying = await productsTable.listByTag(tag_id);
   const changed: TagChange[] = carrying.map((p) => ({
@@ -367,25 +425,36 @@ export async function deleteTag(
     reviewed_by,
     ...(replace_with.length && { merged_into: replace_with }),
     changed,
+    ...(approved && {
+      previous: {
+        outcome: tag.outcome,
+        reviewed_by: tag.reviewed_by,
+        reviewed_at: tag.reviewed_at,
+      },
+    }),
   };
-  // Recorded first, and only while the tag is still pending, so two admins
-  // can't both decide it; the products follow.
-  if (!(await tagsTable.decide(tag_id, decision))) {
-    return conflict(`"${tag_id}" is not awaiting review`);
-  }
-  // ponytail: one write per product and no transaction; a failure partway
-  // leaves some products unchanged, which undoing the decision tolerates.
-  for (const product of carrying) {
-    const replaced = product.metadata.tags!.flatMap((t) =>
-      t !== tag_id ? [t] : replace_with
+  // The decision goes first, holding what each product gains: it applies only
+  // while the tag is in the state read, so two admins can't both act on it,
+  // and once any product changes, undoing can repair it.
+  const written = await commit([
+    tagsTable.decideItem(tag_id, decision),
+    ...created.map((t) => tagsTable.createItem(t, reviewed_by, tag.category)),
+    ...carrying.map((p) =>
+      productsTable.setTagsItem(p.account_id, p.product_id, p.metadata.tags!, [
+        ...new Set(p.metadata.tags!.flatMap((t) => (t !== tag_id ? [t] : replace_with))),
+      ])
+    ),
+  ]);
+  if (written !== undefined) {
+    return conflict(
+      written
+        ? `Only ${written - 1 - created.length} of ${carrying.length} products were updated, because one changed meanwhile. Undo this, then try again.`
+        : `"${tag_id}", a tag it merges into, or one of its products ${RACED}`
     );
-    await productsTable.setTags(product.account_id, product.product_id, [
-      ...new Set(replaced),
-    ]);
   }
   LOGGER.info(replace_with.length ? "Tag merged" : "Tag rejected", {
     operation: "deleteTag",
-    metadata: { tag_id, replace_with, by: reviewed_by, products: carrying.length },
+    metadata: { tag_id, replace_with, created, approved, by: reviewed_by, products: carrying.length },
   });
   revalidatePath(adminTagsUrl());
   const { pending: _pending, ...rest } = tag;

@@ -4,10 +4,11 @@ import { AdminReviewedTags } from "./AdminReviewedTags";
 import { storyAccounts } from "@/components/core/story-accounts";
 
 /**
- * Suggested tags an admin has decided, on the admin tags page, most recent
- * first: what was decided, who decided and when, and the products the tag
- * was on, each linked. **Undo** puts a tag back
- * awaiting review. Undoing a merge or rejection also reverses what it did to
+ * Tags an admin has decided, on the admin tags page, most recent first: what
+ * was decided, who decided and when, and the products the tag was on, each
+ * linked. These are suggestions an admin reviewed, and approved tags an admin
+ * merged, renamed or removed. **Undo** puts a suggestion back awaiting review,
+ * or an approved tag back on the list. Undoing a merge or rejection also reverses what it did to
  * products: the tag goes back on each product it was taken off, and the tags
  * a merge added come off again, unless the product had them before.
  */
@@ -19,6 +20,26 @@ const meta = {
     accounts: storyAccounts,
     action: async () => ({}),
     reviewed: [
+      {
+        tag: "boundary",
+        outcome: "merged",
+        merged_into: ["boundaries"],
+        wasListed: true,
+        reviewed_by: "alukach",
+        reviewed_at: "2026-10-27T16:30:00Z",
+        products: [
+          { account_id: "fiboa", product_id: "luxembourg" },
+          { account_id: "fiboa", product_id: "slovenia" },
+        ],
+      },
+      {
+        tag: "misc",
+        outcome: "rejected",
+        wasListed: true,
+        reviewed_by: "alukach",
+        reviewed_at: "2026-10-27T16:10:00Z",
+        products: [{ account_id: "polar-lab", product_id: "arctic-ice-extent" }],
+      },
       {
         tag: "field-boundaries",
         outcome: "merged",
