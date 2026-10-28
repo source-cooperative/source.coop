@@ -6,6 +6,7 @@ import { DynamicForm, FormField } from "@/components/core";
 import { Account, DataConnection } from "@/types";
 import { Product, ProductVisibility } from "@/types/product";
 import { useProductIdValidation } from "@/hooks/useIdValidation";
+import { useCatalog } from "@/hooks/useCatalog";
 import { createProduct, updateProduct } from "@/lib/actions/products";
 import type { TagCategory } from "@/lib/tags/categories";
 import { TagPicker } from "./TagPicker";
@@ -97,6 +98,12 @@ export function ProductCreationForm({
   pendingTags = [],
 }: ProductCreationFormProps) {
   const isEditMode = mode === "edit" && product;
+  // The catalog describes products that already hold data, so only an edit
+  // has keywords to offer; a new product never downloads it.
+  const catalog = useCatalog(!!isEditMode);
+  const keywords = isEditMode
+    ? catalog?.get(`${product.account_id}/${product.product_id}`)?.keywords
+    : undefined;
 
   // In create mode, start on the preselected owner when given, else the first.
   const initialOwnerId = isEditMode
@@ -275,6 +282,7 @@ export function ProductCreationForm({
           categories={tagCategories}
           pending={pendingTags}
           suggestName="suggest_tags"
+          recommended={keywords}
           defaultValue={isEditMode ? product.metadata.tags : []}
         />
       ),

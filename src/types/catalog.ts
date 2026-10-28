@@ -14,6 +14,8 @@ export const CatalogEntrySchema = z.object({
   objects_updated_at: z.string().datetime({ offset: true }).optional().catch(undefined),
   /** A storage convention the product follows, such as zarr or icechunk. */
   store_format: z.string().min(1).optional().catch(undefined),
+  /** Topics a model read from the product's data, offered as tags to its editors. */
+  keywords: z.array(z.string()).optional().catch(undefined),
 });
 
 export type CatalogEntry = z.infer<typeof CatalogEntrySchema>;
