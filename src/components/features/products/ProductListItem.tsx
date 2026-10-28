@@ -2,6 +2,12 @@
 
 import Link from "next/link";
 import type { ProductResponse } from "@/types";
+import type { CatalogEntry } from "@/types/catalog";
+import {
+  ObjectsUpdated,
+  ProductCatalogStats,
+  StoreFormatPill,
+} from "./ProductCatalogStats";
 import { DateText } from "@/components/display";
 import { Box, Text, Badge, Heading } from "@radix-ui/themes";
 import { TagList } from "./TagList";
@@ -14,6 +20,7 @@ import remarkGfm from "remark-gfm";
 interface ProductListItemProps {
   product: ProductResponse;
   isSelected?: boolean;
+  catalogEntry?: CatalogEntry;
 }
 
 // Listings show a description's inline formatting only; the full description
@@ -35,7 +42,11 @@ const VISIBILITY_CONFIG = {
   restricted: { color: "red" as const, label: "Restricted" },
 } as const;
 
-export function ProductListItem({ product, isSelected }: ProductListItemProps) {
+export function ProductListItem({
+  product,
+  isSelected,
+  catalogEntry,
+}: ProductListItemProps) {
   const visibility =
     VISIBILITY_CONFIG[product.visibility] || VISIBILITY_CONFIG.restricted;
 
@@ -85,6 +96,12 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
           <Text size="1" color="gray">
             Published on <DateText date={product.created_at} />
           </Text>
+          {catalogEntry?.objects_updated_at && (
+            <>
+              {" • "}
+              <ObjectsUpdated entry={catalogEntry} />
+            </>
+          )}
           <Badge
             size="1"
             color={visibility.color}
@@ -97,12 +114,15 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
               Deactivated
             </Badge>
           )}
+          <StoreFormatPill entry={catalogEntry} />
         </Box>
 
         {product.metadata.tags &&
           product.metadata.tags.filter(Boolean).length > 0 && (
             <TagList tags={product.metadata.tags} />
           )}
+
+        <ProductCatalogStats entry={catalogEntry} />
       </article>
     </Box>
   );

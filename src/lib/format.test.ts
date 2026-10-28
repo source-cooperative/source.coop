@@ -1,4 +1,14 @@
-import { formatUrl } from "./format";
+import { formatRelative, formatUrl } from "./format";
+
+describe("formatRelative", () => {
+  const now = Date.parse("2026-10-21T12:00:00Z");
+  it("reads days, then months, then years", () => {
+    expect(formatRelative("2026-10-18T12:00:00Z", now)).toMatch(/3 days ago/);
+    expect(formatRelative("2026-10-20T12:00:00Z", now)).toMatch(/yesterday/);
+    expect(formatRelative("2026-05-21T12:00:00Z", now)).toMatch(/5 months ago/);
+    expect(formatRelative("2024-10-21T12:00:00Z", now)).toMatch(/2 years ago/);
+  });
+});
 
 describe("formatUrl", () => {
   it("drops the scheme, a leading www, and a trailing slash", () => {
