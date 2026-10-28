@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Badge, Button, Flex, Table, Text } from "@radix-ui/themes";
 import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
+import { ProductLinks } from "./AdminTagSuggestions";
 
 export interface ReviewedTag {
   tag: string;
@@ -12,8 +13,11 @@ export interface ReviewedTag {
   suggested_by?: string;
   /** The approved tags a merged tag was replaced with. */
   merged_into?: string[];
-  /** How many products a merge or rejection rewrote, and undoing it restores. */
-  products: number;
+  /**
+   * The products it was on: for a merge or rejection, the ones it rewrote and
+   * undoing restores; for an approval, the ones carrying it now.
+   */
+  products: { account_id: string; product_id: string }[];
 }
 
 interface AdminReviewedTagsProps {
@@ -29,12 +33,12 @@ const date = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium" });
 
 /** What the decision was, in words. */
-function outcome({ outcome, merged_into, products }: ReviewedTag) {
+function outcome({ outcome, merged_into, products: { length } }: ReviewedTag) {
   if (outcome === "approved") return "Approved";
-  const on = products ? ` on ${plural(products, "product")}` : "";
+  const on = length ? ` on ${plural(length, "product")}` : "";
   return outcome === "merged"
     ? `Merged into ${(merged_into ?? []).join(" + ")}${on}`
-    : `Rejected${on ? `, taken off ${plural(products, "product")}` : ""}`;
+    : `Rejected${on ? `, taken off ${plural(length, "product")}` : ""}`;
 }
 
 /**
@@ -106,6 +110,12 @@ function ReviewedRow({
         {tag.suggested_by && (
           <Text as="div" size="1" color="gray">
             Suggested by <AccountMention id={tag.suggested_by} accounts={accounts} />
+          </Text>
+        )}
+        {tag.products.length > 0 && (
+          <Text as="div" size="1" color="gray">
+            {tag.outcome === "approved" ? "On" : "Was on"}{" "}
+            <ProductLinks products={tag.products} />
           </Text>
         )}
       </Table.Cell>

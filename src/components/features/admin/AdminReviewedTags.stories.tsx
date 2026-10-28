@@ -5,7 +5,8 @@ import { storyAccounts } from "./story-accounts";
 
 /**
  * Suggested tags an admin has decided, on the admin tags page, most recent
- * first: what was decided, who decided and when. **Undo** puts a tag back
+ * first: what was decided, who decided and when, and the products the tag
+ * was on, each linked. **Undo** puts a tag back
  * awaiting review. Undoing a merge or rejection also reverses what it did to
  * products: the tag goes back on each product it was taken off, and the tags
  * a merge added come off again, unless the product had them before.
@@ -25,7 +26,11 @@ const meta = {
         suggested_by: "ftw",
         reviewed_by: "alukach",
         reviewed_at: "2026-10-27T15:04:00Z",
-        products: 3,
+        products: [
+          { account_id: "ftw", product_id: "fields-of-the-world" },
+          { account_id: "fiboa", product_id: "austria" },
+          { account_id: "fiboa", product_id: "belgium" },
+        ],
       },
       {
         tag: "sea-ice",
@@ -33,7 +38,10 @@ const meta = {
         suggested_by: "polar-lab",
         reviewed_by: "alukach",
         reviewed_at: "2026-10-26T11:20:00Z",
-        products: 2,
+        products: [
+          { account_id: "polar-lab", product_id: "arctic-ice-extent" },
+          { account_id: "polar-lab", product_id: "antarctic-sea-ice" },
+        ],
       },
       {
         tag: "asdf-foo-bar",
@@ -41,7 +49,7 @@ const meta = {
         suggested_by: "alukach",
         reviewed_by: "alukach",
         reviewed_at: "2026-10-25T09:00:00Z",
-        products: 1,
+        products: [{ account_id: "alukach", product_id: "dynamical-dwd-icon-eu" }],
       },
     ],
   },

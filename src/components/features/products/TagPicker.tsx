@@ -1,19 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Badge,
-  Button,
-  Checkbox,
-  Flex,
-  IconButton,
-  Popover,
-  Text,
-  TextField,
-} from "@radix-ui/themes";
+import { Badge, Button, Flex, IconButton, Popover } from "@radix-ui/themes";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import type { ControlProps } from "@/components/core/DynamicForm";
 import { canonTag } from "@/lib/tags/canon";
+import { TagMenu } from "./TagMenu";
 
 interface TagPickerProps extends Partial<ControlProps> {
   /** The form field each chosen tag is submitted under, once per tag. */
@@ -45,6 +37,9 @@ export function TagPicker({
   // suggestion never outlives a product that wasn't.
   const [fresh, setFresh] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
+  // The product's tags as the menu opened, listed first; held still while it
+  // is open, so a toggled tag stays where it is under the cursor.
+  const [pinned, setPinned] = useState<string[]>([]);
 
   // In the tags' own spelling, so "sea ice" finds and suggests "sea-ice".
   const query = canonTag(filter);
@@ -54,6 +49,7 @@ export function TagPicker({
   const canSuggest =
     suggestName && query && !options.includes(query) && !fresh.includes(query);
 
+  const item = (tag: string) => ({ tag, selected: tags.includes(tag) });
   const toggle = (tag: string, on: boolean) =>
     setTags((tags) => (on ? [...tags, tag] : tags.filter((t) => t !== tag)));
   const suggest = () => {
@@ -101,54 +97,38 @@ export function TagPicker({
     <Flex gap="2" wrap="wrap" align="center">
       {tags.map((tag) => chip(tag, false))}
       {fresh.map((tag) => chip(tag, true))}
-      <Popover.Root onOpenChange={() => setFilter("")}>
+      <Popover.Root
+        onOpenChange={(open) => {
+          setFilter("");
+          if (open) setPinned(tags);
+        }}
+      >
         <Popover.Trigger>
           <Button {...controlProps} type="button" size="1" variant="soft">
             {tags.length || fresh.length ? "Edit tags" : "Add tags"}
           </Button>
         </Popover.Trigger>
-        <Popover.Content width="280px" aria-label="Choose tags">
-          <Flex direction="column" gap="2">
-            <TextField.Root
-              size="2"
-              placeholder="Filter tags"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              // Enter would submit the form behind the popover.
-              onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
-            />
-            {/* ponytail: renders every tag; fine to a few hundred, virtualise
-                  the list if the corpus grows past that. */}
-            <Flex
-              direction="column"
-              gap="1"
-              style={{ maxHeight: 240, overflowY: "auto" }}
-            >
-              {matches.map((tag) => (
-                <Text as="label" size="2" key={tag}>
-                  <Flex gap="2" align="center" py="1">
-                    <Checkbox
-                      checked={tags.includes(tag)}
-                      onCheckedChange={(on) => toggle(tag, on === true)}
-                    />
-                    {tag}
-                  </Flex>
-                </Text>
-              ))}
-              {!matches.length && (
-                <Text size="2" color="gray">
-                  {options.length
-                    ? `No tag matches “${filter}”.`
-                    : "No tags to choose from yet."}
-                </Text>
-              )}
-            </Flex>
-            {canSuggest && (
-              <Button type="button" size="1" variant="ghost" onClick={suggest}>
-                Suggest “{query}” as a new tag
-              </Button>
-            )}
-          </Flex>
+        <Popover.Content width="320px" aria-label="Choose tags" style={{ padding: 0 }}>
+          <TagMenu
+            multiple
+            query={filter}
+            onQueryChange={setFilter}
+            placeholder="Filter tags"
+            sections={[
+              { title: "On this product", items: pinned.filter((t) => t.includes(query)).map(item) },
+              {
+                title: query ? `Matching “${query}”` : "All tags",
+                items: matches.filter((t) => !pinned.includes(t)).map(item),
+              },
+            ]}
+            onChoose={(tag) => toggle(tag, !tags.includes(tag))}
+            action={
+              canSuggest
+                ? { label: `Suggest “${query}” as a new tag`, onChoose: suggest }
+                : undefined
+            }
+            empty={options.length ? `No tag matches “${filter}”.` : "No tags to choose from yet."}
+          />
         </Popover.Content>
       </Popover.Root>
     </Flex>

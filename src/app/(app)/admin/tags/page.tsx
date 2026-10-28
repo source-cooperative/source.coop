@@ -89,7 +89,10 @@ export default async function AdminTagsPage() {
             reviewed_at: t.reviewed_at,
             suggested_by: t.suggested_by,
             merged_into: t.merged_into,
-            products: t.changed?.length ?? carrying(t.tag_id).length,
+            products: (t.changed ?? carrying(t.tag_id)).map(({ account_id, product_id }) => ({
+              account_id,
+              product_id,
+            })),
           }))}
           action={reviewTag}
           accounts={accounts}
