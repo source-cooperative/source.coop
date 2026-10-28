@@ -174,54 +174,78 @@ test("without suggestName there's no way to suggest", () => {
   expect(screen.queryByRole("option", { name: /^Suggest/ })).toBeNull();
 });
 
-describe("tags suggested from the product's data", () => {
+describe("recommended tags", () => {
   const renderRecommended = (suggestName?: string, defaultValue: string[] = []) =>
     render(
       <Theme>
         <TagPicker
           name="tags"
-          options={["agriculture", "boundaries", "field", "ocean"]}
+          options={["agriculture", "boundaries", "climate", "field", "ocean"]}
           defaultValue={defaultValue}
           suggestName={suggestName}
           recommended={["Agriculture", "field-boundaries", "land-parcels", "ocean"]}
         />
       </Theme>
     );
-  const offered = () =>
-    within(screen.getByRole("group", { name: "Suggested from this product's data" }))
-      .getAllByRole("button")
-      .map((b) => b.textContent);
+  const review = () => fireEvent.click(screen.getByRole("button", { name: "Review" }));
+  const recommended = () => within(screen.getByRole("group", { name: "Recommended" }));
+  const rows = () => recommended().getAllByRole("option").map((o) => o.textContent);
 
-  test("offers each keyword as the tags it matches, or as a new one", () => {
+  test("a line under the tags counts them, and Review lists them first in the menu", () => {
     renderRecommended("suggest_tags", ["ocean"]);
-    // ocean is already on the product, so it isn't offered.
-    expect(offered()).toEqual([
-      "agriculture",
-      "field + boundaries",
-      "land-parcels (new)",
-      "Add the 2 existing tags",
-    ]);
+    // ocean is already on the product, so it isn't recommended.
+    expect(screen.getByText(/3 recommended tags\./)).toBeTruthy();
+    review();
+    expect(screen.getAllByRole("group").map((g) => g.getAttribute("aria-label"))[0]).toBe(
+      "Recommended"
+    );
+    expect(rows()).toEqual(["agriculture", "field + boundaries", "land-parcelsnew, for review"]);
   });
 
-  test("a click adds the matched tags, or suggests a new one", () => {
+  test("choosing one adds its tags, or suggests a new one, and checks it in place", () => {
     const { container } = renderRecommended("suggest_tags");
-    fireEvent.click(screen.getByRole("button", { name: "field + boundaries" }));
-    fireEvent.click(screen.getByRole("button", { name: "land-parcels (new)" }));
+    review();
+    fireEvent.click(recommended().getByRole("option", { name: /field \+ boundaries/ }));
+    fireEvent.click(recommended().getByRole("option", { name: /land-parcels/ }));
     expect(submitted(container)).toEqual(["field", "boundaries"]);
     expect(submitted(container, "suggest_tags")).toEqual(["land-parcels"]);
-    expect(screen.queryByRole("button", { name: "field + boundaries" })).toBeNull();
+    const split = recommended().getByRole("option", { name: /field \+ boundaries/ });
+    expect(split.getAttribute("aria-selected")).toBe("true");
+
+    // Choosing it again takes off what it added.
+    fireEvent.click(split);
+    expect(submitted(container)).toEqual([]);
   });
 
-  test("adding the existing tags at once suggests nothing", () => {
+  test("taking one off again keeps a tag the product already had", () => {
+    const { container } = renderRecommended(undefined, ["field"]);
+    review();
+    const split = recommended().getByRole("option", { name: /field \+ boundaries/ });
+    fireEvent.click(split);
+    expect(submitted(container)).toEqual(["field", "boundaries"]);
+    fireEvent.click(split);
+    expect(submitted(container)).toEqual(["field"]);
+  });
+
+  test("the group's link adds every existing tag but suggests nothing", () => {
     const { container } = renderRecommended("suggest_tags");
-    fireEvent.click(screen.getByRole("button", { name: "Add the 3 existing tags" }));
+    review();
+    fireEvent.click(screen.getByRole("button", { name: "Add 3 tags" }));
     expect(submitted(container)).toEqual(["agriculture", "field", "boundaries", "ocean"]);
     expect(submitted(container, "suggest_tags")).toEqual([]);
   });
 
-  test("without suggestName only matches are offered", () => {
+  test("without suggestName only matches are recommended", () => {
     renderRecommended();
-    expect(offered()).not.toContain("land-parcels (new)");
-    expect(offered()).toContain("Add all");
+    review();
+    expect(rows()).toEqual(["agriculture", "field + boundaries", "ocean"]);
+  });
+
+  test("a recommended tag isn't listed again under All tags", () => {
+    renderRecommended();
+    review();
+    const all = within(screen.getByRole("group", { name: "All tags" }));
+    expect(all.queryByRole("option", { name: "agriculture" })).toBeNull();
+    expect(all.getByRole("option", { name: "climate" })).toBeTruthy();
   });
 });
