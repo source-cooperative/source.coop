@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { Flex, Kbd, Text } from "@radix-ui/themes";
+import { Box, Flex, Kbd, Text, TextField } from "@radix-ui/themes";
 import { CheckIcon, MagnifyingGlassIcon, PlusIcon } from "@radix-ui/react-icons";
 
 export interface TagMenuItem {
@@ -100,18 +100,9 @@ export function TagMenu({
   let i = 0;
   return (
     <Flex direction="column">
-      <label
-        style={{
-          ...ROW,
-          cursor: "text",
-          height: 44,
-          gap: "var(--space-3)",
-          borderBottom: "1px solid var(--gray-a5)",
-          color: "var(--gray-11)",
-        }}
-      >
-        <MagnifyingGlassIcon aria-hidden />
-        <input
+      <Box p="2" style={{ borderBottom: "1px solid var(--gray-a5)" }}>
+        <TextField.Root
+          size="2"
           role="combobox"
           aria-expanded
           aria-controls={`${id}-list`}
@@ -121,18 +112,12 @@ export function TagMenu({
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           onKeyDown={onKeyDown}
-          style={{
-            flex: 1,
-            minWidth: 0,
-            border: 0,
-            outline: 0,
-            background: "transparent",
-            font: "inherit",
-            fontSize: "var(--font-size-2)",
-            color: "var(--gray-12)",
-          }}
-        />
-      </label>
+        >
+          <TextField.Slot>
+            <MagnifyingGlassIcon aria-hidden />
+          </TextField.Slot>
+        </TextField.Root>
+      </Box>
       {/* ponytail: renders every tag; fine to a few hundred, virtualise the
           list if the corpus grows past that. */}
       <div
