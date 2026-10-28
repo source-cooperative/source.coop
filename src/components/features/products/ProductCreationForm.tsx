@@ -10,6 +10,7 @@ import { useCatalog } from "@/hooks/useCatalog";
 import { createProduct, updateProduct } from "@/lib/actions/products";
 import { tagsNamed } from "@/lib/actions/tags";
 import { canonTag } from "@/lib/tags/canon";
+import { singularTag } from "@/lib/tags/similar";
 import type { TagCategory } from "@/lib/tags/categories";
 import { TagPicker } from "./TagPicker";
 
@@ -112,7 +113,9 @@ export function ProductCreationForm({
   useEffect(() => {
     if (!keywords?.length) return;
     let active = true;
-    tagsNamed(keywords.map(canonTag).filter(Boolean)).then((tags) => {
+    // Each as spelled and in the singular it would be suggested as.
+    const names = keywords.map(canonTag).flatMap((k) => [k, singularTag(k)]);
+    tagsNamed([...new Set(names)].filter(Boolean)).then((tags) => {
       if (!active) return;
       setDecided(
         Object.fromEntries(
