@@ -118,6 +118,16 @@ export const SplitStaged: Story = {
   },
 };
 
+/**
+ * The list of every approved tag, for a merge target the close matches
+ * missed. The close matches lead it, and the arrow keys and Enter pick one.
+ */
+export const OtherTag: Story = {
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getAllByRole("button", { name: "Other tag" })[0]);
+  },
+};
+
 /** A decision the server refused, with its reason. */
 export const Refused: Story = {
   args: {

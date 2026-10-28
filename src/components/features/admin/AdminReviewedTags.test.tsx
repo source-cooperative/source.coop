@@ -13,10 +13,10 @@ function renderReviewed(action = jest.fn(async () => ({}))) {
             merged_into: ["field", "boundaries"],
             reviewed_by: "alukach",
             reviewed_at: "2026-10-27T15:00:00Z",
-            products: 3,
+            products: [{ account_id: "a", product_id: "p1" }, { account_id: "a", product_id: "p2" }, { account_id: "a", product_id: "p3" }],
           },
-          { tag: "asdf", outcome: "rejected", reviewed_by: "alukach", products: 1 },
-          { tag: "sea-ice", outcome: "approved", reviewed_by: "alukach", products: 2 },
+          { tag: "asdf", outcome: "rejected", reviewed_by: "alukach", products: [{ account_id: "a", product_id: "p1" }] },
+          { tag: "sea-ice", outcome: "approved", reviewed_by: "alukach", products: [{ account_id: "a", product_id: "p1" }, { account_id: "a", product_id: "p2" }] },
         ]}
         action={action}
       />
@@ -30,6 +30,18 @@ test("says what each decision was", () => {
   expect(screen.getByText("Merged into field + boundaries on 3 products")).toBeTruthy();
   expect(screen.getByText("Rejected, taken off 1 product")).toBeTruthy();
   expect(screen.getByText("Approved")).toBeTruthy();
+});
+
+test("links the products each tag was on", () => {
+  renderReviewed();
+  expect(screen.getAllByRole("link", { name: "a/p3" }).map((a) => a.getAttribute("href"))).toEqual([
+    "/a/p3",
+  ]);
+  const line = (text: string) => (_: string, el: Element | null) =>
+    el?.tagName === "DIV" && el.textContent === text;
+  // A merge or rejection names where it was; an approval, where it is.
+  expect(screen.getByText(line("Was on a/p1"))).toBeTruthy();
+  expect(screen.getByText(line("On a/p1, a/p2"))).toBeTruthy();
 });
 
 test("Undo sends an undo for that tag, and shows a refusal", async () => {

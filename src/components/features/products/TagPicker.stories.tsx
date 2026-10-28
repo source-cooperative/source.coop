@@ -81,7 +81,7 @@ export const NewTag: Story = {
   play: async ({ canvasElement }) => {
     await openAndFilter(canvasElement, "Sea Ice");
     await userEvent.click(
-      within(document.body).getByRole("button", { name: /^Suggest/ })
+      within(document.body).getByRole("option", { name: /^Suggest/ })
     );
   },
 };

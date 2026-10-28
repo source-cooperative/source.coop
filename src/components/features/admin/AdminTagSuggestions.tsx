@@ -2,17 +2,11 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import {
-  Badge,
-  Button,
-  Card,
-  Flex,
-  Popover,
-  Text,
-  TextField,
-} from "@radix-ui/themes";
+import { Badge, Button, Card, Flex, Popover, Text } from "@radix-ui/themes";
 import { ArrowRightIcon, ChevronDownIcon } from "@radix-ui/react-icons";
 import { productUrl } from "@/lib/urls";
+import { canonTag } from "@/lib/tags/canon";
+import { TagMenu } from "@/components/features/products/TagMenu";
 import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
 
 export interface TagSuggestion {
@@ -184,6 +178,7 @@ function SuggestionCard({
           ))}
           <MergeTargetPicker
             approved={approved.filter((t) => !into.includes(t.tag))}
+            matches={matches.map((m) => m.tag)}
             label={into.length || matches.length || split ? "Other tag" : "Merge into a tag"}
             onChoose={(t) => setInto((into) => [...into, t])}
           />
@@ -258,7 +253,7 @@ function andList(tags: string[]) {
   ));
 }
 
-function ProductLinks({ products }: { products: TagSuggestion["products"] }) {
+export function ProductLinks({ products }: { products: TagSuggestion["products"] }) {
   if (!products.length) return <>no products</>;
   return (
     <>
@@ -274,20 +269,27 @@ function ProductLinks({ products }: { products: TagSuggestion["products"] }) {
   );
 }
 
-/** Every approved tag, filterable, for a merge target the matches missed. */
+/** Every approved tag, filterable, close matches first, for a merge target. */
 function MergeTargetPicker({
   approved,
+  matches,
   label,
   onChoose,
 }: {
   approved: AdminTagSuggestionsProps["approved"];
+  /** The suggestion's close matches, best first. */
+  matches: string[];
   label: string;
   onChoose: (tag: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState("");
-  const query = filter.trim().toLowerCase();
+  const query = canonTag(filter);
   const shown = approved.filter((t) => t.tag.includes(query));
+  const item = (t: AdminTagSuggestionsProps["approved"][number]) => ({
+    tag: t.tag,
+    detail: plural(t.products, "product"),
+  });
   return (
     <Popover.Root
       open={open}
@@ -304,45 +306,32 @@ function MergeTargetPicker({
           <ChevronDownIcon />
         </Button>
       </Popover.Trigger>
-      <Popover.Content width="280px" aria-label="Choose a tag to merge into">
-        <Flex direction="column" gap="2">
-          <TextField.Root
-            size="2"
-            placeholder="Find an approved tag"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
-          <Text size="1" color="gray">
-            Nothing changes until you save.
-          </Text>
-          {/* ponytail: renders every approved tag; fine to a few hundred. */}
-          <Flex direction="column" style={{ maxHeight: 240, overflowY: "auto" }}>
-            {shown.map((t) => (
-              <Button
-                key={t.tag}
-                type="button"
-                size="2"
-                variant="ghost"
-                color="gray"
-                style={{ justifyContent: "space-between" }}
-                onClick={() => {
-                  onChoose(t.tag);
-                  setOpen(false);
-                }}
-              >
-                <span>{t.tag}</span>
-                <Text size="1" color="gray">
-                  {plural(t.products, "product")}
-                </Text>
-              </Button>
-            ))}
-            {!shown.length && (
-              <Text size="2" color="gray">
-                No approved tag matches “{filter}”.
-              </Text>
-            )}
-          </Flex>
-        </Flex>
+      <Popover.Content
+        width="320px"
+        aria-label="Choose a tag to merge into"
+        style={{ padding: 0 }}
+      >
+        <TagMenu
+          query={filter}
+          onQueryChange={setFilter}
+          placeholder="Find an approved tag"
+          sections={[
+            {
+              title: "Close matches",
+              items: matches.flatMap((m) => shown.filter((t) => t.tag === m)).map(item),
+            },
+            {
+              title: query ? `Matching “${query}”` : "All tags",
+              items: shown.filter((t) => !matches.includes(t.tag)).map(item),
+            },
+          ]}
+          onChoose={(tag) => {
+            onChoose(tag);
+            setOpen(false);
+          }}
+          empty={`No approved tag matches “${filter}”.`}
+          hint="Nothing changes until you save"
+        />
       </Popover.Content>
     </Popover.Root>
   );
