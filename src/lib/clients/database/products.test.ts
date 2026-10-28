@@ -200,3 +200,19 @@ describe("ProductsTable.listProductsByConnectionId", () => {
     expect(mockSend).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("setTagsItem", () => {
+  const table = new ProductsTable({ client: {} as DynamoDBDocumentClient });
+
+  it("applies only while the product's tags are still as read", () => {
+    expect(table.setTagsItem("a", "p", ["ocean"], ["sea"]).Update?.ConditionExpression).toBe(
+      "metadata.tags = :from"
+    );
+  });
+
+  it("matches a product saved with no tags, which may have no tags attribute", () => {
+    expect(table.setTagsItem("a", "p", [], ["sst"]).Update?.ConditionExpression).toBe(
+      "attribute_not_exists(metadata.tags) OR metadata.tags = :from"
+    );
+  });
+});

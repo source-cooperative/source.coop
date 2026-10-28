@@ -391,7 +391,9 @@ export class ProductsTable extends BaseTable {
   /**
    * A transaction write replacing a product's tags, and nothing else about
    * it, that applies only while they are still `from`: a save in the meantime
-   * cancels the transaction rather than being overwritten.
+   * cancels the transaction rather than being overwritten. A product saved
+   * with no tags may have no `tags` attribute at all, which `from` of `[]`
+   * also matches.
    */
   setTagsItem(
     account_id: string,
@@ -404,7 +406,9 @@ export class ProductsTable extends BaseTable {
         TableName: this.table,
         Key: { account_id, product_id },
         UpdateExpression: "SET metadata.tags = :to",
-        ConditionExpression: "metadata.tags = :from",
+        ConditionExpression: from.length
+          ? "metadata.tags = :from"
+          : "attribute_not_exists(metadata.tags) OR metadata.tags = :from",
         ExpressionAttributeValues: { ":from": from, ":to": to },
       },
     };

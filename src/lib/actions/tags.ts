@@ -34,7 +34,10 @@ export async function reviewTag(
         : decision === "reject"
           ? await ops.deleteTag(session, tag, { approved })
           : decision === "undo"
-            ? await ops.updateTag(session, tag, { pending: true })
+            ? await ops.updateTag(session, tag, {
+                pending: true,
+                reviewed_at: formData.get("reviewed_at") || undefined,
+              })
             : null;
   if (!result) return { error: `Unknown decision: ${decision}` };
   return result.ok ? {} : { error: result.message };

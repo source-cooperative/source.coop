@@ -97,11 +97,25 @@ describe("decision writes", () => {
       "SET outcome = :outcome, reviewed_by = :reviewed_by, reviewed_at = :reviewed_at REMOVE merged_into, changed, previous",
     ],
   ])("undoing with previous %p restores it", (previous, expression) => {
-    const { Update } = tagsTable.reopenItem("sst", previous);
+    const { Update } = tagsTable.reopenItem("sst", undefined, previous);
     expect(Update?.UpdateExpression).toBe(expression);
     // DynamoDB refuses values the expression doesn't use.
     expect(Object.keys(Update?.ExpressionAttributeValues ?? {})).toEqual(
       expression.match(/:\w+/g) ?? []
     );
+  });
+
+  test("undoing applies only while the decision made then stands", () => {
+    const { Update } = tagsTable.reopenItem("sst", "2026-10-27T00:00:00Z", {});
+    expect(Update?.ConditionExpression).toBe(
+      "attribute_exists(outcome) AND reviewed_at = :decided_at"
+    );
+    expect(Update?.ExpressionAttributeValues).toEqual({ ":decided_at": "2026-10-27T00:00:00Z" });
+  });
+
+  test("a tag a rename adds is on the list with no decision on it", () => {
+    const { Put } = tagsTable.createItem("sea", "root");
+    expect(Put?.Item).toEqual({ tag_id: "sea", reviewed_by: "root", reviewed_at: expect.any(String) });
+    expect(Put?.ConditionExpression).toBe("attribute_not_exists(tag_id)");
   });
 });
