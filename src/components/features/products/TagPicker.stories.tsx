@@ -118,3 +118,20 @@ export const NewTag: Story = {
 export const PendingTag: Story = {
   args: { defaultValue: ["acoustics", "sea-ice"], pending: ["sea-ice"] },
 };
+
+/**
+ * Tags suggested from the product's data. Source Cooperative's metadata
+ * catalog reads keywords from each product's objects, and the product's
+ * settings offer them under its tags, one click each. A keyword spelled
+ * differently from an approved tag, or in the plural, adds that tag; one
+ * whose words are each tags adds all of them, as `remote-sensing-bathymetry`
+ * would add `remote-sensing` and `bathymetry`; anything else is suggested for
+ * review, marked new. Adding the existing tags at once leaves the new ones to
+ * be chosen one by one, so nothing reaches the review queue unasked.
+ */
+export const FromProductData: Story = {
+  args: {
+    defaultValue: ["acoustics"],
+    recommended: ["Cetacean", "hydrophones", "climate", "marine-mammals", "acoustics"],
+  },
+};

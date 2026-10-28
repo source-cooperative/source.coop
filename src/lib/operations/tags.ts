@@ -12,7 +12,7 @@ import {
 } from "@/lib/clients/database";
 import { MAX_TRANSACTION_ITEMS, type TransactItem } from "@/lib/clients/database/base";
 import { adminTagsUrl } from "@/lib/urls";
-import { canonTag } from "@/lib/tags/canon";
+import { canonTag, TAG_PATTERN } from "@/lib/tags/canon";
 import { TAG_CATEGORY_IDS } from "@/lib/tags/categories";
 import { LOGGER } from "@/lib/logging";
 import {
@@ -29,7 +29,6 @@ import {
 } from "./result";
 
 const MAX_PENDING_PER_ACCOUNT = 5;
-const TAG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
 const PATTERN_RULE =
   "Use up to 40 lowercase letters, digits or hyphens, starting and ending with a letter or digit. Spaces become hyphens.";
 
