@@ -45,7 +45,10 @@ export interface ProbeStoreArgs {
   s3: S3StorageClient;
   account_id: string;
   product_id: string;
-  /** Store prefix relative to the product, e.g. `gfs.icechunk` or `a/b.zarr`. */
+  /**
+   * Store prefix relative to the product, e.g. `gfs.icechunk` or `a/b.zarr`;
+   * empty for a store at the product root.
+   */
   storePath: string;
   /** Lowercased suffix: `zarr` or `icechunk`. */
   extension: string;
@@ -83,7 +86,9 @@ export async function probeStore(args: ProbeStoreArgs): Promise<StoreProbe> {
 
 type Io = Pick<ProbeStoreArgs, "s3" | "account_id" | "product_id" | "storePath">;
 
-const join = (storePath: string, rel: string) => `${storePath}/${rel}`;
+// An empty storePath is a store at the product root.
+const join = (storePath: string, rel: string) =>
+  storePath ? `${storePath}/${rel}` : rel;
 
 /** GET + JSON.parse an object relative to the store root. null on any failure. */
 async function getJson(io: Io, rel: string): Promise<unknown | null> {
@@ -142,7 +147,7 @@ async function headOk(io: Io, rel: string): Promise<boolean> {
  * names relative to the store root (no product prefix, no trailing slash).
  */
 async function listChildren(io: Io, rel = ""): Promise<string[]> {
-  const prefix = `${io.product_id}/${io.storePath}/${rel ? `${rel}/` : ""}`;
+  const prefix = `${io.product_id}/${join(io.storePath, rel ? `${rel}/` : "")}`;
   try {
     const res = await withTimeout(
       io.s3.listObjects({ bucket: io.account_id, prefix, delimiter: "/", maxKeys: 100 }),

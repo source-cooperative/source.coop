@@ -252,3 +252,29 @@ describe("probeStore — Icechunk (spec 2.x repo-info layout, no refs/)", () => 
     expect(r.renderable).toBe(false);
   });
 });
+
+describe("probeStore — store at the product root (empty storePath)", () => {
+  it("reads an Icechunk repo object at the root key, not under a leading slash", async () => {
+    const s3 = fakeS3({ repo: Buffer.concat([ICECHUNK_MAGIC, Buffer.from("ic-2.1.1")]) });
+    const r = await probeStore({ ...base, s3, storePath: "", extension: "icechunk" });
+    expect(r).toMatchObject({ renderable: true, format: "icechunk", icechunkVersion: 2 });
+  });
+
+  it("lists a Zarr v3 group's children under the product prefix", async () => {
+    const s3 = fakeS3(
+      {
+        "zarr.json": json({ zarr_format: 3, node_type: "group" }),
+        "temp/zarr.json": json({
+          zarr_format: 3,
+          node_type: "array",
+          shape: [3],
+          data_type: "float32",
+          chunk_grid: { name: "regular", configuration: { chunk_shape: [3] } },
+        }),
+      },
+      { "prod/": ["prod/temp/"] },
+    );
+    const r = await probeStore({ ...base, s3, storePath: "", extension: "zarr" });
+    expect(r).toMatchObject({ renderable: true, format: "zarr3" });
+  });
+});
