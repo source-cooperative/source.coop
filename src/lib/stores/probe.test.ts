@@ -221,7 +221,7 @@ describe("probeStore — Icechunk", () => {
   });
 });
 
-describe("probeStore — Icechunk (spec 2.x repo-info layout, no refs/)", () => {
+describe("probeStore — Icechunk (spec 2.x repo-info layout)", () => {
   // Icechunk >=2.x drops the refs/ prefix: branch/tag pointers and config live
   // in a single root `repo` info object that starts with the Icechunk magic
   // header (e.g. "ICE🧊CHUNKic-2.1.1…"). See https://icechunk.io/en/stable/spec/.
@@ -244,6 +244,18 @@ describe("probeStore — Icechunk (spec 2.x repo-info layout, no refs/)", () => 
         range: `bytes=0-${ICECHUNK_MAGIC.length - 1}`,
       }),
     );
+  });
+
+  it("reports version 2 when a 2.x repo also keeps a legacy refs/ pointer", async () => {
+    // Seen in beyond-weather/ecmwf-ifs-analysis: both `repo` and
+    // refs/branch.main/ref.json exist, and the snapshot it names is present.
+    const s3 = fakeS3({
+      "s.icechunk/repo": repoInfo,
+      "s.icechunk/refs/branch.main/ref.json": json({ snapshot: "SNAP1" }),
+      "s.icechunk/snapshots/SNAP1": ICECHUNK_MAGIC,
+    });
+    const r = await probeStore({ ...base, s3, storePath: "s.icechunk", extension: "icechunk" });
+    expect(r).toMatchObject({ renderable: true, format: "icechunk", icechunkVersion: 2 });
   });
 
   it("is not renderable when the root `repo` object lacks the Icechunk magic", async () => {

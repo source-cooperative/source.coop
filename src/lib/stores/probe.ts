@@ -325,17 +325,25 @@ async function probeIcechunk(args: ProbeStoreArgs): Promise<StoreProbe> {
   const io: Io = args;
 
   // Two on-disk layouts exist, so try each in turn:
+  //   • Current (spec 2.x, "ic-2.*"): branch/tag pointers and config live in a
+  //     single root `repo` info object.
   //   • Legacy (spec <2.x): a per-branch ref file under refs/branch.{name}/
   //     ref.json points at the current snapshot.
-  //   • Current (spec 2.x, "ic-2.*"): there is no refs/ prefix — branch/tag
-  //     pointers and config live in a single root `repo` info object.
-  return (await probeIcechunkRefs(io)) ?? (await probeIcechunkRepoInfo(io));
+  // The `repo` object goes first because a 2.x repo can also carry a legacy
+  // refs/ pointer, and only the `repo` object proves it's 2.x.
+  return (
+    (await probeIcechunkRepoInfo(io)) ??
+    (await probeIcechunkRefs(io)) ?? {
+      renderable: false,
+      reason: "no icechunk ref or repo info object",
+    }
+  );
 }
 
 /**
  * Legacy layout: refs/branch.{name}/ref.json → snapshots/{id}. Returns null when
- * no branch ref exists at all (so the caller can try the current layout); a
- * terminal `renderable:false` only when a ref exists but its snapshot is broken.
+ * no branch ref exists at all; a terminal `renderable:false` only when a ref
+ * exists but its snapshot is broken.
  */
 async function probeIcechunkRefs(io: Io): Promise<StoreProbe | null> {
   // Tier 1: the branch ref points at the current snapshot. main is the default;
@@ -372,13 +380,15 @@ async function probeIcechunkRefs(io: Io): Promise<StoreProbe | null> {
  * the object existing and carrying the Icechunk magic header — enough to confirm
  * a real store worth handing to the viewer, which resolves the branch itself.
  * Read only the leading magic bytes; the repo info object can be multi-MB.
+ * Returns null when there's no such object, so the caller can try the legacy
+ * layout.
  */
-async function probeIcechunkRepoInfo(io: Io): Promise<StoreProbe> {
+async function probeIcechunkRepoInfo(io: Io): Promise<StoreProbe | null> {
   const repo = await getBytes(io, "repo", `bytes=0-${ICECHUNK_MAGIC.length - 1}`);
   if (hasIcechunkMagic(repo)) {
     return { renderable: true, format: "icechunk", icechunkVersion: 2, chunkCanary: "ok" };
   }
-  return { renderable: false, reason: "no icechunk ref or repo info object" };
+  return null;
 }
 
 const hasIcechunkMagic = (buf: Buffer | null): boolean =>
