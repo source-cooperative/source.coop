@@ -27,6 +27,39 @@ function filterFor(text: string) {
   });
 }
 
+test("leaves out an empty tag a product carries", () => {
+  const { container } = renderPicker(["", "ocean"]);
+  expect(submitted(container)).toEqual(["ocean"]);
+  expect(screen.queryByRole("button", { name: "Remove " })).toBeNull();
+});
+
+test("the list groups tags under their categories, in category order", () => {
+  render(
+    <Theme>
+      <TagPicker
+        name="tags"
+        options={["cog", "ocean", "climate", "misc"]}
+        categories={{ cog: "format", ocean: "domain", climate: "domain" }}
+      />
+    </Theme>
+  );
+  filterFor("");
+
+  const groups = screen.getAllByRole("group");
+  expect(groups.map((g) => g.getAttribute("aria-label"))).toEqual([
+    "Domain",
+    "Format",
+    "Other",
+  ]);
+  expect(within(groups[0]).getAllByRole("option").map((o) => o.textContent)).toEqual([
+    "ocean",
+    "climate",
+  ]);
+  expect(
+    screen.getByRole("group", { name: "Format", description: "How the files are stored." })
+  ).toBeTruthy();
+});
+
 test("submits each chosen tag and drops a removed one", () => {
   const { container } = renderPicker(["ocean", "legacy"]);
   expect(submitted(container)).toEqual(["ocean", "legacy"]);

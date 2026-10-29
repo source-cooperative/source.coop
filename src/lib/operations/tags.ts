@@ -12,6 +12,7 @@ import {
 } from "@/lib/clients/database";
 import { adminTagsUrl } from "@/lib/urls";
 import { canonTag } from "@/lib/tags/canon";
+import { TAG_CATEGORY_IDS } from "@/lib/tags/categories";
 import { LOGGER } from "@/lib/logging";
 import {
   conflict,
@@ -32,6 +33,10 @@ const TAG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
 export const TagSchema = z
   .object({
     tag_id: z.string().openapi({ description: "The tag, as products carry it." }),
+    category: z.enum(TAG_CATEGORY_IDS).optional().openapi({
+      description:
+        "The group the tag belongs to, such as `domain`, `place` or `format`. A tag awaiting review has none.",
+    }),
     pending: z.boolean().optional().openapi({
       description: "True while the tag awaits review. Approved tags leave it out.",
     }),
@@ -109,6 +114,9 @@ export const UpdateTagSchema = z
       description:
         "`false` approves a tag awaiting review. `true` undoes an admin's decision and puts the tag back awaiting review; for a merge or rejection, the products it rewrote get the tag back and lose the tags the merge added.",
     }),
+    category: z.enum(TAG_CATEGORY_IDS).optional().openapi({
+      description: "The category to approve the tag into. Approving requires it.",
+    }),
   })
   .openapi("UpdateTag");
 
@@ -147,7 +155,9 @@ export async function listTags(
           .sort((a, b) => (b.reviewed_at ?? "").localeCompare(a.reviewed_at ?? ""))
       : all.filter(isListed);
   return ok(
-    onePage(isAdmin(session) ? tags : tags.map(({ tag_id }) => ({ tag_id })))
+    onePage(
+      isAdmin(session) ? tags : tags.map(({ tag_id, category }) => ({ tag_id, category }))
+    )
   );
 }
 
@@ -227,7 +237,8 @@ export async function suggestTag(
 }
 
 /**
- * Approves a pending tag, adding it to the list everyone picks from; or, with
+ * Approves a pending tag into a category, adding it to the list everyone
+ * picks from; or, with
  * `pending: true`, undoes an admin's decision and puts the tag back awaiting
  * review (see undoDecision).
  */
@@ -247,14 +258,17 @@ export async function updateTag(
   if (!tag.pending) {
     return conflict(`"${tag_id}" was ${tag.outcome}; undo that before approving it`);
   }
+  const { category } = parsed.data;
+  if (!category) return invalid("Choose a category to approve the tag into", "category");
   const reviewed_by = session!.account!.account_id;
-  if (!(await tagsTable.decide(tag_id, { outcome: "approved", reviewed_by }))) {
+  if (!(await tagsTable.decide(tag_id, { outcome: "approved", reviewed_by, category }))) {
     return conflict(`"${tag_id}" is not awaiting review`);
   }
   revalidatePath(adminTagsUrl());
   const { pending: _pending, ...rest } = tag;
   return ok({
     ...rest,
+    category,
     outcome: "approved",
     reviewed_by,
     reviewed_at: new Date().toISOString(),

@@ -1,5 +1,6 @@
 import { PutCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import type { Product } from "@/types";
+import type { TagCategory } from "@/lib/tags/categories";
 import { BaseTable } from "./base";
 
 /** A product a review decision rewrote, and the tags it gained by it. */
@@ -11,13 +12,16 @@ export interface TagChange {
 
 /**
  * A tag a product may carry. The id is the tag itself, the same string stored
- * in `product.metadata.tags`. A tag someone suggested is `pending` until an
- * admin decides: approved, it joins the list everyone picks from; merged or
+ * in `product.metadata.tags`. A listed tag has a category. A tag someone
+ * suggested is `pending`, with no category, until an admin decides: approved,
+ * it joins the list everyone picks from in the category they chose; merged or
  * rejected, it leaves products and the list but stays on record, with what
  * the decision changed, so the decision can be undone.
  */
 export interface Tag {
   tag_id: string;
+  /** The group the picker lists it under. */
+  category?: TagCategory;
   pending?: boolean;
   /** Who suggested it and when. Tags from the initial import have neither. */
   suggested_by?: string;
@@ -40,13 +44,17 @@ export const isListed = (tag: Tag) =>
 export const isUsable = (tag: Tag) => isListed(tag) || !!tag.pending;
 
 /**
- * The product form's tag props: approved tags to pick, and which of the
- * product's own tags are pending. Other products' pending tags aren't
- * public, so they stay on the server.
+ * The product form's tag props: approved tags to pick, the category of each,
+ * and which of the product's own tags are pending. Other products' pending
+ * tags aren't public, so they stay on the server.
  */
 export function tagProps(tags: Tag[], current: string[] = []) {
+  const listed = tags.filter(isListed);
   return {
-    tagOptions: tags.filter(isListed).map((t) => t.tag_id),
+    tagOptions: listed.map((t) => t.tag_id),
+    tagCategories: Object.fromEntries(
+      listed.flatMap((t) => (t.category ? [[t.tag_id, t.category]] : []))
+    ) as Record<string, TagCategory>,
     pendingTags: tags
       .filter((t) => t.pending && current.includes(t.tag_id))
       .map((t) => t.tag_id),
@@ -157,7 +165,7 @@ export class TagsTable extends BaseTable {
   async decide(
     tag_id: string,
     decision: Required<Pick<Tag, "outcome" | "reviewed_by">> &
-      Pick<Tag, "merged_into" | "changed">
+      Pick<Tag, "category" | "merged_into" | "changed">
   ): Promise<boolean> {
     const fields = { ...decision, reviewed_at: new Date().toISOString() };
     const names = Object.keys(fields);
@@ -193,7 +201,7 @@ export class TagsTable extends BaseTable {
           TableName: this.table,
           Key: { tag_id },
           UpdateExpression:
-            "SET pending = :true REMOVE outcome, reviewed_by, reviewed_at, merged_into, changed",
+            "SET pending = :true REMOVE category, outcome, reviewed_by, reviewed_at, merged_into, changed",
           ConditionExpression: "attribute_exists(outcome)",
           ExpressionAttributeValues: { ":true": true },
         })

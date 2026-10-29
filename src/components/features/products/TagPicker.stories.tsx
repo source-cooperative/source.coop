@@ -1,15 +1,17 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
+import type { TagCategory } from "@/lib/tags/categories";
 import { TagPicker } from "./TagPicker";
 
-const options = [
-  "acoustics",
-  "bathymetry",
-  "cetaceans",
-  "climate",
-  "hydrophone",
-  "remote-sensing",
-];
+const categories: Record<string, TagCategory> = {
+  acoustics: "methodology",
+  bathymetry: "feature-type",
+  cetaceans: "domain",
+  climate: "domain",
+  hydrophone: "sensor",
+  "remote-sensing": "methodology",
+};
+const options = Object.keys(categories);
 
 const openAndFilter = async (canvasElement: HTMLElement, text: string) => {
   await userEvent.click(
@@ -24,7 +26,8 @@ const openAndFilter = async (canvasElement: HTMLElement, text: string) => {
 
 /**
  * Choosing a product's tags. Chosen tags show as chips; "Edit tags" opens a
- * list of every approved tag, with a box to filter it, and ticking one adds it.
+ * list of every approved tag, grouped under its category with a line saying
+ * what the category covers, and a box to filter it; ticking one adds it.
  * When no tag fits, the filter text can be suggested as a new tag. It shows as
  * a new chip, and is only sent for review when the product is saved, so
  * leaving without saving suggests nothing. Each chosen tag is submitted as its
@@ -34,7 +37,7 @@ const meta = {
   title: "Features/Settings/Products/TagPicker",
   component: TagPicker,
   parameters: { layout: "padded" },
-  args: { name: "tags", options, suggestName: "suggest_tags" },
+  args: { name: "tags", options, categories, suggestName: "suggest_tags" },
 } satisfies Meta<typeof TagPicker>;
 
 export default meta;
@@ -56,7 +59,18 @@ export const RetiredTag: Story = {
   args: { defaultValue: ["acoustics", "deep-sea-legacy"] },
 };
 
-/** The list open, narrowed by the filter box. */
+/**
+ * The list open: the product's own tags first, then every other tag under its
+ * category, in the order categories always come in.
+ */
+export const Grouped: Story = {
+  args: { defaultValue: ["acoustics"] },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole("button", { name: "Edit tags" }));
+  },
+};
+
+/** The list narrowed by the filter box, which matches across categories. */
 export const Filtering: Story = {
   args: { defaultValue: ["acoustics"] },
   play: ({ canvasElement }) => openAndFilter(canvasElement, "c"),

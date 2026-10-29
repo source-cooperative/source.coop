@@ -62,7 +62,7 @@ export default async function AdminTagsPage() {
     <Flex direction="column" gap="6">
       <FormTitle
         title="Tags"
-        description="Review tags people have suggested. Approving adds a tag to the list everyone picks from; merging replaces it with an approved tag on every product that carries it; rejecting takes it off them."
+        description="Review tags people have suggested. Approving adds a tag, in the category you choose, to the list everyone picks from; merging replaces it with an approved tag on every product that carries it; rejecting takes it off them."
       />
       <Flex direction="column" gap="3">
         <Heading size="4">

@@ -4,11 +4,11 @@ import { getPageSession } from "@/lib";
 import * as ops from "@/lib/operations/tags";
 
 /**
- * An admin's decision from the review page: approve the tag, merge it into
- * the approved tags chosen (one `into` value each), reject it, or undo an
- * earlier decision, putting it back awaiting review. Resolves to
- * why it was refused, if it was, so the page can say so; a thrown error's
- * message is hidden in production.
+ * An admin's decision from the review page: approve the tag into the
+ * `category` chosen, merge it into the approved tags chosen (one `into` value
+ * each), reject it, or undo an earlier decision, putting it back awaiting
+ * review. Resolves to why it was refused, if it was, so the page can say so;
+ * a thrown error's message is hidden in production.
  */
 export async function reviewTag(
   formData: FormData
@@ -19,7 +19,10 @@ export async function reviewTag(
   const into = formData.getAll("into").map(String);
   const result =
     decision === "approve"
-      ? await ops.updateTag(session, tag, { pending: false })
+      ? await ops.updateTag(session, tag, {
+          pending: false,
+          category: formData.get("category") || undefined,
+        })
       : decision === "merge"
         ? await ops.deleteTag(session, tag, {
             // A merge with no target is refused, not taken as a rejection.
