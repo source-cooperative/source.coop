@@ -53,7 +53,10 @@ beforeEach(() => {
     reviewed_at,
     previous,
   }));
-  (tagsTable.createItem as jest.Mock).mockImplementation((tag_id) => ({ create: tag_id }));
+  (tagsTable.createItem as jest.Mock).mockImplementation((tag_id, by, category) => ({
+    create: tag_id,
+    category,
+  }));
   (productsTable.setTagsItem as jest.Mock).mockImplementation((a, p, from, to) => ({
     product: `${a}/${p}`,
     from,
@@ -275,17 +278,7 @@ describe("reviewing", () => {
     });
   });
 
-  test("merging into a spelling the list lacks adds it, renaming the tag", async () => {
-    await deleteTag(ALICE, "sst", { replace_with: ["Sea Surface Temperature"] });
-    expect(written()).toEqual([
-      expect.objectContaining({ decide: "sst", merged_into: ["sea-surface-temperature"] }),
-      { create: "sea-surface-temperature" },
-      expect.objectContaining({ product: "a/p1" }),
-      expect.objectContaining({ product: "b/p2" }),
-    ]);
-  });
-
-  test.each([[""], ["sst"], ["-"], ["pending-one"], ["rejected-one"], ["ocean", ""]])(
+  test.each([[""], ["sst"], ["-"], ["pending-one"], ["rejected-one"], ["never-used"], ["ocean", ""]])(
     "merging refuses %p",
     async (...replace_with) => {
       (tagsTable.listAll as jest.Mock).mockResolvedValue([
@@ -340,6 +333,7 @@ describe("merging or removing an approved tag", () => {
       { tag_id: "climate" },
       {
         tag_id: "ocean",
+        category: "domain",
         suggested_by: "bob",
         outcome: "approved",
         reviewed_by: "root",
@@ -364,6 +358,15 @@ describe("merging or removing an approved tag", () => {
       },
     });
     expect(productTags()).toEqual({ "a/p1": ["climate"] });
+  });
+
+  test("merging into a spelling the list lacks adds it in the tag's category, renaming it", async () => {
+    await deleteTag(ALICE, "ocean", { replace_with: ["Oceans Deep"], approved: "true" });
+    expect(written()).toEqual([
+      expect.objectContaining({ decide: "ocean", merged_into: ["oceans-deep"] }),
+      { create: "oceans-deep", category: "domain" },
+      expect.objectContaining({ product: "a/p1" }),
+    ]);
   });
 
   test("a seeded tag can be removed", async () => {
