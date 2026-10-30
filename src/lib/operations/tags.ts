@@ -457,6 +457,7 @@ export async function deleteTag(
   const decision = {
     outcome: replace_with.length ? ("merged" as const) : ("rejected" as const),
     reviewed_by,
+    reviewed_at: new Date().toISOString(),
     ...(replace_with.length && { merged_into: replace_with }),
     changed,
     ...(approved && {
@@ -480,13 +481,19 @@ export async function deleteTag(
     ),
   ]);
   if (written !== undefined) {
+    if (!written) return conflict(`"${tag_id}", a tag it merges into, or one of its products ${RACED}`);
+    // Batches apply in order, so the products written are the first ones. The
+    // record keeps only those, so undoing leaves the rest, which this never
+    // touched, as their owners have them.
+    const updated = written - 1 - created.length;
+    await tagsTable.transact([
+      tagsTable.changedItem(tag_id, decision.reviewed_at, changed.slice(0, updated)),
+    ]);
     // The decision and some products changed, so the page should show the
     // decision, with the Undo the message points to.
-    if (written) revalidatePath(adminTagsUrl());
+    revalidatePath(adminTagsUrl());
     return conflict(
-      written
-        ? `Only ${written - 1 - created.length} of ${carrying.length} products were updated, because one changed meanwhile. Undo this, then try again.`
-        : `"${tag_id}", a tag it merges into, or one of its products ${RACED}`
+      `Only ${updated} of ${carrying.length} products were updated, because one changed meanwhile. Undo this, then try again.`
     );
   }
   LOGGER.info(replace_with.length ? "Tag merged" : "Tag rejected", {
@@ -495,5 +502,5 @@ export async function deleteTag(
   });
   revalidatePath(adminTagsUrl());
   const { pending: _pending, ...rest } = tag;
-  return ok({ ...rest, ...decision, reviewed_at: new Date().toISOString() });
+  return ok({ ...rest, ...decision });
 }
