@@ -56,10 +56,16 @@ function Provenance({
  */
 export function AdminTagList({
   tags,
+  taken = {},
   action,
   accounts,
 }: {
   tags: ApprovedTag[];
+  /**
+   * Tags off the list, by name, each with why: awaiting review, merged or
+   * rejected. None can be a new name for a tag.
+   */
+  taken?: Record<string, string>;
   /** Applies a decision, resolving to why it was refused if it was. */
   action: (formData: FormData) => Promise<{ error?: string }>;
   /** The suggesters' and approvers' accounts, for their cards on hover. */
@@ -108,7 +114,7 @@ export function AdminTagList({
                   </Text>
                 </Table.Cell>
                 <Table.Cell justify="end">
-                  <ReplaceTag tag={t} tags={tags} action={action} />
+                  <ReplaceTag tag={t} tags={tags} taken={taken} action={action} />
                 </Table.Cell>
               </Table.Row>
             ))}
@@ -132,10 +138,12 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 function ReplaceTag({
   tag,
   tags,
+  taken,
   action,
 }: {
   tag: ApprovedTag;
   tags: ApprovedTag[];
+  taken: Record<string, string>;
   action: (formData: FormData) => Promise<{ error?: string }>;
 }) {
   const [open, setOpen] = useState(false);
@@ -147,7 +155,12 @@ function ReplaceTag({
   const query = canonTag(filter);
   const others = tags.filter((t) => t.tag !== tag.tag && !into.includes(t.tag));
   const shown = others.filter((t) => t.tag.includes(query));
-  const isNew = !!query && query !== tag.tag && !tags.some((t) => t.tag === query) && !into.includes(query);
+  const isNew =
+    !!query &&
+    query !== tag.tag &&
+    !tags.some((t) => t.tag === query) &&
+    !into.includes(query) &&
+    !taken[query];
   const add = (t: string) => {
     setInto((into) => [...into, t]);
     setFilter("");
@@ -223,7 +236,11 @@ function ReplaceTag({
                   }
                 : undefined
             }
-            empty={`No other tag matches “${filter}”.`}
+            empty={
+              taken[query]
+                ? `“${query}” is ${taken[query]}, so it can't be a new name.`
+                : `No other tag matches “${filter}”.`
+            }
           />
         </div>
         <Flex direction="column" gap="2" p="3" style={{ borderTop: "1px solid var(--gray-a5)" }}>
