@@ -118,3 +118,32 @@ export const NewTag: Story = {
 export const PendingTag: Story = {
   args: { defaultValue: ["acoustics", "sea-ice"], pending: ["sea-ice"] },
 };
+
+/**
+ * Recommended tags, read from the product's data. Source Cooperative's
+ * metadata catalog reads keywords from each product's objects, and a line
+ * under the product's tags says how many it recommends. Keywords already on
+ * the product aren't counted.
+ */
+export const Recommended: Story = {
+  args: {
+    defaultValue: ["acoustics"],
+    recommended: ["Cetacean", "hydrophones", "climate", "marine-mammals", "acoustics"],
+  },
+};
+
+/**
+ * **Review** opens the tag list with the recommendations first. A keyword
+ * spelled differently from an approved tag, or in the plural, adds that tag;
+ * one whose words are each tags adds all of them, as `field-boundaries` adds
+ * `field` and `boundaries`; anything else is suggested for review, marked
+ * new. Each toggles like any tag, and the group's link adds every existing
+ * tag at once, leaving new ones to be chosen one by one so nothing reaches
+ * the review queue unasked.
+ */
+export const RecommendedOpen: Story = {
+  args: Recommended.args,
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole("button", { name: "Review" }));
+  },
+};
