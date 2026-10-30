@@ -512,12 +512,15 @@ describe("undoing a decision", () => {
     expect(tagsTable.transact).not.toHaveBeenCalled();
   });
 
-  test("suggesting a rejected tag again puts it back in the queue", async () => {
-    (tagsTable.listAll as jest.Mock).mockResolvedValue([decided({ outcome: "rejected" })]);
+  test.each([
+    [{ outcome: "rejected" }, /rejected/],
+    [{ outcome: "merged", merged_into: ["sea-surface-temperature"] }, /"sea-surface-temperature"/],
+  ])("suggesting a decided tag again is refused, keeping its record (%p)", async (overrides, message) => {
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([decided(overrides)]);
     expect(await suggestTag(ALICE, { tag_id: "sst" })).toMatchObject({
-      ok: true,
-      value: { created: true },
+      error: "conflict",
+      message: expect.stringMatching(message),
     });
-    expect(tagsTable.suggest).toHaveBeenCalledWith("sst", "alice");
+    expect(tagsTable.suggest).not.toHaveBeenCalled();
   });
 });
