@@ -9,7 +9,7 @@ import { storyAccounts } from "@/components/core/story-accounts";
  * admin approved it, or the initial import that seeded the list. Each tag
  * links to the product list filtered by it.
  *
- * **Change** replaces a tag on every product that carries it. Choose one tag
+ * **Replace** replaces a tag on every product that carries it. Choose one tag
  * to merge it into, several to split it, or type a name the list lacks to
  * rename it. With nothing chosen, **Remove** takes it off them. The products
  * change all at once, or not at all if one was saved meanwhile, and the
@@ -55,23 +55,23 @@ export const Filtered: Story = {
   },
 };
 
-const openChange = async (canvasElement: HTMLElement, tag: string) => {
+const openReplace = async (canvasElement: HTMLElement, tag: string) => {
   const row = within(canvasElement).getByRole("rowheader", { name: tag }).closest("tr")!;
-  await userEvent.click(within(row).getByRole("button", { name: "Change" }));
-  return within(await screen.findByRole("dialog", { name: `Change ${tag}` }));
+  await userEvent.click(within(row).getByRole("button", { name: "Replace" }));
+  return within(await screen.findByRole("dialog", { name: `Replace ${tag}` }));
 };
 
-/** A tag's Change popover, with nothing chosen yet: every other tag, and Remove. */
-export const Change: Story = {
+/** A tag's Replace popover, with nothing chosen yet: every other tag, and Remove. */
+export const Replace: Story = {
   play: async ({ canvasElement }) => {
-    await openChange(canvasElement, "ocean");
+    await openReplace(canvasElement, "ocean");
   },
 };
 
 /** `field-boundaries` split into two new tags, typed by name. */
 export const Split: Story = {
   play: async ({ canvasElement }) => {
-    const popover = await openChange(canvasElement, "field-boundaries");
+    const popover = await openReplace(canvasElement, "field-boundaries");
     const find = popover.getByPlaceholderText("Find a tag, or type a new name");
     await userEvent.type(find, "Field");
     await userEvent.click(popover.getByRole("option", { name: "Rename to “field”" }));
@@ -89,7 +89,7 @@ export const Refused: Story = {
     }),
   },
   play: async ({ canvasElement }) => {
-    const popover = await openChange(canvasElement, "ocean");
+    const popover = await openReplace(canvasElement, "ocean");
     await userEvent.click(popover.getByRole("option", { name: /climate/ }));
     await userEvent.click(popover.getByRole("button", { name: "Save" }));
   },

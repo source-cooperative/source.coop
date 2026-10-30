@@ -108,7 +108,7 @@ export function AdminTagList({
                   </Text>
                 </Table.Cell>
                 <Table.Cell justify="end">
-                  <ChangeTag tag={t} tags={tags} action={action} />
+                  <ReplaceTag tag={t} tags={tags} action={action} />
                 </Table.Cell>
               </Table.Row>
             ))}
@@ -129,7 +129,7 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
  * Replaces an approved tag on every product that carries it: with the tags
  * chosen, a new spelling among them renaming it, or with nothing, removing it.
  */
-function ChangeTag({
+function ReplaceTag({
   tag,
   tags,
   action,
@@ -176,10 +176,10 @@ function ChangeTag({
     >
       <Popover.Trigger>
         <Button type="button" size="1" variant="ghost" color="gray">
-          Change
+          Replace
         </Button>
       </Popover.Trigger>
-      <Popover.Content width="320px" aria-label={`Change ${tag.tag}`} style={{ padding: 0 }}>
+      <Popover.Content width="320px" aria-label={`Replace ${tag.tag}`} style={{ padding: 0 }}>
         <Flex direction="column" gap="2" p="3">
           <Text size="2">
             Replace <b>{tag.tag}</b> on {plural(tag.products, "product")} with:
