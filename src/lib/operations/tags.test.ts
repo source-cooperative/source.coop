@@ -474,10 +474,10 @@ describe("undoing a decision", () => {
 
   test("a merged approved tag goes back on the list as it was", async () => {
     const previous = { outcome: "approved", reviewed_by: "bob", reviewed_at: "2026-10-01T00:00:00.000Z" };
-    (tagsTable.listAll as jest.Mock).mockResolvedValue([merged({ previous })]);
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([merged({ previous, category: "domain" })]);
     expect(await updateTag(ALICE, "sst", { pending: true })).toMatchObject({
       ok: true,
-      value: { tag_id: "sst", outcome: "approved", reviewed_by: "bob" },
+      value: { tag_id: "sst", category: "domain", outcome: "approved", reviewed_by: "bob" },
     });
     expect(written().at(-1)).toEqual({ reopen: "sst", reviewed_at: "2026-10-27T00:00:00.000Z", previous });
   });

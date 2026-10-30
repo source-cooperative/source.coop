@@ -383,10 +383,10 @@ async function undoDecision(
     },
   });
   revalidatePath(adminTagsUrl());
-  const { tag_id, suggested_by, suggested_at } = tag;
+  const { tag_id, category, suggested_by, suggested_at } = tag;
   return ok(
     tag.previous
-      ? { tag_id, suggested_by, suggested_at, ...tag.previous }
+      ? { tag_id, category, suggested_by, suggested_at, ...tag.previous }
       : { tag_id, pending: true, suggested_by, suggested_at }
   );
 }
