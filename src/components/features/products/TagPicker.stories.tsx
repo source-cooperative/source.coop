@@ -25,7 +25,8 @@ const openAndFilter = async (canvasElement: HTMLElement, text: string) => {
 };
 
 /**
- * Choosing a product's tags. Chosen tags show as chips; "Edit tags" opens a
+ * Choosing a product's tags. Chosen tags show as chips, with "Edit tags" on
+ * its own line below them. The button opens a
  * list of every approved tag, grouped under its category with a line saying
  * what the category covers, and a box to filter it; ticking one adds it.
  * When no tag fits, the filter text can be suggested as a new tag. It shows as
@@ -67,6 +68,19 @@ export const Grouped: Story = {
   args: { defaultValue: ["acoustics"] },
   play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole("button", { name: "Edit tags" }));
+  },
+};
+
+/**
+ * A tag ticked with the list open joins the product's tags at the top straight
+ * away, and stays ticked in its category too, so the row just clicked doesn't
+ * move. The new chip appears above the button, which stays where it was.
+ */
+export const Ticking: Story = {
+  args: { defaultValue: ["acoustics"] },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole("button", { name: "Edit tags" }));
+    await userEvent.click(within(document.body).getByRole("option", { name: "cetaceans" }));
   },
 };
 

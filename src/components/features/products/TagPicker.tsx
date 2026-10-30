@@ -43,9 +43,12 @@ export function TagPicker({
   // suggestion never outlives a product that wasn't.
   const [fresh, setFresh] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
-  // The product's tags as the menu opened, listed first; held still while it
-  // is open, so a toggled tag stays where it is under the cursor.
+  // The product's tags as the menu opened, listed first and held still while
+  // it is open, so an unchecked tag stays where it is under the cursor.
   const [pinned, setPinned] = useState<string[]>([]);
+  // A tag checked while open joins them, and also stays in its category, so
+  // the row just clicked doesn't move away from the cursor.
+  const onProduct = [...pinned, ...tags.filter((t) => !pinned.includes(t))];
 
   // In the tags' own spelling, so "sea ice" finds and suggests "sea-ice".
   const query = canonTag(filter);
@@ -121,9 +124,15 @@ export function TagPicker({
   };
 
   return (
-    <Flex gap="2" wrap="wrap" align="center">
-      {tags.map((tag) => chip(tag, false))}
-      {fresh.map((tag) => chip(tag, true))}
+    // The button sits below the chips rather than after them, so a new chip
+    // doesn't push it, and the open list with it, sideways.
+    <Flex direction="column" gap="2" align="start">
+      {(tags.length > 0 || fresh.length > 0) && (
+        <Flex gap="2" wrap="wrap" align="center">
+          {tags.map((tag) => chip(tag, false))}
+          {fresh.map((tag) => chip(tag, true))}
+        </Flex>
+      )}
       <Popover.Root
         onOpenChange={(open) => {
           setFilter("");
@@ -142,7 +151,7 @@ export function TagPicker({
             onQueryChange={setFilter}
             placeholder="Filter tags"
             sections={[
-              { title: "On this product", items: pinned.filter((t) => t.includes(query)).map(item) },
+              { title: "On this product", items: onProduct.filter((t) => t.includes(query)).map(item) },
               ...sections,
             ]}
             onChoose={(tag) => toggle(tag, !tags.includes(tag))}
