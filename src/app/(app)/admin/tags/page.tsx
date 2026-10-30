@@ -50,6 +50,12 @@ export default async function AdminTagsPage() {
     ])
   );
   const approvedTags = approved.value.items.map((t) => t.tag_id);
+  const taken = Object.fromEntries([
+    ...pending.value.items.map((t) => [t.tag_id, "awaiting review"]),
+    ...reviewed.value.items
+      .filter((t) => t.outcome === "merged" || t.outcome === "rejected")
+      .map((t) => [t.tag_id, t.outcome]),
+  ]);
   const counted = approved.value.items.map((t) => ({
     tag: t.tag_id,
     products: carrying(t.tag_id).length,
@@ -107,7 +113,7 @@ export default async function AdminTagsPage() {
       </Flex>
       <Flex direction="column" gap="3">
         <Heading size="4">All tags</Heading>
-        <AdminTagList tags={counted} action={reviewTag} accounts={accounts} />
+        <AdminTagList tags={counted} taken={taken} action={reviewTag} accounts={accounts} />
       </Flex>
     </Flex>
   );

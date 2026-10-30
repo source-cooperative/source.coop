@@ -20,7 +20,7 @@ const TAGS = [
 const renderList = (action = jest.fn().mockResolvedValue({})) => {
   render(
     <Theme>
-      <AdminTagList tags={TAGS} action={action} />
+      <AdminTagList tags={TAGS} taken={{ oceans: "merged" }} action={action} />
     </Theme>
   );
   return action;
@@ -63,6 +63,14 @@ test("splits a tag into an approved one and a new name", async () => {
     into: ["boundaries", "field"],
   });
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+});
+
+test("doesn't offer a tag off the list as a new name, and says why", async () => {
+  renderList();
+  const popover = await openReplace("boundaries");
+  await userEvent.type(popover.getByPlaceholderText(/type a new name/), "oceans");
+  expect(popover.queryByRole("option", { name: /oceans/ })).toBeNull();
+  expect(popover.getByText("“oceans” is merged, so it can't be a new name.")).toBeTruthy();
 });
 
 test("removes a tag, and shows why a change was refused", async () => {
