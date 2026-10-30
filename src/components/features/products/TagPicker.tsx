@@ -7,6 +7,7 @@ import type { ControlProps } from "@/components/core/DynamicForm";
 import { canonTag } from "@/lib/tags/canon";
 import { TAG_CATEGORIES, type TagCategory } from "@/lib/tags/categories";
 import { recommendTags, type RecommendedTag } from "@/lib/tags/recommend";
+import { singularTag } from "@/lib/tags/similar";
 import { LINK_BUTTON, TagMenu } from "./TagMenu";
 
 interface TagPickerProps extends Partial<ControlProps> {
@@ -62,7 +63,10 @@ export function TagPicker({
 
   // In the tags' own spelling, so "sea ice" finds and suggests "sea-ice".
   const query = canonTag(filter);
-  const matches = options.filter((tag) => tag.toLowerCase().includes(query));
+  // Tags are singular, so "forests" finds "forest" too. With no query both
+  // are "", which matches every tag, as it should.
+  const single = singularTag(query);
+  const matches = options.filter((tag) => tag.includes(query) || tag.includes(single));
   // Offered even when other tags partly match: someone after "ocean
   // acidification" shouldn't have to settle for "ocean".
   const canSuggest =
@@ -209,6 +213,11 @@ export function TagPicker({
             action={
               canSuggest
                 ? { label: `Suggest “${query}” as a new tag`, onChoose: suggest }
+                : undefined
+            }
+            hint={
+              canSuggest && single !== query
+                ? `Tags are usually singular, like “${single}”.`
                 : undefined
             }
             empty={options.length ? `No tag matches “${filter}”.` : "No tags to choose from yet."}

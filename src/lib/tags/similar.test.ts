@@ -1,4 +1,4 @@
-import { similarTags, splitTag } from "./similar";
+import { similarTags, singular, singularTag, splitTag } from "./similar";
 
 const approved = [
   "boundaries",
@@ -40,4 +40,18 @@ test("splits a suggestion whose every word is an approved tag", () => {
   expect(splitTag("field-boundary", list)).toEqual(["field", "boundaries"]);
   expect(splitTag("field-polygons", list)).toBeNull();
   expect(splitTag("crops", list)).toBeNull();
+});
+
+test("singular takes a plural word to the singular and leaves the rest", () => {
+  expect(
+    ["boundaries", "boxes", "classes", "crops", "areas", "databases", "houses", "licenses"].map(
+      singular
+    )
+  ).toEqual(["boundary", "box", "class", "crop", "area", "database", "house", "license"]);
+  expect(["analyses", "buses", "gases"].map(singular)).toEqual(["analysis", "bus", "gas"]);
+  for (const word of ["class", "analysis", "status", "series", "gas", "goes", "genomics"]) {
+    expect(singular(word)).toBe(word);
+  }
+  expect(singularTag("building-footprints")).toBe("building-footprint");
+  expect(singularTag("time-series")).toBe("time-series");
 });
