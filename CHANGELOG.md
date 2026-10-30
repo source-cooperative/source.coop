@@ -1,5 +1,54 @@
 # Changelog
 
+## [1.8.0](https://github.com/source-cooperative/source.coop/compare/v1.7.0...v1.8.0) (2026-10-30)
+
+
+### Features
+
+* **analytics:** add Vercel Web Analytics ([#689](https://github.com/source-cooperative/source.coop/issues/689)) ([116153a](https://github.com/source-cooperative/source.coop/commit/116153a1e1045bee7be08f0c27cf6de13bed549c))
+* **api:** accept Ory access tokens from the CLI's login ([#654](https://github.com/source-cooperative/source.coop/issues/654)) ([8b40dc4](https://github.com/source-cooperative/source.coop/commit/8b40dc4ef3622d02ca368ebb325905e74332c54c))
+* **api:** accounts, whoami and the internal routes on the ops layer ([#667](https://github.com/source-cooperative/source.coop/issues/667)) ([cdc1258](https://github.com/source-cooperative/source.coop/commit/cdc12586968684b1c1964f0d7868c3b33cea5bf8))
+* **api:** answer every error as an RFC 9457 problem ([#701](https://github.com/source-cooperative/source.coop/issues/701)) ([0198499](https://github.com/source-cooperative/source.coop/commit/0198499412727e236cd1add37fb8b7fcde9d60fd))
+* **api:** answer the membership lists a page at a time ([#673](https://github.com/source-cooperative/source.coop/issues/673)) ([488275a](https://github.com/source-cooperative/source.coop/commit/488275a0e45b4591db1021276fd0e9931274c715))
+* **api:** challenge every 401 with WWW-Authenticate: Bearer ([#709](https://github.com/source-cooperative/source.coop/issues/709)) ([f59f532](https://github.com/source-cooperative/source.coop/commit/f59f53286dffd36d8780f2d9da14a19bfc69bd07))
+* **api:** configurable token audience, for Vercel previews ([#662](https://github.com/source-cooperative/source.coop/issues/662)) ([0cc9dc9](https://github.com/source-cooperative/source.coop/commit/0cc9dc937c017089b1a10d0df7402f491cb6515f))
+* **api:** data connections, including account-owned ones ([#657](https://github.com/source-cooperative/source.coop/issues/657)) ([e1f9f43](https://github.com/source-cooperative/source.coop/commit/e1f9f432821135797089d1e2448180ca34266b6d))
+* **api:** document HEAD /products/{account_id}/{product_id} ([#672](https://github.com/source-cooperative/source.coop/issues/672)) ([18f1475](https://github.com/source-cooperative/source.coop/commit/18f147502c225b3a5d9ed26e8539379476fd0ee0))
+* **api:** edit every account with PATCH /accounts/{account_id} ([#674](https://github.com/source-cooperative/source.coop/issues/674)) ([2749c78](https://github.com/source-cooperative/source.coop/commit/2749c789875aa36774b4e8c87f099441824fce8c))
+* **api:** generate the reference as OpenAPI 3.1 ([#710](https://github.com/source-cooperative/source.coop/issues/710)) ([97eaca9](https://github.com/source-cooperative/source.coop/commit/97eaca97e0588c6d7a4df3e363216d488d449b79))
+* **api:** manage a product's mirrors ([#655](https://github.com/source-cooperative/source.coop/issues/655)) ([e164d17](https://github.com/source-cooperative/source.coop/commit/e164d1765aad225118d41c9737699ec59d14cf69))
+* **api:** manage service accounts, their trusts and their API keys ([#665](https://github.com/source-cooperative/source.coop/issues/665)) ([8713872](https://github.com/source-cooperative/source.coop/commit/8713872a3d49e50806f15792a1ce330bb99ebc25))
+* **api:** name a membership's product product_id; filter on field names ([#680](https://github.com/source-cooperative/source.coop/issues/680)) ([f1701d7](https://github.com/source-cooperative/source.coop/commit/f1701d7527d6b35589d297c8294dda4a4638b274))
+* **api:** one endpoint per account: DELETE only deletes; profile and flags fold into /accounts/{account_id} ([#675](https://github.com/source-cooperative/source.coop/issues/675)) ([554d5ca](https://github.com/source-cooperative/source.coop/commit/554d5ca72e36aeab96120291e32e4e19308fd81c))
+* **api:** one memberships resource at /memberships ([#679](https://github.com/source-cooperative/source.coop/issues/679)) ([e90da24](https://github.com/source-cooperative/source.coop/commit/e90da24fb6fb3f420f3e2b9e72b7464c43e189c1))
+* **api:** operations layer, generated OpenAPI docs, and the memberships API ([#642](https://github.com/source-cooperative/source.coop/issues/642)) ([6316196](https://github.com/source-cooperative/source.coop/commit/631619672bd5e1bbc13a4700373fd93244fa93f7))
+* **api:** page GET /data-connections ([#684](https://github.com/source-cooperative/source.coop/issues/684)) ([1e4435f](https://github.com/source-cooperative/source.coop/commit/1e4435f02b7beeee92ff8217871228f261bfda89))
+* **api:** product list, create, view, edit and delete ([#651](https://github.com/source-cooperative/source.coop/issues/651)) ([9c72964](https://github.com/source-cooperative/source.coop/commit/9c72964844eb9ab4d74d11215e645bdef2ed1b2f))
+* **api:** render /api/docs with Swagger UI ([#656](https://github.com/source-cooperative/source.coop/issues/656)) ([490c355](https://github.com/source-cooperative/source.coop/commit/490c3556f8a87aa514d049b670ac948d6433676c))
+* **forms:** show unsaved changes by Save, and ask before leaving them ([#722](https://github.com/source-cooperative/source.coop/issues/722)) ([2090d98](https://github.com/source-cooperative/source.coop/commit/2090d98e7556778f7c284ebfdf48676e70863e77))
+* **object-browser:** indicate COG tiling structure in preview label ([#720](https://github.com/source-cooperative/source.coop/issues/720)) ([c72134e](https://github.com/source-cooperative/source.coop/commit/c72134eca170ce23e21402e026ab8cec6fb4534b))
+* **object-browser:** show object type label in preview card header ([#690](https://github.com/source-cooperative/source.coop/issues/690)) ([57c07d0](https://github.com/source-cooperative/source.coop/commit/57c07d00fb8dc3147b3627238e7fbdf0ae57a2ce))
+* **products:** give each product-page card an id, namespace README heading ids ([#643](https://github.com/source-cooperative/source.coop/issues/643)) ([a92c699](https://github.com/source-cooperative/source.coop/commit/a92c6992db0a70f4ac7b63de35515e57a525ae70))
+* **products:** pick tags from a curated corpus in the product form ([#647](https://github.com/source-cooperative/source.coop/issues/647)) ([34d6b71](https://github.com/source-cooperative/source.coop/commit/34d6b718c76ea3b7cbc8fcd7dbde0b8b4977857c))
+* publish llms.txt for AI agents ([#641](https://github.com/source-cooperative/source.coop/issues/641)) ([90bdcb1](https://github.com/source-cooperative/source.coop/commit/90bdcb1f29f8fa7f4f925a45c91345661676c004))
+* show object types as a grayscale bar on product cards and the product sidebar ([#687](https://github.com/source-cooperative/source.coop/issues/687)) ([5f74860](https://github.com/source-cooperative/source.coop/commit/5f748601fd4aabf8823c265c48fcbb27fc59648c))
+* **tags:** group tags into categories ([#685](https://github.com/source-cooperative/source.coop/issues/685)) ([b8eb1a3](https://github.com/source-cooperative/source.coop/commit/b8eb1a36dc3306a40bd6b83d212c586739056bca))
+* **tags:** let people suggest a tag, and admins review suggestions ([#648](https://github.com/source-cooperative/source.coop/issues/648)) ([fb42606](https://github.com/source-cooperative/source.coop/commit/fb4260629a5d8e565c1fe777b906de2cf571b4b7))
+
+
+### Bug Fixes
+
+* **analytics:** label request counts as Requests, not Downloads ([#688](https://github.com/source-cooperative/source.coop/issues/688)) ([99989e2](https://github.com/source-cooperative/source.coop/commit/99989e28e439812c9e0e77e67aad69575ac2b591))
+* **api:** authorize product and membership edits before reading the body ([#678](https://github.com/source-cooperative/source.coop/issues/678)) ([1eb2904](https://github.com/source-cooperative/source.coop/commit/1eb2904efd8cad051835dedaa39e2dc18d18584b))
+* **api:** document that PATCH /data-connections accepts null authentication ([#712](https://github.com/source-cooperative/source.coop/issues/712)) ([be41149](https://github.com/source-cooperative/source.coop/commit/be41149074d90499f5e743c2b9557642626fa92b))
+* **api:** list product permissions as internal; refuse callers who can't read ([#682](https://github.com/source-cooperative/source.coop/issues/682)) ([09ffe24](https://github.com/source-cooperative/source.coop/commit/09ffe2473e456fadebabd1d7dfff95ac4ce33164))
+* **api:** mark session-aware reads as optionally authenticated ([#717](https://github.com/source-cooperative/source.coop/issues/717)) ([dfbbe05](https://github.com/source-cooperative/source.coop/commit/dfbbe05577e6d35b8d5622e6222a30abd9b76fc9))
+* **api:** refuse the data proxy's assertions for anything but reads ([#661](https://github.com/source-cooperative/source.coop/issues/661)) ([ed1e832](https://github.com/source-cooperative/source.coop/commit/ed1e832ba6ab66448ef31ae9c54a56f828d82f57))
+* **data-connections:** show the role's full trust policy ([#652](https://github.com/source-cooperative/source.coop/issues/652)) ([075718f](https://github.com/source-cooperative/source.coop/commit/075718f4f968c888af893b7a971d05605fd84b01))
+* **data-connections:** stop listing other accounts' connections on product create ([#480](https://github.com/source-cooperative/source.coop/issues/480)) ([4dbe597](https://github.com/source-cooperative/source.coop/commit/4dbe5972f70125f1e5780be526816d7b5f8f8016))
+* **service-accounts:** refuse new product access while disabled ([#666](https://github.com/source-cooperative/source.coop/issues/666)) ([6e21bd3](https://github.com/source-cooperative/source.coop/commit/6e21bd3b3358d2172a09b061266470980eb0ccf6))
+* **tags:** spell tags with hyphens in clean-tags and product saves ([#719](https://github.com/source-cooperative/source.coop/issues/719)) ([4b9733e](https://github.com/source-cooperative/source.coop/commit/4b9733efe64d5aa97f50bb97f0eed33f3865cc34))
+
 ## [1.7.0](https://github.com/source-cooperative/source.coop/compare/v1.6.0...v1.7.0) (2026-10-05)
 
 
