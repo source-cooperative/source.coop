@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Badge, Button, Card, Flex, Popover, Text } from "@radix-ui/themes";
+import { Badge, Button, Card, Flex, Popover, Select, Text } from "@radix-ui/themes";
 import { ArrowRightIcon, ChevronDownIcon } from "@radix-ui/react-icons";
 import { productUrl } from "@/lib/urls";
 import { canonTag } from "@/lib/tags/canon";
+import { TAG_CATEGORIES } from "@/lib/tags/categories";
 import { TagMenu } from "@/components/features/products/TagMenu";
 import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
 
@@ -73,6 +74,7 @@ function SuggestionCard({
   // A merge rewrites other people's products, so choosing targets only stages
   // them; nothing changes until the merge is saved.
   const [into, setInto] = useState<string[]>([]);
+  const [category, setCategory] = useState("");
   const [error, setError] = useState("");
   const [busy, startTransition] = useTransition();
 
@@ -89,6 +91,7 @@ function SuggestionCard({
       const form = new FormData();
       form.set("tag", tag);
       form.set("decision", decision);
+      if (decision === "approve") form.set("category", category);
       if (decision === "merge") into.forEach((target) => form.append("into", target));
       setError((await action(form)).error ?? "");
     });
@@ -190,16 +193,31 @@ function SuggestionCard({
               Save merge
             </Button>
           ) : (
-            <Button
-              type="button"
-              size="1"
-              // Soft on every card, so Save merge is the one solid button.
-              variant="soft"
-              loading={busy}
-              onClick={() => decide("approve")}
-            >
-              Approve as a new tag
-            </Button>
+            <>
+              {/* An approved tag is listed under its category, so it can't be
+                  approved without one. */}
+              <Select.Root size="1" value={category} onValueChange={setCategory}>
+                <Select.Trigger placeholder="Category…" aria-label="Category" />
+                <Select.Content>
+                  {TAG_CATEGORIES.map((c) => (
+                    <Select.Item key={c.id} value={c.id}>
+                      {c.label}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
+              <Button
+                type="button"
+                size="1"
+                // Soft on every card, so Save merge is the one solid button.
+                variant="soft"
+                loading={busy}
+                disabled={!category}
+                onClick={() => decide("approve")}
+              >
+                Approve as a new tag
+              </Button>
+            </>
           )}
           <Flex flexGrow="1" />
           {into.length ? (

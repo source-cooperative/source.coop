@@ -27,6 +27,39 @@ function filterFor(text: string) {
   });
 }
 
+test("leaves out an empty tag a product carries", () => {
+  const { container } = renderPicker(["", "ocean"]);
+  expect(submitted(container)).toEqual(["ocean"]);
+  expect(screen.queryByRole("button", { name: "Remove " })).toBeNull();
+});
+
+test("the list groups tags under their categories, in category order", () => {
+  render(
+    <Theme>
+      <TagPicker
+        name="tags"
+        options={["cog", "ocean", "climate", "misc"]}
+        categories={{ cog: "format", ocean: "domain", climate: "domain" }}
+      />
+    </Theme>
+  );
+  filterFor("");
+
+  const groups = screen.getAllByRole("group");
+  expect(groups.map((g) => g.getAttribute("aria-label"))).toEqual([
+    "Domain",
+    "Format",
+    "Other",
+  ]);
+  expect(within(groups[0]).getAllByRole("option").map((o) => o.textContent)).toEqual([
+    "ocean",
+    "climate",
+  ]);
+  expect(
+    screen.getByRole("group", { name: "Format", description: "How the files are stored." })
+  ).toBeTruthy();
+});
+
 test("submits each chosen tag and drops a removed one", () => {
   const { container } = renderPicker(["ocean", "legacy"]);
   expect(submitted(container)).toEqual(["ocean", "legacy"]);
@@ -47,7 +80,8 @@ test("the popover filters the corpus and toggles tags", () => {
   fireEvent.click(screen.getByRole("option", { name: "climate-change" }));
   expect(submitted(container)).toEqual(["ocean", "climate-change"]);
 
-  fireEvent.click(screen.getByRole("option", { name: "climate-change" }));
+  // Checked, it is listed twice: with the product's tags, and where it was.
+  fireEvent.click(screen.getAllByRole("option", { name: "climate-change" })[1]);
   expect(submitted(container)).toEqual(["ocean"]);
 });
 
@@ -64,6 +98,31 @@ test("lists the product's tags first, checked, and keeps them there while open",
   expect(submitted(container)).toEqual([]);
   expect(within(pinned).getByRole("option", { name: "ocean" }).getAttribute("aria-selected")).toBe(
     "false"
+  );
+});
+
+test("adds a tag checked while open to the product's tags, leaving it in its category", () => {
+  render(
+    <Theme>
+      <TagPicker
+        name="tags"
+        options={["climate", "ocean"]}
+        categories={{ climate: "domain", ocean: "domain" }}
+        defaultValue={["ocean"]}
+      />
+    </Theme>
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Edit tags" }));
+  const domain = screen.getByRole("group", { name: "Domain" });
+  fireEvent.click(within(domain).getByRole("option", { name: "climate" }));
+
+  const pinned = screen.getByRole("group", { name: "On this product" });
+  expect(within(pinned).getAllByRole("option").map((o) => o.textContent)).toEqual([
+    "ocean",
+    "climate",
+  ]);
+  expect(within(domain).getByRole("option", { name: "climate" }).getAttribute("aria-selected")).toBe(
+    "true"
   );
 });
 

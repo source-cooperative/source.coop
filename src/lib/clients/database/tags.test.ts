@@ -22,9 +22,9 @@ test("keeps them on a product `keep` picks", async () => {
   expect(await hidePendingTags([stored], () => true)).toEqual([stored]);
 });
 
-test("the form gets approved tags, and only the product's own pending ones", () => {
+test("the form gets approved tags with their categories, and only the product's own pending ones", () => {
   const tags = [
-    { tag_id: "ocean" },
+    { tag_id: "ocean", category: "domain" as const },
     { tag_id: "sea-ice", pending: true },
     { tag_id: "someone else's", pending: true },
     { tag_id: "sea", outcome: "rejected" as const },
@@ -34,6 +34,7 @@ test("the form gets approved tags, and only the product's own pending ones", () 
   expect(tagProps(tags, ["ocean", "sea-ice"]).tagOptions).toEqual(["ocean", "climate"]);
   expect(tagProps(tags.slice(0, 3), ["ocean", "sea-ice"])).toEqual({
     tagOptions: ["ocean"],
+    tagCategories: { ocean: "domain" },
     pendingTags: ["sea-ice"],
   });
   expect(tagProps(tags).pendingTags).toEqual([]);

@@ -6,8 +6,9 @@ import { storyAccounts } from "@/components/core/story-accounts";
 /**
  * The admin queue of suggested tags. Each suggestion shows who suggested it,
  * the products carrying it, and the approved tags it looks most like.
- * Approving adds it to the list everyone picks from, and rejecting takes it
- * off its products; both happen at once. Merging takes two steps: choosing
+ * Approving adds it to the list everyone picks from, under the category
+ * chosen beside **Approve as a new tag**, which stays disabled until there is
+ * one. Rejecting takes it off its products. Both happen at once. Merging takes two steps: choosing
  * one or more tags stages the merge and shows what it will change, and
  * nothing happens until **Save merge**. **Reset** goes back to the suggestion
  * as it was. When every word of a suggestion is already a tag, as with
@@ -135,7 +136,7 @@ export const Refused: Story = {
   },
   play: async ({ canvasElement }) => {
     await userEvent.click(
-      within(canvasElement).getAllByRole("button", { name: "Approve as a new tag" })[0]
+      within(canvasElement).getAllByRole("button", { name: "Reject" })[0]
     );
   },
 };

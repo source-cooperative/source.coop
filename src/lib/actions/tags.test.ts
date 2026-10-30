@@ -27,12 +27,15 @@ describe("reviewTag", () => {
     operations.updateTag.mockResolvedValue(ok({ tag_id: "sst" }));
     operations.deleteTag.mockResolvedValue(ok({ tag_id: "sst" }));
 
-    await reviewTag(form({ tag: "sst", decision: "approve" }));
+    await reviewTag(form({ tag: "sst", decision: "approve", category: "domain" }));
     await reviewTag(form({ tag: "sst", decision: "merge", into: "ocean" }));
     await reviewTag(form({ tag: "sst", decision: "reject" }));
     await reviewTag(form({ tag: "sst", decision: "undo" }));
 
-    expect(operations.updateTag).toHaveBeenCalledWith(session, "sst", { pending: false });
+    expect(operations.updateTag).toHaveBeenCalledWith(session, "sst", {
+      pending: false,
+      category: "domain",
+    });
     expect(operations.deleteTag).toHaveBeenNthCalledWith(1, session, "sst", {
       replace_with: ["ocean"],
     });

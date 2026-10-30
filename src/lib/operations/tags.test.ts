@@ -50,6 +50,15 @@ describe("listTags", () => {
     });
   });
 
+  test("lists each approved tag's category to anyone", async () => {
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([
+      { tag_id: "cog", category: "format", suggested_by: "noaa" },
+    ]);
+    expect(await listTags(null, {})).toMatchObject({
+      value: { items: [{ tag_id: "cog", category: "format" }] },
+    });
+  });
+
   test("shows admins who suggested and approved each tag, and leaves decided ones off", async () => {
     const approved = {
       tag_id: "ocean",
@@ -168,12 +177,13 @@ describe("reviewing", () => {
     expect(tagsTable.decide).not.toHaveBeenCalled();
   });
 
-  test("approving records the decision, keeps who suggested, and repeats harmlessly", async () => {
-    const result = await updateTag(ALICE, "sst", { pending: false });
+  test("approving records the decision and category, keeps who suggested, and repeats harmlessly", async () => {
+    const result = await updateTag(ALICE, "sst", { pending: false, category: "domain" });
     expect(result).toEqual({
       ok: true,
       value: {
         tag_id: "sst",
+        category: "domain",
         suggested_by: "alice",
         suggested_at: "2026-10-26T00:00:00.000Z",
         outcome: "approved",
@@ -184,11 +194,20 @@ describe("reviewing", () => {
     expect(tagsTable.decide).toHaveBeenCalledWith("sst", {
       outcome: "approved",
       reviewed_by: "alice",
+      category: "domain",
     });
     expect(productsTable.setTags).not.toHaveBeenCalled();
 
     await updateTag(ALICE, "ocean", { pending: false });
     expect(tagsTable.decide).toHaveBeenCalledTimes(1);
+  });
+
+  test.each([undefined, "colour"])("approving refuses the category %p", async (category) => {
+    expect(await updateTag(ALICE, "sst", { pending: false, category })).toMatchObject({
+      error: "invalid",
+      fieldErrors: { category: expect.any(Array) },
+    });
+    expect(tagsTable.decide).not.toHaveBeenCalled();
   });
 
   test("approving a tag that doesn't exist is not found", async () => {

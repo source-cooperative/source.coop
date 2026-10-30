@@ -2,6 +2,13 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 import { AdminTagSuggestions, type TagSuggestion } from "./AdminTagSuggestions";
 
+// jsdom has no ResizeObserver, and Radix's Select measures its trigger with one.
+global.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver;
+
 function renderQueue(
   suggestion: Partial<TagSuggestion> = {},
   action = jest.fn(async () => ({}))
@@ -88,6 +95,13 @@ test("the split button stages a merge into each of its words", async () => {
 
   await waitFor(() => expect(action).toHaveBeenCalled());
   expect(sent(action).into).toEqual(["field", "boundaries"]);
+});
+
+test("approving waits for a category", () => {
+  renderQueue();
+  const approve = screen.getByRole("button", { name: "Approve as a new tag" });
+  expect((approve as HTMLButtonElement).disabled).toBe(true);
+  expect(screen.getByRole("combobox", { name: "Category" })).toBeTruthy();
 });
 
 test("approve and reject act at once, and a refusal is shown", async () => {

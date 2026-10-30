@@ -16,8 +16,11 @@ interface TagMenuProps {
   query: string;
   onQueryChange: (query: string) => void;
   placeholder: string;
-  /** The tags, in titled groups; an empty group is left out. */
-  sections: { title: string; items: TagMenuItem[] }[];
+  /**
+   * The tags, in titled groups, each optionally described under its title;
+   * an empty group is left out.
+   */
+  sections: { title: string; description?: string; items: TagMenuItem[] }[];
   onChoose: (tag: string) => void;
   /** A last row that isn't a tag, such as suggesting a new one. */
   action?: { label: ReactNode; onChoose: () => void };
@@ -127,8 +130,13 @@ export function TagMenu({
         aria-label={placeholder}
         style={{ maxHeight: 300, overflowY: "auto", overflowX: "hidden", padding: "var(--space-1) 0" }}
       >
-        {groups.map((group) => (
-          <div key={group.title} role="group" aria-label={group.title}>
+        {groups.map((group, g) => (
+          <div
+            key={group.title}
+            role="group"
+            aria-label={group.title}
+            aria-describedby={group.description ? `${id}-group-${g}` : undefined}
+          >
             <Text
               as="div"
               size="1"
@@ -138,6 +146,17 @@ export function TagMenu({
             >
               {group.title}
             </Text>
+            {group.description && (
+              <Text
+                as="div"
+                size="1"
+                color="gray"
+                id={`${id}-group-${g}`}
+                style={{ padding: "0 var(--space-3) var(--space-1)" }}
+              >
+                {group.description}
+              </Text>
+            )}
             {group.items.map((item) =>
               row(
                 i++,

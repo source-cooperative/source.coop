@@ -5,6 +5,7 @@ import { Badge, Button, Flex, IconButton, Popover } from "@radix-ui/themes";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import type { ControlProps } from "@/components/core/DynamicForm";
 import { canonTag } from "@/lib/tags/canon";
+import { TAG_CATEGORIES, type TagCategory } from "@/lib/tags/categories";
 import { TagMenu } from "./TagMenu";
 
 interface TagPickerProps extends Partial<ControlProps> {
@@ -12,6 +13,8 @@ interface TagPickerProps extends Partial<ControlProps> {
   name: string;
   /** The approved corpus, listed for picking. */
   options: string[];
+  /** Each option's category, which the list groups by. */
+  categories?: Record<string, TagCategory>;
   /** Tags already on the product, kept even when the corpus no longer has them. */
   defaultValue?: string[];
   /** Tags someone suggested that an admin hasn't reviewed yet. */
@@ -27,19 +30,25 @@ interface TagPickerProps extends Partial<ControlProps> {
 export function TagPicker({
   name,
   options,
+  categories = {},
   defaultValue = [],
   pending = [],
   suggestName,
   ...controlProps
 }: TagPickerProps) {
-  const [tags, setTags] = useState(defaultValue);
+  // Some products carry an empty tag from before tags were picked from a list.
+  // It isn't a tag, and submitting it would fail the corpus check.
+  const [tags, setTags] = useState(() => defaultValue.filter(Boolean));
   // Suggested here, and only sent for review once the form is saved, so a
   // suggestion never outlives a product that wasn't.
   const [fresh, setFresh] = useState<string[]>([]);
   const [filter, setFilter] = useState("");
-  // The product's tags as the menu opened, listed first; held still while it
-  // is open, so a toggled tag stays where it is under the cursor.
+  // The product's tags as the menu opened, listed first and held still while
+  // it is open, so an unchecked tag stays where it is under the cursor.
   const [pinned, setPinned] = useState<string[]>([]);
+  // A tag checked while open joins them, and also stays in its category, so
+  // the row just clicked doesn't move away from the cursor.
+  const onProduct = [...pinned, ...tags.filter((t) => !pinned.includes(t))];
 
   // In the tags' own spelling, so "sea ice" finds and suggests "sea-ice".
   const query = canonTag(filter);
@@ -54,6 +63,23 @@ export function TagPicker({
     !fresh.includes(query);
 
   const item = (tag: string) => ({ tag, selected: tags.includes(tag) });
+  const listed = matches.filter((t) => !pinned.includes(t));
+  // Under their categories, in the order TAG_CATEGORIES gives; a list with no
+  // categories at all stays one list rather than all of it under "Other".
+  const sections = listed.some((t) => categories[t])
+    ? [
+        ...TAG_CATEGORIES.map(({ id, label, description }) => ({
+          title: label,
+          description,
+          items: listed.filter((t) => categories[t] === id).map(item),
+        })),
+        {
+          title: "Other",
+          description: "Tags not given a category yet.",
+          items: listed.filter((t) => !categories[t]).map(item),
+        },
+      ]
+    : [{ title: query ? `Matching “${query}”` : "All tags", items: listed.map(item) }];
   const toggle = (tag: string, on: boolean) =>
     setTags((tags) => (on ? [...tags, tag] : tags.filter((t) => t !== tag)));
   const suggest = () => {
@@ -98,9 +124,15 @@ export function TagPicker({
   };
 
   return (
-    <Flex gap="2" wrap="wrap" align="center">
-      {tags.map((tag) => chip(tag, false))}
-      {fresh.map((tag) => chip(tag, true))}
+    // The button sits below the chips rather than after them, so a new chip
+    // doesn't push it, and the open list with it, sideways.
+    <Flex direction="column" gap="2" align="start">
+      {(tags.length > 0 || fresh.length > 0) && (
+        <Flex gap="2" wrap="wrap" align="center">
+          {tags.map((tag) => chip(tag, false))}
+          {fresh.map((tag) => chip(tag, true))}
+        </Flex>
+      )}
       <Popover.Root
         onOpenChange={(open) => {
           setFilter("");
@@ -119,11 +151,8 @@ export function TagPicker({
             onQueryChange={setFilter}
             placeholder="Filter tags"
             sections={[
-              { title: "On this product", items: pinned.filter((t) => t.includes(query)).map(item) },
-              {
-                title: query ? `Matching “${query}”` : "All tags",
-                items: matches.filter((t) => !pinned.includes(t)).map(item),
-              },
+              { title: "On this product", items: onProduct.filter((t) => t.includes(query)).map(item) },
+              ...sections,
             ]}
             onChoose={(tag) => toggle(tag, !tags.includes(tag))}
             action={
