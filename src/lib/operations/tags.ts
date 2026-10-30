@@ -210,9 +210,16 @@ export async function planSuggestions(
   }
 
   const all = await tagsTable.listAll();
-  // A tag merged or rejected before counts as new: suggesting it again puts
-  // it back in the queue.
-  const existing = all.filter((t) => tags.includes(t.tag_id) && isUsable(t));
+  // Suggesting a merged or rejected tag afresh would overwrite the record that
+  // undoing the decision needs, so it waits for an admin to undo it instead.
+  for (const t of all) {
+    if (!tags.includes(t.tag_id) || isUsable(t)) continue;
+    const message = t.merged_into?.length
+      ? `"${t.tag_id}" was merged into ${t.merged_into.map((m) => `"${m}"`).join(" and ")}; use that instead`
+      : `"${t.tag_id}" was rejected; an admin can undo that on the tags page`;
+    return conflict(message, { [field]: [message] });
+  }
+  const existing = all.filter((t) => tags.includes(t.tag_id));
   const fresh = tags.filter((tag) => !existing.some((t) => t.tag_id === tag));
   // ponytail: read then write, so simultaneous suggestions can pass the cap;
   // bounded, and not worth a counter while suggestions are rare.

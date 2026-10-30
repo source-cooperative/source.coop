@@ -39,7 +39,7 @@ registry.registerPath({
   tags: ["Tags"],
   summary: "Suggest a tag",
   description:
-    "Adds a tag that awaits review. Your products may carry it from now on, but only people who may edit them see it until an admin approves it.\n\nIf the tag already exists, approved or pending, you get it back with 200 and nothing changes. So you may retry a suggestion safely.\n\nYou may have at most 5 suggestions awaiting review. A sixth returns 409.",
+    "Adds a tag that awaits review. Your products may carry it from now on, but only people who may edit them see it until an admin approves it.\n\nIf the tag already exists, approved or pending, you get it back with 200 and nothing changes. So you may retry a suggestion safely. A tag an admin merged or rejected returns 409 until that decision is undone; the problem names the tags a merge put in its place.\n\nYou may have at most 5 suggestions awaiting review. A sixth returns 409.",
   security: bearer,
   request: {
     body: { content: { "application/json": { schema: SuggestTagSchema } } },

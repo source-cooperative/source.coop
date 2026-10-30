@@ -154,8 +154,8 @@ export class TagsTable extends BaseTable {
   }
 
   /**
-   * Adds a pending tag. One merged or rejected before is suggested afresh,
-   * replacing its record; any other tag that already exists is left as it is.
+   * Adds a pending tag. A tag that already exists is left as it is: a merged
+   * or rejected one keeps the record that undoing its decision needs.
    */
   async suggest(tag_id: string, suggested_by: string): Promise<Tag> {
     const tag: Tag = {
@@ -169,9 +169,7 @@ export class TagsTable extends BaseTable {
         new PutCommand({
           TableName: this.table,
           Item: tag,
-          ConditionExpression:
-            "attribute_not_exists(tag_id) OR outcome = :merged OR outcome = :rejected",
-          ExpressionAttributeValues: { ":merged": "merged", ":rejected": "rejected" },
+          ConditionExpression: "attribute_not_exists(tag_id)",
         })
       );
       return tag;
