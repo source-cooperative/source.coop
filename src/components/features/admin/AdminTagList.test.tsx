@@ -32,9 +32,9 @@ const sent = (action: jest.Mock) => {
   return { ...Object.fromEntries(form), into: form.getAll("into") };
 };
 
-const openChange = async (tag: string) => {
+const openReplace = async (tag: string) => {
   const row = screen.getByRole("rowheader", { name: tag }).closest("tr")!;
-  await userEvent.click(within(row).getByRole("button", { name: "Change" }));
+  await userEvent.click(within(row).getByRole("button", { name: "Replace" }));
   return within(await screen.findByRole("dialog"));
 };
 
@@ -50,7 +50,7 @@ test("each tag links to the product list filtered by it", () => {
 
 test("splits a tag into an approved one and a new name", async () => {
   const action = renderList();
-  const popover = await openChange("field-boundaries");
+  const popover = await openReplace("field-boundaries");
   await userEvent.click(popover.getByRole("option", { name: /^boundaries/ }));
   await userEvent.type(popover.getByPlaceholderText(/type a new name/), "Field");
   await userEvent.click(popover.getByRole("option", { name: "Add new tag “field”" }));
@@ -67,7 +67,7 @@ test("splits a tag into an approved one and a new name", async () => {
 
 test("removes a tag, and shows why a change was refused", async () => {
   const action = renderList(jest.fn().mockResolvedValue({ error: "nothing was changed" }));
-  const popover = await openChange("boundaries");
+  const popover = await openReplace("boundaries");
   await userEvent.click(popover.getByRole("button", { name: "Remove from 121 products" }));
 
   expect(sent(action)).toMatchObject({ decision: "reject", approved: "true", into: [] });
