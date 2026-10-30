@@ -191,11 +191,11 @@ export class TagsTable extends BaseTable {
   decideItem(
     tag_id: string,
     decision: Required<Pick<Tag, "outcome" | "reviewed_by">> &
-      Pick<Tag, "category" | "merged_into" | "changed" | "previous">
+      Pick<Tag, "category" | "merged_into" | "changed" | "previous" | "reviewed_at">
   ): TransactItem {
     const { set, values } = setting({
       ...decision,
-      reviewed_at: new Date().toISOString(),
+      reviewed_at: decision.reviewed_at ?? new Date().toISOString(),
     });
     return {
       Update: {
@@ -209,6 +209,23 @@ export class TagsTable extends BaseTable {
           ...values,
           ...(decision.previous ? { ":approved": "approved" } : { ":true": true }),
         },
+      },
+    };
+  }
+
+  /**
+   * A transaction write narrowing a decision's `changed` to the products it
+   * did change, for a merge or removal whose later batch was refused. Applies
+   * only while the decision made at `reviewed_at` still stands.
+   */
+  changedItem(tag_id: string, reviewed_at: string, changed: TagChange[]): TransactItem {
+    return {
+      Update: {
+        TableName: this.table,
+        Key: { tag_id },
+        UpdateExpression: "SET changed = :changed",
+        ConditionExpression: "reviewed_at = :decided_at",
+        ExpressionAttributeValues: { ":changed": changed, ":decided_at": reviewed_at },
       },
     };
   }

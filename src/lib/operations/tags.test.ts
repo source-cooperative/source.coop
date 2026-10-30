@@ -17,6 +17,7 @@ jest.mock("@/lib/clients/database", () => {
       decideItem: jest.fn(),
       reopenItem: jest.fn(),
       createItem: jest.fn(),
+      changedItem: jest.fn(),
     },
   };
 });
@@ -52,6 +53,11 @@ beforeEach(() => {
     reopen: tag_id,
     reviewed_at,
     previous,
+  }));
+  (tagsTable.changedItem as jest.Mock).mockImplementation((tag_id, reviewed_at, changed) => ({
+    narrow: tag_id,
+    reviewed_at,
+    changed,
   }));
   (tagsTable.createItem as jest.Mock).mockImplementation((tag_id, by, category) => ({
     create: tag_id,
@@ -257,6 +263,7 @@ describe("reviewing", () => {
         decide: "sst",
         outcome: "merged",
         reviewed_by: "alice",
+        reviewed_at: expect.any(String),
         merged_into: ["ocean"],
         // p1 had ocean already, so the merge added nothing there.
         changed: [
@@ -401,9 +408,16 @@ describe("merging or removing an approved tag", () => {
     // The decision landed, so the page shows it, and its Undo.
     expect(revalidatePath).toHaveBeenCalled();
     const batches = (tagsTable.transact as jest.Mock).mock.calls.map(([items]) => items);
-    expect(batches.map((b) => b.length)).toEqual([100, 51]);
+    expect(batches.map((b) => b.length)).toEqual([100, 51, 1]);
     // The decision leads, so whatever changed can be undone.
-    expect(batches[0][0]).toMatchObject({ decide: "ocean" });
+    const [decision] = batches[0];
+    expect(decision).toMatchObject({ decide: "ocean" });
+    // Then it keeps only the products written, so undoing leaves the rest alone.
+    const [[narrow]] = batches.slice(-1);
+    expect(narrow).toMatchObject({ narrow: "ocean", reviewed_at: decision.reviewed_at });
+    expect(narrow.changed.map((c: { product_id: string }) => c.product_id)).toEqual(
+      Array.from({ length: 99 }, (_, i) => `p${i}`)
+    );
   });
 });
 
