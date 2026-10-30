@@ -141,7 +141,7 @@ export const DeleteTagQuerySchema = z.object({
     .optional()
     .openapi({
       description:
-        "Tags to put in this one's place on every product that carries it. Repeat it to merge into several, as `?replace_with=field&replace_with=boundaries` for `field-boundaries`. A spelling never used is added to the list, which renames the tag; a merged or rejected tag can't be one until that decision is undone. Without it, the tag is just taken off them.",
+        "Tags to put in this one's place on every product that carries it. Repeat it to merge into several, as `?replace_with=field&replace_with=boundaries` for `field-boundaries`. With `approved=true`, a spelling never used is added to the list, which renames the tag; a merged or rejected tag can't be one until that decision is undone. Without it, the tag is just taken off them.",
     }),
   approved: z.enum(["true", "false"]).optional().openapi({
     description:
@@ -391,8 +391,17 @@ async function undoDecision(
   );
 }
 
-/** Why a tag can't replace `tag_id`, if it can't. */
-function badTarget(tag_id: string, target: string, tags: Tag[]): string | undefined {
+/**
+ * Why a tag can't replace `tag_id`, if it can't. Only an approved tag can be
+ * renamed to a spelling never used: a suggestion merges into approved tags,
+ * so a typo is refused rather than added to the list with no category.
+ */
+function badTarget(
+  tag_id: string,
+  target: string,
+  tags: Tag[],
+  approved: boolean
+): string | undefined {
   if (!target) return "Choose a tag to merge into";
   if (target === tag_id) return `"${tag_id}" can't be merged into itself`;
   if (!TAG_PATTERN.test(target)) return `"${target}" isn't a tag: ${PATTERN_RULE}`;
@@ -403,12 +412,13 @@ function badTarget(tag_id: string, target: string, tags: Tag[]): string | undefi
   if (existing && !isListed(existing)) {
     return `"${target}" was ${existing.outcome}; undo that first, or choose another tag`;
   }
+  if (!existing && !approved) return `"${target}" is not an approved tag`;
 }
 
 /**
  * Takes a tag off every product that carries it, or merges it into others by
- * putting those in its place. A target the list lacks is added to it, which
- * renames the tag. By default the tag must be awaiting review, which this
+ * putting those in its place. For an approved tag, a target the list lacks is
+ * added to it, which renames the tag. By default the tag must be awaiting review, which this
  * rejects or merges; with `approved: true`, it must be on the list. Refusing
  * the other state keeps a form left open after another admin acted from
  * acting again. The tag stays on record with the decision and what it did to
@@ -432,7 +442,7 @@ export async function deleteTag(
     return conflict(`"${tag_id}" is not ${approved ? "an approved tag" : "awaiting review"}`);
   }
   for (const target of replace_with) {
-    const problem = badTarget(tag_id, target, tags);
+    const problem = badTarget(tag_id, target, tags, approved);
     if (problem) return invalid(problem, "replace_with");
   }
   const created = replace_with.filter((target) => !tags.some((t) => t.tag_id === target));
