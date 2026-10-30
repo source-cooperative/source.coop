@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Flex, Table, Text, TextField } from "@radix-ui/themes";
+import { useState, useTransition } from "react";
+import { Badge, Button, Flex, Popover, Table, Text, TextField } from "@radix-ui/themes";
+import { Cross2Icon } from "@radix-ui/react-icons";
 import { productListUrl } from "@/lib/urls";
+import { canonTag } from "@/lib/tags/canon";
 import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
+import { TagMenu } from "@/components/features/products/TagMenu";
 
 export interface ApprovedTag {
   tag: string;
@@ -46,12 +49,25 @@ function Provenance({
   );
 }
 
-/** Every approved tag, most used first, with where each one came from. */
+/**
+ * Every approved tag, most used first, with where each one came from, and a
+ * way to replace one on every product: merge it into other tags, rename it,
+ * or remove it.
+ */
 export function AdminTagList({
   tags,
+  taken = {},
+  action,
   accounts,
 }: {
   tags: ApprovedTag[];
+  /**
+   * Tags off the list, by name, each with why: awaiting review, merged or
+   * rejected. None can be a new name for a tag.
+   */
+  taken?: Record<string, string>;
+  /** Applies a decision, resolving to why it was refused if it was. */
+  action: (formData: FormData) => Promise<{ error?: string }>;
   /** The suggesters' and approvers' accounts, for their cards on hover. */
   accounts?: AccountsById;
 }) {
@@ -78,6 +94,7 @@ export function AdminTagList({
               <Table.ColumnHeaderCell>Tag</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell justify="end">Products</Table.ColumnHeaderCell>
               <Table.ColumnHeaderCell>Added</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell />
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -96,6 +113,9 @@ export function AdminTagList({
                     <Provenance tag={t} accounts={accounts} />
                   </Text>
                 </Table.Cell>
+                <Table.Cell justify="end">
+                  <ReplaceTag tag={t} tags={tags} taken={taken} action={action} />
+                </Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>
@@ -106,5 +126,153 @@ export function AdminTagList({
         </Text>
       )}
     </Flex>
+  );
+}
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/**
+ * Replaces an approved tag on every product that carries it: with the tags
+ * chosen, a new spelling among them renaming it, or with nothing, removing it.
+ */
+function ReplaceTag({
+  tag,
+  tags,
+  taken,
+  action,
+}: {
+  tag: ApprovedTag;
+  tags: ApprovedTag[];
+  taken: Record<string, string>;
+  action: (formData: FormData) => Promise<{ error?: string }>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [into, setInto] = useState<string[]>([]);
+  const [filter, setFilter] = useState("");
+  const [error, setError] = useState("");
+  const [busy, startTransition] = useTransition();
+
+  const query = canonTag(filter);
+  const others = tags.filter((t) => t.tag !== tag.tag && !into.includes(t.tag));
+  const shown = others.filter((t) => t.tag.includes(query));
+  const isNew =
+    !!query &&
+    query !== tag.tag &&
+    !tags.some((t) => t.tag === query) &&
+    !into.includes(query) &&
+    !taken[query];
+  const add = (t: string) => {
+    setInto((into) => [...into, t]);
+    setFilter("");
+  };
+  const save = (decision: "merge" | "reject") =>
+    startTransition(async () => {
+      const form = new FormData();
+      form.set("tag", tag.tag);
+      form.set("decision", decision);
+      form.set("approved", "true");
+      if (decision === "merge") into.forEach((t) => form.append("into", t));
+      const { error = "" } = await action(form);
+      setError(error);
+      if (!error) setOpen(false);
+    });
+
+  return (
+    <Popover.Root
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        setInto([]);
+        setFilter("");
+        setError("");
+      }}
+    >
+      <Popover.Trigger>
+        <Button type="button" size="1" variant="ghost" color="gray">
+          Replace
+        </Button>
+      </Popover.Trigger>
+      <Popover.Content width="320px" aria-label={`Replace ${tag.tag}`} style={{ padding: 0 }}>
+        <Flex direction="column" gap="2" p="3">
+          <Text size="2">
+            Replace <b>{tag.tag}</b> on {plural(tag.products, "product")} with:
+          </Text>
+          {into.length > 0 && (
+            <Flex gap="1" wrap="wrap">
+              {into.map((t) => (
+                <Badge key={t} size="2" color="gray">
+                  {t}
+                  {!tags.some((x) => x.tag === t) && " (new)"}
+                  <button
+                    type="button"
+                    aria-label={`Take off ${t}`}
+                    onClick={() => setInto((into) => into.filter((x) => x !== t))}
+                    style={{ all: "unset", cursor: "pointer", display: "inline-flex" }}
+                  >
+                    <Cross2Icon />
+                  </button>
+                </Badge>
+              ))}
+            </Flex>
+          )}
+        </Flex>
+        <div style={{ borderTop: "1px solid var(--gray-a5)" }}>
+          <TagMenu
+            query={filter}
+            onQueryChange={setFilter}
+            placeholder="Find a tag, or type a new name"
+            sections={[
+              {
+                title: query ? `Matching “${query}”` : "All tags",
+                items: shown.map((t) => ({ tag: t.tag, detail: plural(t.products, "product") })),
+              },
+            ]}
+            onChoose={add}
+            action={
+              isNew
+                ? {
+                    label: into.length ? `Add new tag “${query}”` : `Rename to “${query}”`,
+                    onChoose: () => add(query),
+                  }
+                : undefined
+            }
+            empty={
+              taken[query]
+                ? `“${query}” is ${taken[query]}, so it can't be a new name.`
+                : `No other tag matches “${filter}”.`
+            }
+          />
+        </div>
+        <Flex direction="column" gap="2" p="3" style={{ borderTop: "1px solid var(--gray-a5)" }}>
+          <Flex gap="2" align="center">
+            <Button
+              type="button"
+              size="1"
+              disabled={!into.length}
+              loading={busy}
+              onClick={() => save("merge")}
+            >
+              Save
+            </Button>
+            <Flex flexGrow="1" />
+            <Button
+              type="button"
+              size="1"
+              variant="ghost"
+              color="red"
+              disabled={busy || into.length > 0}
+              onClick={() => save("reject")}
+            >
+              Remove from {plural(tag.products, "product")}
+            </Button>
+          </Flex>
+          {error && (
+            <Text size="1" color="red" role="alert">
+              {error}
+            </Text>
+          )}
+        </Flex>
+      </Popover.Content>
+    </Popover.Root>
   );
 }

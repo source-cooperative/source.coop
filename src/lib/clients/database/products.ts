@@ -14,7 +14,7 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { accountsTable } from "./accounts";
-import { BaseTable } from "./base";
+import { BaseTable, type TransactItem } from "./base";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
 export class ProductsTable extends BaseTable {
@@ -388,25 +388,30 @@ export class ProductsTable extends BaseTable {
     );
   }
 
-  /** Replaces a product's tags, and nothing else about it. */
-  async setTags(
+  /**
+   * A transaction write replacing a product's tags, and nothing else about
+   * it, that applies only while they are still `from`: a save in the meantime
+   * cancels the transaction rather than being overwritten. A product saved
+   * with no tags may have no `tags` attribute at all, which `from` of `[]`
+   * also matches.
+   */
+  setTagsItem(
     account_id: string,
     product_id: string,
-    tags: string[]
-  ): Promise<void> {
-    try {
-      await this.client.send(
-        new UpdateCommand({
-          TableName: this.table,
-          Key: { account_id, product_id },
-          UpdateExpression: "SET metadata.tags = :tags",
-          ExpressionAttributeValues: { ":tags": tags },
-        })
-      );
-    } catch (error) {
-      this.logError("setTags", error, { account_id, product_id });
-      throw error;
-    }
+    from: string[],
+    to: string[]
+  ): TransactItem {
+    return {
+      Update: {
+        TableName: this.table,
+        Key: { account_id, product_id },
+        UpdateExpression: "SET metadata.tags = :to",
+        ConditionExpression: from.length
+          ? "metadata.tags = :from"
+          : "attribute_not_exists(metadata.tags) OR metadata.tags = :from",
+        ExpressionAttributeValues: { ":from": from, ":to": to },
+      },
+    };
   }
 
   async delete(account_id: string, product_id: string): Promise<void> {

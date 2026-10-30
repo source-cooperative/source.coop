@@ -13,6 +13,8 @@ export interface ReviewedTag {
   suggested_by?: string;
   /** The approved tags a merged tag was replaced with. */
   merged_into?: string[];
+  /** Whether it was an approved tag, which undoing puts back on the list. */
+  wasListed?: boolean;
   /**
    * The products it was on: for a merge or rejection, the ones it rewrote and
    * undoing restores; for an approval, the ones carrying it now.
@@ -33,18 +35,18 @@ const date = (iso: string) =>
   new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium" });
 
 /** What the decision was, in words. */
-function outcome({ outcome, merged_into, products: { length } }: ReviewedTag) {
+function outcome({ outcome, merged_into, products: { length }, wasListed }: ReviewedTag) {
   if (outcome === "approved") return "Approved";
   const on = length ? ` on ${plural(length, "product")}` : "";
   return outcome === "merged"
     ? `Merged into ${(merged_into ?? []).join(" + ")}${on}`
-    : `Rejected${on ? `, taken off ${plural(length, "product")}` : ""}`;
+    : `${wasListed ? "Removed" : "Rejected"}${on ? `, taken off ${plural(length, "product")}` : ""}`;
 }
 
 /**
- * Suggested tags an admin has decided, most recent first, with the decision
- * and who made it. Undo puts a tag back awaiting review, and reverses what a
- * merge or rejection did to products.
+ * Tags an admin has decided, most recent first, with the decision and who
+ * made it. Undo puts a suggestion back awaiting review, or an approved tag
+ * back on the list, and reverses what a merge or rejection did to products.
  */
 export function AdminReviewedTags({
   reviewed,
@@ -95,6 +97,8 @@ function ReviewedRow({
       const form = new FormData();
       form.set("tag", tag.tag);
       form.set("decision", "undo");
+      // Names the decision shown, so a second click doesn't undo the one before.
+      if (tag.reviewed_at) form.set("reviewed_at", tag.reviewed_at);
       setError((await action(form)).error ?? "");
     });
 
@@ -138,7 +142,7 @@ function ReviewedRow({
             color="gray"
             loading={busy}
             onClick={undo}
-            title="Put this tag back awaiting review, and reverse what the decision did to products"
+            title={`Put this tag back ${tag.wasListed ? "on the list" : "awaiting review"}, and reverse what the decision did to products`}
           >
             Undo
           </Button>

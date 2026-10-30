@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { userEvent, within } from "storybook/test";
+import { screen, userEvent, within } from "storybook/test";
 import { AdminTagList } from "./AdminTagList";
 import { storyAccounts } from "@/components/core/story-accounts";
 
@@ -8,6 +8,13 @@ import { storyAccounts } from "@/components/core/story-accounts";
  * products carry each and where it came from: who suggested it and which
  * admin approved it, or the initial import that seeded the list. Each tag
  * links to the product list filtered by it.
+ *
+ * **Replace** replaces a tag on every product that carries it. Choose one tag
+ * to merge it into, several to split it, or type a name the list lacks to
+ * rename it. A name awaiting review, merged or rejected can't be a new name,
+ * and the menu says so. With nothing chosen, **Remove** takes it off them. The products
+ * change all at once, or not at all if one was saved meanwhile, and the
+ * decision appears under Reviewed, where it can be undone.
  */
 const meta = {
   title: "Features/Admin/AdminTagList",
@@ -15,6 +22,8 @@ const meta = {
   parameters: { layout: "padded" },
   args: {
     accounts: storyAccounts,
+    action: async () => ({}),
+    taken: { oceans: "merged", "sea-ice-extent": "awaiting review" },
     tags: [
       { tag: "field-boundaries", products: 113 },
       { tag: "geoparquet", products: 101 },
@@ -45,6 +54,57 @@ export const Filtered: Story = {
       within(canvasElement).getByPlaceholderText("Filter 6 tags"),
       "ice"
     );
+  },
+};
+
+const openReplace = async (canvasElement: HTMLElement, tag: string) => {
+  const row = within(canvasElement).getByRole("rowheader", { name: tag }).closest("tr")!;
+  await userEvent.click(within(row).getByRole("button", { name: "Replace" }));
+  return within(await screen.findByRole("dialog", { name: `Replace ${tag}` }));
+};
+
+/** A tag's Replace popover, with nothing chosen yet: every other tag, and Remove. */
+export const Replace: Story = {
+  play: async ({ canvasElement }) => {
+    await openReplace(canvasElement, "ocean");
+  },
+};
+
+/** `field-boundaries` split into two new tags, typed by name. */
+export const Split: Story = {
+  play: async ({ canvasElement }) => {
+    const popover = await openReplace(canvasElement, "field-boundaries");
+    const find = popover.getByPlaceholderText("Find a tag, or type a new name");
+    await userEvent.type(find, "Field");
+    await userEvent.click(popover.getByRole("option", { name: "Rename to “field”" }));
+    await userEvent.type(find, "boundaries");
+    await userEvent.click(popover.getByRole("option", { name: "Add new tag “boundaries”" }));
+  },
+};
+
+/**
+ * A name typed that is off the list, here a tag merged into another. It can't
+ * be a new name, so the menu offers no rename and says why.
+ */
+export const TakenName: Story = {
+  play: async ({ canvasElement }) => {
+    const popover = await openReplace(canvasElement, "ocean");
+    await userEvent.type(popover.getByPlaceholderText("Find a tag, or type a new name"), "oceans");
+  },
+};
+
+/** A change refused because a product was saved while it was being applied. */
+export const Refused: Story = {
+  args: {
+    action: async () => ({
+      error:
+        '"ocean", a tag it merges into, or one of its products changed while this was being saved, so nothing was changed. Reload and try again.',
+    }),
+  },
+  play: async ({ canvasElement }) => {
+    const popover = await openReplace(canvasElement, "ocean");
+    await userEvent.click(popover.getByRole("option", { name: /climate/ }));
+    await userEvent.click(popover.getByRole("button", { name: "Save" }));
   },
 };
 

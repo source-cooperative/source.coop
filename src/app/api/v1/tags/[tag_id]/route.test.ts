@@ -11,13 +11,13 @@ jest.mock("@/lib/operations/tags", () => ({
 
 const { DELETE } = require("./route");
 
-test("passes every replace_with on, so a tag can merge into several", async () => {
+test("passes every replace_with on, so a tag can merge into several, and approved", async () => {
   (getApiSession as jest.Mock).mockResolvedValue({ account: { account_id: "root" } });
   (deleteTag as jest.Mock).mockResolvedValue({ ok: true, value: { tag_id: "field-boundaries" } });
 
   const res = await DELETE(
     new NextRequest(
-      "http://localhost/api/v1/tags/field-boundaries?replace_with=field&replace_with=boundaries",
+      "http://localhost/api/v1/tags/field-boundaries?replace_with=field&replace_with=boundaries&approved=true",
       { method: "DELETE", headers: { Authorization: "Bearer x" } }
     ),
     { params: Promise.resolve({ tag_id: "field-boundaries" }) }
@@ -26,5 +26,6 @@ test("passes every replace_with on, so a tag can merge into several", async () =
   expect(res.status).toBe(200);
   expect(deleteTag).toHaveBeenCalledWith(expect.anything(), "field-boundaries", {
     replace_with: ["field", "boundaries"],
+    approved: "true",
   });
 });

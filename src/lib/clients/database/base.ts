@@ -1,7 +1,12 @@
 import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  TransactWriteCommand,
+  type TransactWriteCommandInput,
+} from "@aws-sdk/lib-dynamodb";
+import { isTransactionRefused } from "./errors";
 import type { GetOutputType } from "@smithy/types";
 import {
   memoizedRead as defaultMemoizedRead,
@@ -19,6 +24,12 @@ interface DynamoCommand {
   readonly input: unknown;
   readonly constructor: { name: string };
 }
+
+/** One write in a transaction, to any table. */
+export type TransactItem = NonNullable<TransactWriteCommandInput["TransactItems"]>[number];
+
+/** The most writes DynamoDB takes in one transaction. */
+export const MAX_TRANSACTION_ITEMS = 100;
 
 // Base class for database operations
 export abstract class BaseTable {
@@ -68,6 +79,22 @@ export abstract class BaseTable {
         command as unknown as Parameters<DynamoDBDocumentClient["send"]>[0]
       )
     ) as Promise<GetOutputType<C>>;
+  }
+
+  /**
+   * Applies up to MAX_TRANSACTION_ITEMS writes, to any tables, all or none.
+   * Answers false, having written nothing, when a condition failed or another
+   * write raced one of them.
+   */
+  async transact(items: TransactItem[]): Promise<boolean> {
+    try {
+      await this.client.send(new TransactWriteCommand({ TransactItems: items }));
+      return true;
+    } catch (error) {
+      if (isTransactionRefused(error)) return false;
+      this.logError("transact", error, { items: items.length });
+      throw error;
+    }
   }
 
   protected logError(
