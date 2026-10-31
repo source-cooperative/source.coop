@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { userEvent, within } from "storybook/test";
+import { screen, userEvent, within } from "storybook/test";
 import type { TagCategory } from "@/lib/tags/categories";
 import { TagPicker } from "./TagPicker";
 
@@ -137,13 +137,35 @@ export const Recommended: Story = {
  * spelled differently from an approved tag, or in the plural, adds that tag;
  * one whose words are each tags adds all of them, as `field-boundaries` adds
  * `field` and `boundaries`; anything else is suggested for review, marked
- * new. Each toggles like any tag, and the group's link adds every existing
- * tag at once, leaving new ones to be chosen one by one so nothing reaches
+ * new. Keywords that come to the same tags are one recommendation. Each
+ * toggles like any tag, and the group's last row adds every existing tag it
+ * shows at once, leaving new ones to be chosen one by one so nothing reaches
  * the review queue unasked.
  */
 export const RecommendedOpen: Story = {
   args: Recommended.args,
   play: async ({ canvasElement }) => {
     await userEvent.click(within(canvasElement).getByRole("button", { name: "Review" }));
+  },
+};
+
+/**
+ * A keyword an admin decided: `porpoises` was merged into `whales`, so it
+ * recommends that, and `noise` was rejected, so it isn't offered at all.
+ * Five new tags is as many as anyone may have awaiting review, so past that
+ * a new recommendation says so instead of adding.
+ */
+export const RecommendedDecidedAndCapped: Story = {
+  args: {
+    options: [...options, "whales"],
+    recommended: ["porpoises", "noise", "aa", "bb", "cc", "dd", "ee", "ff"],
+    decided: { porpoises: ["whales"], noise: null },
+  },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole("button", { name: "Review" }));
+    const group = within(await screen.findByRole("group", { name: "Recommended" }));
+    for (const k of ["aa", "bb", "cc", "dd", "ee"]) {
+      await userEvent.click(group.getByRole("option", { name: new RegExp(`^${k}`) }));
+    }
   },
 };
