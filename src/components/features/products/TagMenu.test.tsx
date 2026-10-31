@@ -68,3 +68,22 @@ test("says so when nothing matches", () => {
   renderMenu({ sections: [], action: undefined });
   expect(screen.getByText("Nothing")).toBeTruthy();
 });
+
+test("a group's action is a row the arrow keys reach, after the group's tags", () => {
+  const addAll = jest.fn();
+  const { input } = renderMenu({
+    sections: [
+      {
+        title: "Recommended",
+        items: [{ tag: "ocean" }],
+        action: { label: "Add 1 tag", onChoose: addAll },
+      },
+      { title: "All tags", items: [{ tag: "climate" }] },
+    ],
+  });
+  fireEvent.keyDown(input, { key: "ArrowDown" });
+  expect(active()).toBe("Add 1 tag");
+  fireEvent.keyDown(input, { key: "Enter" });
+  expect(addAll).toHaveBeenCalled();
+  expect(screen.queryByRole("button")).toBeNull();
+});

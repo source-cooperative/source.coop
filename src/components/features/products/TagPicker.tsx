@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge, Button, Flex, IconButton, Link, Popover, Text } from "@radix-ui/themes";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import type { ControlProps } from "@/components/core/DynamicForm";
-import { canonTag } from "@/lib/tags/canon";
+import { canonTag, MAX_PENDING_PER_ACCOUNT } from "@/lib/tags/canon";
 import { TAG_CATEGORIES, type TagCategory } from "@/lib/tags/categories";
 import { recommendTags, type RecommendedTag } from "@/lib/tags/recommend";
 import { LINK_BUTTON, TagMenu } from "./TagMenu";
@@ -31,7 +31,15 @@ interface TagPickerProps extends Partial<ControlProps> {
    * the tags says how many, and the menu lists them first.
    */
   recommended?: string[];
+  /**
+   * Recommended keywords an admin has decided: merged ones map to the tags
+   * that replaced them, rejected ones to null. Neither is offered as new.
+   */
+  decided?: Record<string, string[] | null>;
 }
+
+const NONE: never[] = [];
+const NO_DECISIONS = {};
 
 export function TagPicker({
   name,
@@ -40,7 +48,8 @@ export function TagPicker({
   defaultValue = [],
   pending = [],
   suggestName,
-  recommended = [],
+  recommended = NONE,
+  decided = NO_DECISIONS,
   ...controlProps
 }: TagPickerProps) {
   // Some products carry an empty tag from before tags were picked from a list.
@@ -59,14 +68,21 @@ export function TagPicker({
   // Held still the same way, so an added recommendation stays, checked.
   const [recs, setRecs] = useState<RecommendedTag[]>([]);
   const [open, setOpen] = useState(false);
+  // The tags each adopted recommendation put on, by keyword, so undoing one
+  // takes off only those, and not one another recommendation still wants.
+  const [adoptedBy, setAdoptedBy] = useState<Record<string, string[]>>({});
 
   // In the tags' own spelling, so "sea ice" finds and suggests "sea-ice".
   const query = canonTag(filter);
   const matches = options.filter((tag) => tag.toLowerCase().includes(query));
   // Offered even when other tags partly match: someone after "ocean
   // acidification" shouldn't have to settle for "ocean".
+  // ponytail: counts this form's suggestions only; the server also counts the
+  // account's others, and refuses the save if they pass the cap.
+  const atCap = fresh.length >= MAX_PENDING_PER_ACCOUNT;
   const canSuggest =
     suggestName &&
+    !atCap &&
     query &&
     !options.includes(query) &&
     !tags.includes(query) &&
@@ -101,25 +117,37 @@ export function TagPicker({
 
   // Offered until added; a keyword no approved tag fits is only offered where
   // the form can suggest it.
-  const offered = recommendTags(recommended, options).filter(({ keyword, tags: these }) =>
+  // Matching runs an edit distance against every option, so not per keystroke.
+  const recommendations = useMemo(
+    () => recommendTags(recommended, options, decided),
+    [recommended, options, decided]
+  );
+  const offered = recommendations.filter(({ keyword, tags: these }) =>
     these
       ? these.some((t) => !tags.includes(t))
       : suggestName && !tags.includes(keyword) && !fresh.includes(keyword)
   );
   const added = ({ keyword, tags: these }: RecommendedTag) =>
     these ? these.every((t) => tags.includes(t)) : fresh.includes(keyword);
-  const adopt = ({ keyword, tags: these }: RecommendedTag) =>
-    these
-      ? setTags((tags) => [...new Set([...tags, ...these])])
-      : setFresh((fresh) => [...fresh, keyword]);
-  // Undoing one takes off only what it added, not a tag the product had.
-  const unadopt = ({ keyword, tags: these }: RecommendedTag) =>
-    these
-      ? setTags((tags) => tags.filter((t) => !these.includes(t) || pinned.includes(t)))
-      : setFresh((fresh) => fresh.filter((t) => t !== keyword));
+  const adopt = ({ keyword, tags: these }: RecommendedTag) => {
+    if (!these) return setFresh((fresh) => [...fresh, keyword]);
+    const gained = these.filter((t) => !tags.includes(t));
+    setAdoptedBy((by) => ({ ...by, [keyword]: gained }));
+    setTags((tags) => [...new Set([...tags, ...these])]);
+  };
+  // Undoing one takes off only what it added: not a tag the product had or
+  // someone picked, nor one another adopted recommendation also added.
+  const unadopt = ({ keyword, tags: these }: RecommendedTag) => {
+    if (!these) return setFresh((fresh) => fresh.filter((t) => t !== keyword));
+    const { [keyword]: gained = [], ...others } = adoptedBy;
+    const kept = Object.values(others).flat();
+    setAdoptedBy(others);
+    setTags((tags) => tags.filter((t) => !gained.includes(t) || kept.includes(t)));
+  };
   const recLabel = (r: RecommendedTag) => (r.tags ? r.tags.join(" + ") : r.keyword);
   const shownRecs = recs.filter((r) => recLabel(r).includes(query) || r.keyword.includes(query));
-  const toAdd = recs.filter((r) => r.tags && !added(r));
+  // The rows the filter leaves, so the count is what the person can see.
+  const toAdd = shownRecs.filter((r) => r.tags && !added(r));
 
   const openMenu = (next: boolean) => {
     setOpen(next);
@@ -191,12 +219,20 @@ export function TagPicker({
             sections={[
               {
                 title: "Recommended",
-                items: shownRecs.map((r) => ({
-                  tag: recLabel(r),
-                  selected: added(r),
-                  ...(!r.tags && { detail: "new, for review", detailColor: "amber" as const }),
-                  onChoose: () => (added(r) ? unadopt(r) : adopt(r)),
-                })),
+                items: shownRecs.map((r) => {
+                  const full = !r.tags && !added(r) && atCap;
+                  return {
+                    tag: recLabel(r),
+                    selected: added(r),
+                    ...(!r.tags && {
+                      detail: full
+                        ? `${MAX_PENDING_PER_ACCOUNT} new tags at most`
+                        : "new, for review",
+                      detailColor: full ? ("gray" as const) : ("amber" as const),
+                    }),
+                    onChoose: () => (added(r) ? unadopt(r) : full ? undefined : adopt(r)),
+                  };
+                }),
                 action:
                   toAdd.length > 1
                     ? { label: `Add ${toAdd.length} tags`, onChoose: () => toAdd.forEach(adopt) }

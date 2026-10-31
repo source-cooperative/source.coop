@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Text, Spinner, Flex } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
 import { Account, DataConnection } from "@/types";
@@ -8,6 +8,8 @@ import { Product, ProductVisibility } from "@/types/product";
 import { useProductIdValidation } from "@/hooks/useIdValidation";
 import { useCatalog } from "@/hooks/useCatalog";
 import { createProduct, updateProduct } from "@/lib/actions/products";
+import { tagsNamed } from "@/lib/actions/tags";
+import { canonTag } from "@/lib/tags/canon";
 import type { TagCategory } from "@/lib/tags/categories";
 import { TagPicker } from "./TagPicker";
 
@@ -104,6 +106,30 @@ export function ProductCreationForm({
   const keywords = isEditMode
     ? catalog?.get(`${product.account_id}/${product.product_id}`)?.keywords
     : undefined;
+  // Which keywords an admin merged or rejected, asked about by name, since the
+  // full list of decided tags isn't public.
+  const [decided, setDecided] = useState<Record<string, string[] | null>>({});
+  useEffect(() => {
+    if (!keywords?.length) return;
+    let active = true;
+    tagsNamed(keywords.map(canonTag).filter(Boolean)).then((tags) => {
+      if (!active) return;
+      setDecided(
+        Object.fromEntries(
+          tags.flatMap((t): [string, string[] | null][] =>
+            t.outcome === "merged"
+              ? [[t.tag_id, t.merged_into ?? []]]
+              : t.outcome === "rejected"
+                ? [[t.tag_id, null]]
+                : []
+          )
+        )
+      );
+    });
+    return () => {
+      active = false;
+    };
+  }, [keywords]);
 
   // In create mode, start on the preselected owner when given, else the first.
   const initialOwnerId = isEditMode
@@ -283,6 +309,7 @@ export function ProductCreationForm({
           pending={pendingTags}
           suggestName="suggest_tags"
           recommended={keywords}
+          decided={decided}
           defaultValue={isEditMode ? product.metadata.tags : []}
         />
       ),
