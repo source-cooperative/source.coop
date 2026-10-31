@@ -8,8 +8,21 @@ export interface TagMenuItem {
   tag: string;
   /** Shown at the row's right, such as how many products carry it. */
   detail?: string;
+  /** The detail's colour, amber for a tag awaiting review as elsewhere. */
+  detailColor?: "gray" | "amber";
   /** Checked, in a menu that picks several. */
   selected?: boolean;
+  /** Chooses the row instead of `onChoose(tag)`, for a row that isn't one tag. */
+  onChoose?: () => void;
+}
+
+export interface TagMenuSection {
+  title: string;
+  /** Said under the title, such as what the group's tags have in common. */
+  description?: string;
+  items: TagMenuItem[];
+  /** A last row in the group that isn't a tag, such as adding every row at once. */
+  action?: { label: string; onChoose: () => void };
 }
 
 interface TagMenuProps {
@@ -20,7 +33,7 @@ interface TagMenuProps {
    * The tags, in titled groups, each optionally described under its title;
    * an empty group is left out.
    */
-  sections: { title: string; description?: string; items: TagMenuItem[] }[];
+  sections: TagMenuSection[];
   onChoose: (tag: string) => void;
   /** A last row that isn't a tag, such as suggesting a new one. */
   action?: { label: ReactNode; onChoose: () => void };
@@ -31,6 +44,12 @@ interface TagMenuProps {
   /** Footer text beside the key hints. */
   hint?: string;
 }
+
+/**
+ * A `<button>` inside a Radix `Link`, rid of the button's own chrome but
+ * nothing more, so the link's type and colour still apply.
+ */
+export const LINK_BUTTON = { background: "none", border: 0, padding: 0, cursor: "pointer" } as const;
 
 const ROW = {
   display: "flex",
@@ -60,8 +79,12 @@ export function TagMenu({
 }: TagMenuProps) {
   const id = useId();
   const groups = sections.filter((s) => s.items.length);
+  // In the order the rows show, so the arrow keys reach every one.
   const choices = [
-    ...groups.flatMap((g) => g.items.map((item) => () => onChoose(item.tag))),
+    ...groups.flatMap((g) => [
+      ...g.items.map((item) => item.onChoose ?? (() => onChoose(item.tag))),
+      ...(g.action ? [g.action.onChoose] : []),
+    ]),
     ...(action ? [action.onChoose] : []),
   ];
   const [active, setActive] = useState(0);
@@ -99,6 +122,17 @@ export function TagMenu({
       {content}
     </div>
   );
+
+  const plusRow = (i: number, label: ReactNode) =>
+    row(
+      i,
+      <>
+        <PlusIcon aria-hidden style={{ flexShrink: 0 }} />
+        <Text size="2" truncate>
+          {label}
+        </Text>
+      </>
+    );
 
   let i = 0;
   return (
@@ -171,7 +205,11 @@ export function TagMenu({
                     {item.tag}
                   </Text>
                   {item.detail && (
-                    <Text size="1" color="gray" style={{ fontVariantNumeric: "tabular-nums" }}>
+                    <Text
+                      size="1"
+                      color={item.detailColor ?? "gray"}
+                      style={{ fontVariantNumeric: "tabular-nums" }}
+                    >
                       {item.detail}
                     </Text>
                   )}
@@ -179,18 +217,10 @@ export function TagMenu({
                 item.selected
               )
             )}
+            {group.action && plusRow(i++, group.action.label)}
           </div>
         ))}
-        {action &&
-          row(
-            i++,
-            <>
-              <PlusIcon aria-hidden style={{ flexShrink: 0 }} />
-              <Text size="2" truncate>
-                {action.label}
-              </Text>
-            </>
-          )}
+        {action && plusRow(i++, action.label)}
         {!choices.length && (
           <Text as="div" size="2" color="gray" style={{ padding: "var(--space-2) var(--space-3)" }}>
             {empty}

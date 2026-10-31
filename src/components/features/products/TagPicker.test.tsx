@@ -173,3 +173,128 @@ test("without suggestName there's no way to suggest", () => {
   filterFor("sea ice");
   expect(screen.queryByRole("option", { name: /^Suggest/ })).toBeNull();
 });
+
+describe("recommended tags", () => {
+  const renderRecommended = (suggestName?: string, defaultValue: string[] = []) =>
+    render(
+      <Theme>
+        <TagPicker
+          name="tags"
+          options={["agriculture", "boundaries", "climate", "field", "ocean"]}
+          defaultValue={defaultValue}
+          suggestName={suggestName}
+          recommended={["Agriculture", "field-boundaries", "land-parcels", "ocean"]}
+        />
+      </Theme>
+    );
+  const review = () => fireEvent.click(screen.getByRole("button", { name: "Review" }));
+  const recommended = () => within(screen.getByRole("group", { name: "Recommended" }));
+  const rows = () => recommended().getAllByRole("option").map((o) => o.textContent);
+
+  test("a line under the tags counts them, and Review lists them first in the menu", () => {
+    renderRecommended("suggest_tags", ["ocean"]);
+    // ocean is already on the product, so it isn't recommended.
+    expect(screen.getByText(/3 recommended tags\./)).toBeTruthy();
+    review();
+    expect(screen.getAllByRole("group").map((g) => g.getAttribute("aria-label"))[0]).toBe(
+      "Recommended"
+    );
+    expect(rows()).toEqual([
+      "agriculture",
+      "field + boundaries",
+      "land-parcelsnew, for review",
+      "Add 2 tags",
+    ]);
+  });
+
+  test("choosing one adds its tags, or suggests a new one, and checks it in place", () => {
+    const { container } = renderRecommended("suggest_tags");
+    review();
+    fireEvent.click(recommended().getByRole("option", { name: /field \+ boundaries/ }));
+    fireEvent.click(recommended().getByRole("option", { name: /land-parcels/ }));
+    expect(submitted(container)).toEqual(["field", "boundaries"]);
+    expect(submitted(container, "suggest_tags")).toEqual(["land-parcels"]);
+    const split = recommended().getByRole("option", { name: /field \+ boundaries/ });
+    expect(split.getAttribute("aria-selected")).toBe("true");
+
+    // Choosing it again takes off what it added.
+    fireEvent.click(split);
+    expect(submitted(container)).toEqual([]);
+  });
+
+  test("taking one off again keeps a tag the product already had", () => {
+    const { container } = renderRecommended(undefined, ["field"]);
+    review();
+    const split = recommended().getByRole("option", { name: /field \+ boundaries/ });
+    fireEvent.click(split);
+    expect(submitted(container)).toEqual(["field", "boundaries"]);
+    fireEvent.click(split);
+    expect(submitted(container)).toEqual(["field"]);
+  });
+
+  test("the group's last row adds every existing tag but suggests nothing", () => {
+    const { container } = renderRecommended("suggest_tags");
+    review();
+    fireEvent.click(recommended().getByRole("option", { name: "Add 3 tags" }));
+    expect(submitted(container)).toEqual(["agriculture", "field", "boundaries", "ocean"]);
+    expect(submitted(container, "suggest_tags")).toEqual([]);
+  });
+
+  test("the group's last row counts and adds only the rows the filter shows", () => {
+    const { container } = renderRecommended();
+    review();
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "o" } });
+    // agriculture is hidden by "o"; field + boundaries and ocean are shown.
+    fireEvent.click(recommended().getByRole("option", { name: "Add 2 tags" }));
+    expect(submitted(container)).toEqual(["field", "boundaries", "ocean"]);
+  });
+
+  test("taking one off keeps a tag another recommendation also added", () => {
+    const { container } = render(
+      <Theme>
+        <TagPicker
+          name="tags"
+          options={["boundaries", "field"]}
+          recommended={["field-boundaries", "fields"]}
+          decided={{ fields: ["field"] }}
+        />
+      </Theme>
+    );
+    review();
+    fireEvent.click(recommended().getByRole("option", { name: /field \+ boundaries/ }));
+    fireEvent.click(recommended().getByRole("option", { name: /^field$/ }));
+    fireEvent.click(recommended().getByRole("option", { name: /^field$/ }));
+    expect(submitted(container)).toEqual(["field", "boundaries"]);
+  });
+
+  test("new tags can be suggested up to the pending cap, and no further", () => {
+    const keywords = ["aa", "bb", "cc", "dd", "ee", "ff"];
+    const { container } = render(
+      <Theme>
+        <TagPicker name="tags" options={[]} suggestName="suggest_tags" recommended={keywords} />
+      </Theme>
+    );
+    review();
+    for (const k of keywords) {
+      fireEvent.click(recommended().getByRole("option", { name: new RegExp(`^${k}`) }));
+    }
+    expect(submitted(container, "suggest_tags")).toEqual(keywords.slice(0, 5));
+    expect(recommended().getByRole("option", { name: /^ff/ }).textContent).toContain(
+      "5 new tags at most"
+    );
+  });
+
+  test("without suggestName only matches are recommended", () => {
+    renderRecommended();
+    review();
+    expect(rows()).toEqual(["agriculture", "field + boundaries", "ocean", "Add 3 tags"]);
+  });
+
+  test("a recommended tag isn't listed again under All tags", () => {
+    renderRecommended();
+    review();
+    const all = within(screen.getByRole("group", { name: "All tags" }));
+    expect(all.queryByRole("option", { name: "agriculture" })).toBeNull();
+    expect(all.getByRole("option", { name: "climate" })).toBeTruthy();
+  });
+});

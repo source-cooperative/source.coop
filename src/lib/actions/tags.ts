@@ -1,6 +1,7 @@
 "use server";
 
 import { getPageSession } from "@/lib";
+import type { Tag } from "@/lib/clients/database";
 import * as ops from "@/lib/operations/tags";
 
 /**
@@ -41,4 +42,14 @@ export async function reviewTag(
             : null;
   if (!result) return { error: `Unknown decision: ${decision}` };
   return result.ok ? {} : { error: result.message };
+}
+
+/**
+ * The tags named, in any state, for the product form to tell a merged or
+ * rejected tag from a new one. Empty when the lookup is refused.
+ */
+export async function tagsNamed(names: string[]): Promise<Tag[]> {
+  if (!names.length) return [];
+  const result = await ops.listTags(await getPageSession(), { tag_id: names.slice(0, 100) });
+  return result.ok ? result.value.items : [];
 }

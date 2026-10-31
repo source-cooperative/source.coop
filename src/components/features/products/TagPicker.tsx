@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { Badge, Button, Flex, IconButton, Popover } from "@radix-ui/themes";
+import { useMemo, useState } from "react";
+import { Badge, Button, Flex, IconButton, Link, Popover, Text } from "@radix-ui/themes";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import type { ControlProps } from "@/components/core/DynamicForm";
-import { canonTag } from "@/lib/tags/canon";
+import { canonTag, MAX_PENDING_PER_ACCOUNT } from "@/lib/tags/canon";
 import { TAG_CATEGORIES, type TagCategory } from "@/lib/tags/categories";
-import { TagMenu } from "./TagMenu";
+import { recommendTags, type RecommendedTag } from "@/lib/tags/recommend";
+import { LINK_BUTTON, TagMenu } from "./TagMenu";
 
 interface TagPickerProps extends Partial<ControlProps> {
   /** The form field each chosen tag is submitted under, once per tag. */
@@ -25,7 +26,20 @@ interface TagPickerProps extends Partial<ControlProps> {
    * one.
    */
   suggestName?: string;
+  /**
+   * Keywords read from the product's data, recommended as tags: a line under
+   * the tags says how many, and the menu lists them first.
+   */
+  recommended?: string[];
+  /**
+   * Recommended keywords an admin has decided: merged ones map to the tags
+   * that replaced them, rejected ones to null. Neither is offered as new.
+   */
+  decided?: Record<string, string[] | null>;
 }
+
+const NONE: never[] = [];
+const NO_DECISIONS = {};
 
 export function TagPicker({
   name,
@@ -34,6 +48,8 @@ export function TagPicker({
   defaultValue = [],
   pending = [],
   suggestName,
+  recommended = NONE,
+  decided = NO_DECISIONS,
   ...controlProps
 }: TagPickerProps) {
   // Some products carry an empty tag from before tags were picked from a list.
@@ -49,21 +65,33 @@ export function TagPicker({
   // A tag checked while open joins them, and also stays in its category, so
   // the row just clicked doesn't move away from the cursor.
   const onProduct = [...pinned, ...tags.filter((t) => !pinned.includes(t))];
+  // Held still the same way, so an added recommendation stays, checked.
+  const [recs, setRecs] = useState<RecommendedTag[]>([]);
+  const [open, setOpen] = useState(false);
+  // The tags each adopted recommendation put on, by keyword, so undoing one
+  // takes off only those, and not one another recommendation still wants.
+  const [adoptedBy, setAdoptedBy] = useState<Record<string, string[]>>({});
 
   // In the tags' own spelling, so "sea ice" finds and suggests "sea-ice".
   const query = canonTag(filter);
   const matches = options.filter((tag) => tag.toLowerCase().includes(query));
   // Offered even when other tags partly match: someone after "ocean
   // acidification" shouldn't have to settle for "ocean".
+  // ponytail: counts this form's suggestions only; the server also counts the
+  // account's others, and refuses the save if they pass the cap.
+  const atCap = fresh.length >= MAX_PENDING_PER_ACCOUNT;
   const canSuggest =
     suggestName &&
+    !atCap &&
     query &&
     !options.includes(query) &&
     !tags.includes(query) &&
     !fresh.includes(query);
 
   const item = (tag: string) => ({ tag, selected: tags.includes(tag) });
-  const listed = matches.filter((t) => !pinned.includes(t));
+  // A recommendation that is one approved tag is listed there, not twice.
+  const recommendedTags = recs.flatMap((r) => (r.tags?.length === 1 ? r.tags : []));
+  const listed = matches.filter((t) => !pinned.includes(t) && !recommendedTags.includes(t));
   // Under their categories, in the order TAG_CATEGORIES gives; a list with no
   // categories at all stays one list rather than all of it under "Other".
   const sections = listed.some((t) => categories[t])
@@ -85,6 +113,49 @@ export function TagPicker({
   const suggest = () => {
     setFresh((fresh) => [...fresh, query]);
     setFilter("");
+  };
+
+  // Offered until added; a keyword no approved tag fits is only offered where
+  // the form can suggest it.
+  // Matching runs an edit distance against every option, so not per keystroke.
+  const recommendations = useMemo(
+    () => recommendTags(recommended, options, decided),
+    [recommended, options, decided]
+  );
+  const offered = recommendations.filter(({ keyword, tags: these }) =>
+    these
+      ? these.some((t) => !tags.includes(t))
+      : suggestName && !tags.includes(keyword) && !fresh.includes(keyword)
+  );
+  const added = ({ keyword, tags: these }: RecommendedTag) =>
+    these ? these.every((t) => tags.includes(t)) : fresh.includes(keyword);
+  const adopt = ({ keyword, tags: these }: RecommendedTag) => {
+    if (!these) return setFresh((fresh) => [...fresh, keyword]);
+    const gained = these.filter((t) => !tags.includes(t));
+    setAdoptedBy((by) => ({ ...by, [keyword]: gained }));
+    setTags((tags) => [...new Set([...tags, ...these])]);
+  };
+  // Undoing one takes off only what it added: not a tag the product had or
+  // someone picked, nor one another adopted recommendation also added.
+  const unadopt = ({ keyword, tags: these }: RecommendedTag) => {
+    if (!these) return setFresh((fresh) => fresh.filter((t) => t !== keyword));
+    const { [keyword]: gained = [], ...others } = adoptedBy;
+    const kept = Object.values(others).flat();
+    setAdoptedBy(others);
+    setTags((tags) => tags.filter((t) => !gained.includes(t) || kept.includes(t)));
+  };
+  const recLabel = (r: RecommendedTag) => (r.tags ? r.tags.join(" + ") : r.keyword);
+  const shownRecs = recs.filter((r) => recLabel(r).includes(query) || r.keyword.includes(query));
+  // The rows the filter leaves, so the count is what the person can see.
+  const toAdd = shownRecs.filter((r) => r.tags && !added(r));
+
+  const openMenu = (next: boolean) => {
+    setOpen(next);
+    setFilter("");
+    if (next) {
+      setPinned(tags);
+      setRecs(offered);
+    }
   };
 
   const chip = (tag: string, isNew: boolean) => {
@@ -133,12 +204,7 @@ export function TagPicker({
           {fresh.map((tag) => chip(tag, true))}
         </Flex>
       )}
-      <Popover.Root
-        onOpenChange={(open) => {
-          setFilter("");
-          if (open) setPinned(tags);
-        }}
-      >
+      <Popover.Root open={open} onOpenChange={openMenu}>
         <Popover.Trigger>
           <Button {...controlProps} type="button" size="1" variant="soft">
             {tags.length || fresh.length ? "Edit tags" : "Add tags"}
@@ -151,6 +217,27 @@ export function TagPicker({
             onQueryChange={setFilter}
             placeholder="Filter tags"
             sections={[
+              {
+                title: "Recommended",
+                items: shownRecs.map((r) => {
+                  const full = !r.tags && !added(r) && atCap;
+                  return {
+                    tag: recLabel(r),
+                    selected: added(r),
+                    ...(!r.tags && {
+                      detail: full
+                        ? `${MAX_PENDING_PER_ACCOUNT} new tags at most`
+                        : "new, for review",
+                      detailColor: full ? ("gray" as const) : ("amber" as const),
+                    }),
+                    onChoose: () => (added(r) ? unadopt(r) : full ? undefined : adopt(r)),
+                  };
+                }),
+                action:
+                  toAdd.length > 1
+                    ? { label: `Add ${toAdd.length} tags`, onChoose: () => toAdd.forEach(adopt) }
+                    : undefined,
+              },
               { title: "On this product", items: onProduct.filter((t) => t.includes(query)).map(item) },
               ...sections,
             ]}
@@ -164,6 +251,16 @@ export function TagPicker({
           />
         </Popover.Content>
       </Popover.Root>
+      {offered.length > 0 && !open && (
+        <Text size="1" color="gray">
+          {offered.length === 1 ? "1 recommended tag." : `${offered.length} recommended tags.`}{" "}
+          <Link size="1" weight="medium" asChild>
+            <button type="button" onClick={() => openMenu(true)} style={LINK_BUTTON}>
+              Review
+            </button>
+          </Link>
+        </Text>
+      )}
     </Flex>
   );
 }

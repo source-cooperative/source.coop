@@ -11,3 +11,9 @@ export const canonTag = (tag: string) =>
     .replace(/#/g, "")
     .replace(/[\s-]+/g, "-")
     .replace(/^-+|-+$/g, "");
+
+/** What a stored tag may be: up to 40 lowercase letters, digits or hyphens. */
+export const TAG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
+
+/** How many tags one account may have awaiting review at once. */
+export const MAX_PENDING_PER_ACCOUNT = 5;
