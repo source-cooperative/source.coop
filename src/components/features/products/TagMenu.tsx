@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { Box, Flex, Kbd, Link, Text, TextField } from "@radix-ui/themes";
+import { Box, Flex, Kbd, Text, TextField } from "@radix-ui/themes";
 import { CheckIcon, MagnifyingGlassIcon, PlusIcon } from "@radix-ui/react-icons";
 
 export interface TagMenuItem {
@@ -21,7 +21,7 @@ export interface TagMenuSection {
   /** Said under the title, such as what the group's tags have in common. */
   description?: string;
   items: TagMenuItem[];
-  /** A link in the group's heading, such as adding every row at once. */
+  /** A last row in the group that isn't a tag, such as adding every row at once. */
   action?: { label: string; onChoose: () => void };
 }
 
@@ -79,8 +79,12 @@ export function TagMenu({
 }: TagMenuProps) {
   const id = useId();
   const groups = sections.filter((s) => s.items.length);
+  // In the order the rows show, so the arrow keys reach every one.
   const choices = [
-    ...groups.flatMap((g) => g.items.map((item) => item.onChoose ?? (() => onChoose(item.tag)))),
+    ...groups.flatMap((g) => [
+      ...g.items.map((item) => item.onChoose ?? (() => onChoose(item.tag))),
+      ...(g.action ? [g.action.onChoose] : []),
+    ]),
     ...(action ? [action.onChoose] : []),
   ];
   const [active, setActive] = useState(0);
@@ -119,6 +123,17 @@ export function TagMenu({
     </div>
   );
 
+  const plusRow = (i: number, label: ReactNode) =>
+    row(
+      i,
+      <>
+        <PlusIcon aria-hidden style={{ flexShrink: 0 }} />
+        <Text size="2" truncate>
+          {label}
+        </Text>
+      </>
+    );
+
   let i = 0;
   return (
     <Flex direction="column">
@@ -156,26 +171,15 @@ export function TagMenu({
             aria-label={group.title}
             aria-describedby={group.description ? `${id}-group-${g}` : undefined}
           >
-            <Flex
-              justify="between"
-              align="center"
+            <Text
+              as="div"
+              size="1"
+              weight="medium"
+              color="gray"
               style={{ padding: "var(--space-2) var(--space-3) var(--space-1)" }}
             >
-              <Text size="1" weight="medium" color="gray">
-                {group.title}
-              </Text>
-              {group.action && (
-                <Link size="1" weight="medium" asChild>
-                  <button
-                    type="button"
-                    onClick={group.action.onChoose}
-                    style={LINK_BUTTON}
-                  >
-                    {group.action.label}
-                  </button>
-                </Link>
-              )}
-            </Flex>
+              {group.title}
+            </Text>
             {group.description && (
               <Text
                 as="div"
@@ -213,18 +217,10 @@ export function TagMenu({
                 item.selected
               )
             )}
+            {group.action && plusRow(i++, group.action.label)}
           </div>
         ))}
-        {action &&
-          row(
-            i++,
-            <>
-              <PlusIcon aria-hidden style={{ flexShrink: 0 }} />
-              <Text size="2" truncate>
-                {action.label}
-              </Text>
-            </>
-          )}
+        {action && plusRow(i++, action.label)}
         {!choices.length && (
           <Text as="div" size="2" color="gray" style={{ padding: "var(--space-2) var(--space-3)" }}>
             {empty}

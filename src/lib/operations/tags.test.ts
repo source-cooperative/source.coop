@@ -88,6 +88,31 @@ describe("listTags", () => {
     });
   });
 
+  test("lists the tags named, in any state, without who suggested or decided them", async () => {
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([
+      { tag_id: "ocean", category: "domain", outcome: "approved", reviewed_by: "root" },
+      { tag_id: "seas", outcome: "merged", merged_into: ["ocean"], reviewed_by: "root" },
+      { tag_id: "junk", outcome: "rejected", suggested_by: "bob" },
+      { tag_id: "climate" },
+    ]);
+    expect(await listTags(null, { tag_id: ["Seas", "junk", "nope"] })).toEqual({
+      ok: true,
+      value: {
+        items: [
+          { tag_id: "seas", outcome: "merged", merged_into: ["ocean"] },
+          { tag_id: "junk", outcome: "rejected" },
+        ],
+        next_cursor: null,
+      },
+    });
+  });
+
+  test("naming tags can't be combined with pending or reviewed", async () => {
+    expect(await listTags(ALICE, { tag_id: ["sst"], pending: "true" })).toMatchObject({
+      error: "invalid",
+    });
+  });
+
   test("lists each approved tag's category to anyone", async () => {
     (tagsTable.listAll as jest.Mock).mockResolvedValue([
       { tag_id: "cog", category: "format", suggested_by: "noaa" },

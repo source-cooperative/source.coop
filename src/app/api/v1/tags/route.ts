@@ -16,7 +16,7 @@ registry.registerPath({
   tags: ["Tags"],
   summary: "List tags",
   description:
-    "Returns the tags a product may carry, as one page. Anyone may list them.\n\nWith `?pending=true`, returns the tags awaiting review instead. Only admins may list those; everyone else gets 401 or 403.\n\nAdmins also see who suggested each tag and when, and which admin approved it and when. Tags from the initial import have no suggester or approver.",
+    "Returns the tags a product may carry, as one page. Anyone may list them.\n\nWith `?pending=true`, returns the tags awaiting review instead. Only admins may list those; everyone else gets 401 or 403.\n\nWith `?tag_id=`, repeated for each tag, returns just the tags named, in any state, with each one's `outcome` and `merged_into`. Anyone may ask, to learn whether a tag is on the list, awaiting review, merged into others or rejected.\n\nAdmins also see who suggested each tag and when, and which admin approved it and when. Tags from the initial import have no suggester or approver.",
   security: optionalBearer,
   request: { query: ListTagsQuerySchema },
   responses: {
@@ -27,7 +27,13 @@ registry.registerPath({
 
 export const GET = withApiSession(async ({ session, request }) =>
   toResponse(
-    await listTags(session, Object.fromEntries(request.nextUrl.searchParams)),
+    await listTags(session, {
+      ...Object.fromEntries(request.nextUrl.searchParams),
+      // Every one, which Object.fromEntries would cut to the last.
+      tag_id: request.nextUrl.searchParams.getAll("tag_id").length
+        ? request.nextUrl.searchParams.getAll("tag_id")
+        : undefined,
+    }),
     StatusCodes.OK,
     "query"
   )

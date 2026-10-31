@@ -83,6 +83,32 @@ export const ProductTags: Story = {
   },
 };
 
+/**
+ * Groups that explain themselves, as the product form shows recommendations:
+ * a description under the title, a new tag's detail in amber, and a last row
+ * in the group that adds every tag in it at once.
+ */
+export const RecommendedGroup: Story = {
+  args: {
+    multiple: true,
+    placeholder: "Filter tags",
+    empty: "No tag matches.",
+    sections: [
+      {
+        title: "Recommended",
+        description: "Read from this product's data.",
+        items: [
+          { tag: "agriculture" },
+          { tag: "field + boundaries" },
+          { tag: "land-parcels", detail: "new, for review", detailColor: "amber" },
+        ],
+        action: { label: "Add 2 tags", onChoose: () => {} },
+      },
+      { title: "All tags", items: [{ tag: "climate" }, { tag: "ocean" }] },
+    ],
+  },
+};
+
 /** Nothing matches the search and nothing can be suggested. */
 export const NoMatch: Story = {
   args: { query: "zzz", empty: "No approved tag matches “zzz”." },
