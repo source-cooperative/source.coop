@@ -140,7 +140,7 @@ export function TagMenu({
             <Text
               as="div"
               size="1"
-              weight="bold"
+              weight="medium"
               style={{ padding: "var(--space-2) var(--space-3) var(--space-1)" }}
             >
               {group.title}
