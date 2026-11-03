@@ -416,6 +416,17 @@ describe("searchAccounts", () => {
     expect(search).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["no account", { identity_id: "an-identity" }],
+    ["a disabled account", { account: { account_id: "alice", disabled: true } }],
+    ["a service account", { account: { account_id: "acme--bot", type: AccountType.SERVICE } }],
+  ])("refuses a session with %s", async (_, session) => {
+    expect(await searchAccounts(session as never, { q: "bo" })).toMatchObject({
+      error: "forbidden",
+    });
+    expect(search).not.toHaveBeenCalled();
+  });
+
   it("looks up an email for an admin only", async () => {
     expect(await searchAccounts(SESSION, { q: "bob@example.com" })).toMatchObject({
       error: "forbidden",

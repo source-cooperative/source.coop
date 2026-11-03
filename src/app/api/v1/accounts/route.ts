@@ -16,7 +16,7 @@ registry.registerPath({
   tags: ["Accounts"],
   summary: "Search accounts",
   description:
-    "Returns up to 10 active people whose ID or name contains `q`. With `member_of`, it also searches that account's service accounts, if you may invite members to it.\n\nAdmins may search by a whole email address. That finds the one account signed in with it, even a disabled one. Returns 403 to anyone else who searches by email.\n\nReturns 400 if `q` is shorter than two characters.",
+    "Returns up to 10 active people whose ID or name contains `q`. With `member_of`, it also searches that account's service accounts, if you may invite members to it.\n\nAdmins may search by a whole email address. That finds the one account signed in with it, even a disabled one. Returns 403 to anyone else who searches by email, and to a disabled account or a service account.\n\nReturns 400 if `q` is shorter than two characters.",
   security: bearer,
   request: { query: SearchAccountsQuerySchema },
   responses: {

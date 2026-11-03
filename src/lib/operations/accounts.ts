@@ -360,14 +360,18 @@ export async function deleteAccount(
 /**
  * Type-ahead search over people. With `member_of`, the service accounts of an
  * account the caller may invite to are searched too. An email finds the one
- * account signed in with it, which only an admin may ask. Needs a session, so
- * it isn't an open directory to scrape.
+ * account signed in with it, which only an admin may ask. Only an active
+ * person may search, so it isn't an open directory for a leftover key or a
+ * machine identity to scrape.
  */
 export async function searchAccounts(
   session: UserSession | null,
   query: unknown
 ): Promise<OperationResult<Page<z.infer<typeof AccountSuggestionSchema>>>> {
   if (!session) return unauthenticated();
+  if (!session.account || session.account.disabled || isServiceAccount(session.account)) {
+    return deny(session, "Only an active person may search accounts");
+  }
   const parsed = SearchAccountsQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
   const { q, member_of } = parsed.data;
