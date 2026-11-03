@@ -449,7 +449,16 @@ export async function createOrganization(
       state_changed: now,
     });
   } catch (error) {
-    await accountsTable.delete(account_id);
+    // The membership failure is the error worth raising; a failed cleanup is
+    // logged so the ownerless organization can be found.
+    try {
+      await accountsTable.delete(account_id);
+    } catch (cleanupError) {
+      LOGGER.error("Could not delete an organization left without an owner", {
+        operation: "createOrganization",
+        metadata: { account_id, error: cleanupError },
+      });
+    }
     throw error;
   }
   LOGGER.info("Created organization", {

@@ -493,4 +493,10 @@ describe("createOrganization", () => {
     await expect(createOrganization(SESSION, input)).rejects.toThrow("throttled");
     expect(accountsTable.delete).toHaveBeenCalledWith("acme");
   });
+
+  it("raises the owner's error even if the organization can't be deleted", async () => {
+    (membershipsTable.create as jest.Mock).mockRejectedValue(new Error("throttled"));
+    (accountsTable.delete as jest.Mock).mockRejectedValueOnce(new Error("delete failed"));
+    await expect(createOrganization(SESSION, input)).rejects.toThrow("throttled");
+  });
 });
