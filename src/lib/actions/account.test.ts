@@ -1,8 +1,7 @@
-import { searchAccounts, updateAccountProfile } from "./account";
-import { accountsTable } from "../clients";
+import { createOrganization, searchAccounts, updateAccountProfile } from "./account";
 import { getPageSession } from "../api/utils";
-import { isAuthorized } from "../api/authz";
-import { Account, AccountType, Actions, UserSession } from "@/types";
+import { Account, AccountType, UserSession } from "@/types";
+import * as ops from "@/lib/operations/accounts";
 
 jest.mock("../clients", () => ({
   accountsTable: {
@@ -20,16 +19,18 @@ jest.mock("../api/authz", () => ({
   isAuthorized: jest.fn(),
 }));
 
+jest.mock("@/lib/operations/accounts", () => ({
+  updateAccount: jest.fn(),
+  searchAccounts: jest.fn(),
+  createOrganization: jest.fn(),
+}));
+
 jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
 }));
 
-const mockAccountsTable = accountsTable as jest.Mocked<typeof accountsTable>;
 const mockGetPageSession = getPageSession as jest.MockedFunction<
   typeof getPageSession
->;
-const mockIsAuthorized = isAuthorized as jest.MockedFunction<
-  typeof isAuthorized
 >;
 
 const account = (overrides: Partial<Account>): Account =>
@@ -45,133 +46,90 @@ const account = (overrides: Partial<Account>): Account =>
     ...overrides,
   }) as Account;
 
-const submit = (fields: Record<string, string>) => {
-  const formData = new FormData();
-  formData.set("account_id", "an-account");
-  formData.set("name", "An Account");
-  for (const [key, value] of Object.entries(fields)) formData.set(key, value);
-  return updateAccountProfile(null, formData);
-};
+describe("updateAccountProfile", () => {
+  it("hands the form's fields to the operation", async () => {
+    mockGetPageSession.mockResolvedValue(null);
+    (ops.updateAccount as jest.Mock).mockResolvedValue({ ok: true, value: {} });
+    const formData = new FormData();
+    for (const [key, value] of Object.entries({
+      account_id: "an-account",
+      name: "An Account",
+      description: "A bio",
+      email: "contact@example.test",
+      websites_0: "example.test",
+      websites_1: "",
+    })) {
+      formData.set(key, value);
+    }
 
-const updatedEmails = () => mockAccountsTable.update.mock.calls[0][0].emails;
-
-describe("updateAccountProfile contact email", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockGetPageSession.mockResolvedValue({
-      identity_id: "an-identity",
-    } as UserSession);
-    mockIsAuthorized.mockReturnValue(true);
-    mockAccountsTable.update.mockResolvedValue(undefined as never);
-  });
-
-  it("stores an organization's submitted email as its unverified primary", async () => {
-    mockAccountsTable.fetchById.mockResolvedValue(
-      account({ type: AccountType.ORGANIZATION, emails: [] })
-    );
-
-    const result = await submit({ email: " contact@example.test " });
+    const result = await updateAccountProfile(null, formData);
 
     expect(result.success).toBe(true);
-    expect(updatedEmails()).toEqual([
-      expect.objectContaining({
-        address: "contact@example.test",
-        is_primary: true,
-        verified: false,
-      }),
-    ]);
-  });
-
-  // The form seeds the field with the current address, so every save of a name
-  // or bio resubmits it. Rebuilding the record then would drop verified state.
-  it("leaves a verified organization email alone when it is resubmitted unchanged", async () => {
-    const emails = [
-      {
-        address: "contact@example.test",
-        is_primary: true,
-        verified: true,
-        added_at: "2020-05-05T00:00:00.000Z",
-      },
-    ];
-    mockAccountsTable.fetchById.mockResolvedValue(
-      account({ type: AccountType.ORGANIZATION, emails })
-    );
-
-    await submit({ email: "contact@example.test" });
-
-    expect(updatedEmails()).toEqual(emails);
-  });
-
-  it("rejects a malformed organization email without writing", async () => {
-    mockAccountsTable.fetchById.mockResolvedValue(
-      account({ type: AccountType.ORGANIZATION, emails: [] })
-    );
-
-    const result = await submit({ email: "not-an-email" });
-
-    expect(result.success).toBe(false);
-    expect(result.fieldErrors).toEqual({ email: ["Invalid email address"] });
-    expect(mockAccountsTable.update).not.toHaveBeenCalled();
-  });
-
-  it("clears an organization's email when the field is submitted empty", async () => {
-    mockAccountsTable.fetchById.mockResolvedValue(
-      account({
-        type: AccountType.ORGANIZATION,
-        emails: [
-          { address: "old@example.test", is_primary: true, verified: true },
-        ],
-      })
-    );
-
-    await submit({ email: "   " });
-
-    expect(updatedEmails()).toEqual([]);
-  });
-
-  // An individual's email lives in the identity provider, so the form field is
-  // read-only and never submitted. A forged submission must not move it anyway.
-  it("ignores an email submitted for an individual account", async () => {
-    const emails = [
-      { address: "person@example.test", is_primary: true, verified: true },
-    ];
-    mockAccountsTable.fetchById.mockResolvedValue(
-      account({ type: AccountType.INDIVIDUAL, emails })
-    );
-
-    const result = await submit({ email: "attacker@example.test" });
-
-    expect(result.success).toBe(true);
-    expect(updatedEmails()).toEqual(emails);
+    expect(ops.updateAccount).toHaveBeenCalledWith(null, "an-account", {
+      name: "An Account",
+      bio: "A bio",
+      orcid: undefined,
+      ror_id: undefined,
+      email: "contact@example.test",
+      websites: ["example.test", ""],
+    });
   });
 });
 
 describe("searchAccounts", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockGetPageSession.mockResolvedValue({ identity_id: "an-identity" } as UserSession);
-    mockAccountsTable.searchMemberCandidates.mockResolvedValue([]);
-  });
+  const SESSION = { identity_id: "an-identity" } as UserSession;
+  beforeEach(() => mockGetPageSession.mockResolvedValue(SESSION));
 
-  it("offers an account's service accounts only to someone who may invite to it", async () => {
-    mockIsAuthorized.mockReturnValue(true);
-    await searchAccounts("bo", "acme");
-    expect(mockAccountsTable.searchMemberCandidates).toHaveBeenLastCalledWith("bo", "acme");
-    expect(mockIsAuthorized).toHaveBeenCalledWith(
+  it("answers the operation's items, and nothing for a refused search", async () => {
+    (ops.searchAccounts as jest.Mock).mockResolvedValue({
+      ok: true,
+      value: { items: [{ account_id: "bob" }], next_cursor: null },
+    });
+    expect(await searchAccounts("bo", "acme")).toEqual([{ account_id: "bob" }]);
+    expect(ops.searchAccounts).toHaveBeenCalledWith(SESSION, { q: "bo", member_of: "acme" });
+
+    (ops.searchAccounts as jest.Mock).mockResolvedValue({
+      ok: true,
+      value: { items: [{ account_id: "gone", disabled: true }], next_cursor: null },
+    });
+    expect(await searchAccounts("gone@example.com")).toEqual([]);
+
+    (ops.searchAccounts as jest.Mock).mockResolvedValue({ ok: false, error: "invalid", message: "" });
+    expect(await searchAccounts("b")).toEqual([]);
+  });
+});
+
+describe("createOrganization", () => {
+  const form = (fields: Record<string, string>) => {
+    const data = new FormData();
+    for (const [k, v] of Object.entries(fields)) data.set(k, v);
+    return data;
+  };
+
+  it("shows the operation's bio and websites errors on the form's own fields", async () => {
+    (ops.createOrganization as jest.Mock).mockResolvedValue({
+      ok: false,
+      error: "invalid",
+      message: "Invalid input",
+      fieldErrors: { websites: ["Each website must be a URL"], bio: ["Too long"], name: ["Short"] },
+    });
+    const state = await createOrganization(null, form({ website: "https://", description: "x" }));
+    expect(ops.createOrganization).toHaveBeenCalledWith(
       expect.anything(),
-      { membership_account_id: "acme" },
-      Actions.InviteMembership
+      expect.objectContaining({ bio: "x", websites: ["https://"] })
     );
-
-    // Anyone else gets an ordinary search of people, not a listing of acme's bots.
-    mockIsAuthorized.mockReturnValue(false);
-    await searchAccounts("bo", "acme");
-    expect(mockAccountsTable.searchMemberCandidates).toHaveBeenLastCalledWith("bo", undefined);
+    expect(state.fieldErrors).toEqual({
+      website: ["Each website must be a URL"],
+      description: ["Too long"],
+      name: ["Short"],
+    });
   });
 
-  it("never consults authorization for a plain search", async () => {
-    await searchAccounts("bo");
-    expect(mockIsAuthorized).not.toHaveBeenCalled();
-    expect(mockAccountsTable.searchMemberCandidates).toHaveBeenLastCalledWith("bo", undefined);
+  it("redirects to the new organization, and reports a failed write on the form", async () => {
+    (ops.createOrganization as jest.Mock).mockResolvedValue({ ok: true, value: { account_id: "acme" } });
+    expect(await createOrganization(null, form({}))).toMatchObject({ success: true, redirectTo: "/acme" });
+
+    (ops.createOrganization as jest.Mock).mockRejectedValue(new Error("throttled"));
+    expect(await createOrganization(null, form({}))).toMatchObject({ success: false });
   });
 });

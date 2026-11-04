@@ -101,12 +101,16 @@ function useIdValidation(id: string, options: UseIdValidationOptions) {
           }
         );
 
-        // Both account and product validation use the same logic:
-        // 404 means available (not found), 200 means taken
+        // Only a 404 frees the ID. A 401 or 403 is a product that exists but
+        // that the caller may not read, so its ID is taken too.
+        const taken = response.ok || [401, 403].includes(response.status);
+        if (!taken && response.status !== 404) {
+          throw new Error(`Unexpected status ${response.status}`);
+        }
         setValidationState({
-          isValid: !response.ok, // 404 = available, 200 = taken
+          isValid: !taken,
           isLoading: false,
-          error: response.ok
+          error: taken
             ? `${
                 isProductValidation ? "Product" : "Account"
               } ID is not available`

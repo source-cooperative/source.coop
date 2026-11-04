@@ -10,7 +10,7 @@ import { ProductAnalyticsView } from "./ProductAnalyticsView";
 
 /**
  * The body of the product analytics page, behind the manager-only ANALYTICS
- * tab: stats over a downloads chart, a by-country ranking, and a top-files
+ * tab: stats over a requests chart, a by-country ranking, and a top-files
  * table, with audience numbers on the USERS tab.
  *
  * Reaching this in the app takes a product you can manage, 28 days of real
@@ -62,7 +62,7 @@ const totalsOf = (days: UsagePoint[], countries: number): UsageTotals => ({
 });
 
 /**
- * A heavy-tailed downloads-per-IP histogram: most addresses take one file, a
+ * A heavy-tailed requests-per-IP histogram: most addresses take one file, a
  * few mirror the whole product. The real `distribution` is zero-filled across
  * every bin, so this builds from FREQUENCY_BINS rather than from a written-out
  * list that would drift if the bins changed.
@@ -127,11 +127,11 @@ export const BreakdownsUnavailable: Story = {
 };
 
 /**
- * Downloads happened, but none of them resolved to a file — the country
+ * Requests came in, but none of them resolved to a file — the country
  * ranking is populated and the table is not. The two panels come from one
  * query but render independently, so it is worth knowing the layout holds.
  */
-export const NoFileDownloads: Story = {
+export const NoFileRequests: Story = {
   args: { ...base, breakdowns: { ...breakdowns, files: [] } },
 };
 

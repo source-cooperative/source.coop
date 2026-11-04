@@ -1,5 +1,6 @@
 import {
   accountsTable,
+  hidePendingTags,
   isOrganizationalAccount,
   membershipsTable,
   productsTable,
@@ -29,7 +30,9 @@ export async function IndividualProfilePage({
     1000
   );
 
-  products = products.filter((product) => canListOnProfile(session, product));
+  products = await hidePendingTags(
+    products.filter((product) => canListOnProfile(session, product))
+  );
 
   const memberships = (
     await membershipsTable.listByUser(account.account_id)

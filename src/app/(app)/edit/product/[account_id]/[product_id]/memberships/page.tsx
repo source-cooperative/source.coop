@@ -87,7 +87,7 @@ export default async function MembershipsPage({ params }: PageProps) {
     userSession,
     {
       membership_account_id: account.account_id,
-      repository_id: product.product_id,
+      product_id: product.product_id,
     },
     Actions.InviteMembership
   );

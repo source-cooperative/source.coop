@@ -122,7 +122,7 @@ describe("getUsage", () => {
       // Slice 0 stays open-ended so it keeps the in-progress UTC day.
       expect(bound(ipSqls[0], "<")).toBeUndefined();
       // Each slice starts where the next-older one ends, so no day is counted
-      // twice (which would inflate an IP's downloads) or skipped entirely.
+      // twice (which would inflate an IP's requests) or skipped entirely.
       ipSqls.forEach((sql, i) => {
         expect(bound(sql, ">=")).toBe(String(7 * (i + 1) - 1));
         if (i > 0) expect(bound(sql, "<")).toBe(bound(ipSqls[i - 1], ">="));

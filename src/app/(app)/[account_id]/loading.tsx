@@ -1,5 +1,6 @@
 import { Container, Box, Flex, Grid } from "@radix-ui/themes";
 import { Skeleton } from "@/components/core";
+import { ProductCatalogStatsSkeleton } from "@/components/features/products/ProductCatalogStats";
 
 export default function AccountPageLoading() {
   return (
@@ -100,6 +101,8 @@ export default function AccountPageLoading() {
                   <Skeleton height="12px" width="100px" />
                   <Skeleton height="16px" width="50px" />
                 </Flex>
+
+                <ProductCatalogStatsSkeleton />
               </Box>
             ))}
           </Box>
@@ -137,6 +140,8 @@ export default function AccountPageLoading() {
                   <Skeleton height="12px" width="110px" />
                   <Skeleton height="16px" width="45px" />
                 </Flex>
+
+                <ProductCatalogStatsSkeleton />
               </Box>
             ))}
           </Box>

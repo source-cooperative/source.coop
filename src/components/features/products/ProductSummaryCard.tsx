@@ -5,6 +5,7 @@ import { Actions, type Product } from "@/types";
 import { TagList } from "./TagList";
 import { isAuthorized } from "@/lib/api/authz";
 import { getPageSession } from "@/lib/api/utils";
+import { hidePendingTags } from "@/lib/clients/database";
 import { editProductUrl } from "@/lib/urls";
 import { EditButton } from "@/components/core";
 import { MarkdownViewer } from "../markdown";
@@ -14,8 +15,13 @@ interface ProductSummaryCardProps {
   product: Product;
 }
 
-export async function ProductSummaryCard({ product }: ProductSummaryCardProps) {
-  const session = await getPageSession();
+export async function ProductSummaryCard({
+  product: stored,
+}: ProductSummaryCardProps) {
+  const [session, [product]] = await Promise.all([
+    getPageSession(),
+    hidePendingTags([stored]),
+  ]);
   return (
     <Box>
       <Flex align="center" justify="between" mb="2">

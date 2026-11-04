@@ -3,9 +3,8 @@ jest.mock("@/components/features/products/ProductsList", () => ({}));
 jest.mock("@/components/features/products/ProductsFilters", () => ({
   ProductsFilters: () => null,
 }));
-jest.mock("@/lib/actions/products", () => ({
-  getPaginatedProducts: jest.fn().mockResolvedValue({ products: [] }),
-}));
+jest.mock("@/lib", () => ({}));
+jest.mock("@/lib/operations/products", () => ({}));
 
 import { metadata } from "./(app)/products/page";
 

@@ -1,10 +1,10 @@
 import { useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Product } from "@/types";
+import type { ProductResponse } from "@/types";
 import { productUrl } from "@/lib/urls";
 
 interface UseProductListKeyboardShortcutsOptions {
-  products: Product[];
+  products: ProductResponse[];
   onShowHelp: () => void;
 }
 

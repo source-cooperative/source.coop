@@ -40,7 +40,7 @@ export type UsageWindow = (typeof USAGE_WINDOWS)[number];
 
 export interface UsageTotals {
   bytes: number;
-  requests: number; // downloads: successful GETs, sample-weighted
+  requests: number; // successful GETs (200/206), sample-weighted
   countries: number;
 }
 
@@ -50,7 +50,7 @@ export interface UsagePoint extends UsageTotals {
 }
 
 /**
- * Downloads-per-IP histogram bins. Quasi-log edges: the distribution is
+ * Requests-per-IP histogram bins. Quasi-log edges: the distribution is
  * heavy-tailed (a 1× spike and a tail spanning orders of magnitude), so
  * linear bins waste the axis on empty slots and pool the tail into one
  * lump. Last bin is open-ended.
@@ -70,7 +70,7 @@ export const FREQUENCY_BINS = [
 
 export interface UsageUsers {
   /**
-   * Distinct client IP hashes (blob8) that downloaded in the window, unioned
+   * Distinct client IP hashes (blob8) that made requests in the window, unioned
    * across CHUNK_DAYS-wide slices. A lower bound: ingest-level sampling drops
    * events on very high-volume products before any query sees them.
    */
@@ -79,7 +79,7 @@ export interface UsageUsers {
   registered: number;
   /** Sample-weighted requests with no signed-in user */
   anonRequests: number;
-  /** Unique IPs per FREQUENCY_BINS downloads-per-IP bin, zero-filled */
+  /** Unique IPs per FREQUENCY_BINS requests-per-IP bin, zero-filled */
   distribution: { label: string; ips: number }[];
 }
 
@@ -355,7 +355,7 @@ export async function getUsage(
         `SELECT COUNT(DISTINCT blob6) AS countries, sumIf(_sample_interval, blob5 = '') AS anon_requests, sumIf(_sample_interval, blob5 != '') AS registered_requests ${from}`,
       ),
       // Sample-weighted request count per unique client IP hash, for the
-      // unique-IP headline and the download-frequency histogram (blob8 is
+      // unique-IP headline and the request-frequency histogram (blob8 is
       // empty when the IP is unknown). Sliced into weeks and unioned below:
       // Analytics Engine samples a whole-window GROUP BY hard enough that it
       // returns FEWER distinct IPs for a wider window, and distinct counts —
@@ -412,9 +412,9 @@ export async function getUsage(
     }));
     for (const requests of requestsByIp.values()) {
       // Sampling makes per-IP counts fractional estimates; round, floor 1.
-      const downloads = Math.max(1, Math.round(requests));
+      const count = Math.max(1, Math.round(requests));
       distribution[
-        FREQUENCY_BINS.findIndex((bin) => downloads <= bin.max)
+        FREQUENCY_BINS.findIndex((bin) => count <= bin.max)
       ].ips += 1;
     }
 
@@ -451,11 +451,11 @@ const COUNTRY_LIST_LIMIT = 5;
 const FILE_LIST_LIMIT = 10;
 
 export interface ProductBreakdowns {
-  /** Top countries by downloads */
+  /** Top countries by requests */
   countries: { code: string; name: string; requests: number }[];
   /** Aggregate of the remaining countries, if any */
   otherCountries: { count: number; requests: number } | null;
-  /** Top objects by downloads */
+  /** Top objects by requests */
   files: { path: string; requests: number; bytes: number }[];
 }
 

@@ -12,6 +12,21 @@ export function formatBytes(bytes: number, decimals: number = 2): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
 }
 
+const RELATIVE = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+const DAY_MS = 86_400_000;
+
+/**
+ * "3 days ago", "in 5 months", "yesterday": a date relative to now, in whole
+ * days, then months, then years. Depends on the clock, so render it only
+ * client-side, or accept that server and client may differ.
+ */
+export function formatRelative(iso: string, now = Date.now()): string {
+  const days = Math.round((Date.parse(iso) - now) / DAY_MS);
+  if (Math.abs(days) < 30) return RELATIVE.format(days, "day");
+  if (Math.abs(days) < 365) return RELATIVE.format(Math.round(days / 30), "month");
+  return RELATIVE.format(Math.round(days / 365), "year");
+}
+
 /**
  * Format a date string into a human-readable format that's safe for SSR
  * @param date The date string to format

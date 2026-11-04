@@ -1,40 +1,19 @@
-/**
- * @openapi
- * /whoami:
- *   get:
- *     tags: [Authentication]
- *     description: Get the current user's session information.
- *       If the user is authenticated but has not created an account, the account field will be null.
- *       If the user is not authenticated, a `401 - Unauthorized` response will be returned.
- *       This endpoint can be used to list all of the authenticated user's memberships.
- *     responses:
- *       200:
- *         description: Returns the user session data
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/UserSession'
- *       401:
- *         description: Unauthorized - No valid session found
- */
-import { NextRequest, NextResponse } from "next/server";
-import { StatusCodes } from "http-status-codes";
-import { getApiSession } from "@/lib/api/utils";
+import { withApiSession, toResponse } from "@/lib/api/handler";
+import { bearer, errors, json, registry } from "@/lib/api/openapi";
+import { whoami, WhoamiSchema } from "@/lib/operations/accounts";
 
-export async function GET(req: NextRequest) {
-  try {
-    const session = await getApiSession(req);
-    if (!session) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    return NextResponse.json(session, { status: StatusCodes.OK });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Internal server error" },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+registry.registerPath({
+  method: "get",
+  path: "/whoami",
+  tags: ["Accounts"],
+  summary: "Who you are",
+  description:
+    "The account the credentials act as and its memberships. Someone signed in who hasn't created an account yet has no `account`.",
+  security: bearer,
+  responses: {
+    200: json("The caller.", WhoamiSchema),
+    ...errors(401),
+  },
+});
+
+export const GET = withApiSession(async ({ session }) => toResponse(whoami(session)));

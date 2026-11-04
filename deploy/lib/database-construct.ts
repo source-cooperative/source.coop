@@ -27,6 +27,7 @@ export class DatabaseConstruct extends Construct {
   public readonly membershipsTable: dynamodb.Table;
   public readonly accountTrustsTable: dynamodb.Table;
   public readonly serviceAccountKeysTable: dynamodb.Table;
+  public readonly tagsTable: dynamodb.Table;
 
   constructor(
     scope: Construct,
@@ -86,6 +87,14 @@ export class DatabaseConstruct extends Construct {
           partitionKey: "account_id",
         },
       ],
+      removalPolicy,
+    });
+
+    this.tagsTable = this.createTable({
+      name: "tags",
+      stage,
+      // The tag itself, the string a product carries in `metadata.tags`.
+      partitionKey: "tag_id",
       removalPolicy,
     });
 

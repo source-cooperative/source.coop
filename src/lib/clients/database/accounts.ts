@@ -1,4 +1,5 @@
 import { isIndividualAccount, isOrganizationalAccount, isServiceAccount } from "@/types";
+import { isConditionalCheckFailed } from "./errors";
 import {
   QueryCommand,
   ScanCommand,
@@ -13,11 +14,13 @@ import {
   type Account,
   AccountType,
   type IndividualAccount,
+  type Membership,
   type ServiceAccount,
 } from "@/types";
 
 import { BaseTable } from "./base";
 import { AccountTrustsTable, accountTrustsTable, identityKey } from "./account-trusts";
+import { membershipsTable, toItem } from "./memberships";
 import { LOGGER } from "@/lib/logging";
 
 /**
@@ -248,7 +251,7 @@ export class AccountsTable extends BaseTable {
         })
       );
     } catch (error) {
-      if ((error as { name?: string })?.name !== "ConditionalCheckFailedException") {
+      if (!isConditionalCheckFailed(error)) {
         this.logError("create", error, { account_id: account.account_id });
       }
       throw error;
@@ -257,17 +260,59 @@ export class AccountsTable extends BaseTable {
     return account;
   }
 
+  /**
+   * Creates an account with the membership that makes someone its owner, in
+   * one transaction. Written apart, an owner row could outlive a failed
+   * account write and make its person an owner of whoever takes the ID next.
+   * The membership's ID is the idempotency token, so the SDK's retry of a
+   * write that landed but timed out replays it rather than failing on the
+   * now-taken ID.
+   */
+  async createWithOwner(account: Account, owner: Membership): Promise<Account> {
+    try {
+      await this.client.send(
+        new TransactWriteCommand({
+          ClientRequestToken: owner.membership_id,
+          TransactItems: [
+            {
+              Put: {
+                TableName: this.table,
+                Item: account,
+                ConditionExpression: "attribute_not_exists(account_id)",
+              },
+            },
+            { Put: { TableName: membershipsTable.table, Item: toItem(owner) } },
+          ],
+        })
+      );
+    } catch (error) {
+      if (!isConditionalCheckFailed(error)) {
+        this.logError("createWithOwner", error, { account_id: account.account_id });
+      }
+      throw error;
+    }
+    return account;
+  }
+
   async update(account: Account): Promise<Account> {
     const updateParts: string[] = [];
     const expressionAttributeValues: Record<string, any> = {};
 
     // Always update these core fields
-    updateParts.push("#name = :name", "#type = :type", "updated_at = :updated_at");
+    updateParts.push("#type = :type", "updated_at = :updated_at");
     expressionAttributeValues[":type"] = account.type;
-    expressionAttributeValues[":name"] = account.name;
     expressionAttributeValues[":updated_at"] = new Date().toISOString();
+    const expressionAttributeNames: Record<string, string> = {
+      "#type": "type", // type is a reserved word in DynamoDB
+    };
 
     // Conditionally add fields that might be undefined
+    if (account.name !== undefined) {
+      updateParts.push("#name = :name");
+      expressionAttributeValues[":name"] = account.name;
+      expressionAttributeNames["#name"] = "name"; // name is a reserved word in DynamoDB
+    }
+
     if (account.emails !== undefined) {
       updateParts.push("emails = :emails");
       expressionAttributeValues[":emails"] = account.emails;
@@ -308,10 +353,7 @@ export class AccountsTable extends BaseTable {
           account_id: account.account_id,
         },
         UpdateExpression: `SET ${updateParts.join(", ")}`,
-        ExpressionAttributeNames: {
-          "#name": "name", // name is a reserved word in DynamoDB
-          "#type": "type", // type is also a reserved word in DynamoDB
-        },
+        ExpressionAttributeNames: expressionAttributeNames,
         ExpressionAttributeValues: expressionAttributeValues,
         ReturnValues: "ALL_NEW",
       })

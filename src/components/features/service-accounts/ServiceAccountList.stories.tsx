@@ -55,7 +55,7 @@ const summary = (
       membership_id: `m-${account_id}`,
       account_id,
       membership_account_id: "miskatonic",
-      repository_id: "climate-data",
+      product_id: "climate-data",
       role: MembershipRole.WriteData,
       state: MembershipState.Member,
       state_changed: "2026-03-12T00:00:00Z",

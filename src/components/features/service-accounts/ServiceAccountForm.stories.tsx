@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { storyAccounts } from "@/components/core/story-accounts";
 import { ServiceAccountForm } from "./ServiceAccountForm";
 
 /**
@@ -25,6 +26,7 @@ const meta = {
   title: "Features/Settings/Service accounts/Create/ServiceAccountForm",
   component: ServiceAccountForm,
   parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
+  args: { accounts: storyAccounts },
 } satisfies Meta<typeof ServiceAccountForm>;
 
 export default meta;

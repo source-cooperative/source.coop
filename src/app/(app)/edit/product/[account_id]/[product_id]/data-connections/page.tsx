@@ -2,9 +2,10 @@ import { getPageSession } from "@/lib/api/utils";
 import { canManageAccount, isAdmin } from "@/lib/api/authz";
 import {
   canManageDataConnection,
-  canUseDataConnectionFor,
+  listUsableDataConnections,
 } from "@/lib/data-connections";
 import { accountsTable, productsTable, dataConnectionsTable } from "@/lib/clients";
+import { publicView } from "@/lib/operations/accounts";
 import { notFound } from "next/navigation";
 import { ProductMirrorsManager } from "@/components/features/data-connections";
 import { toDataConnectionOption } from "@/components/features/data-connections/redact";
@@ -40,9 +41,9 @@ export default async function ProductDataConnectionsPage({
   // the account's own. Redact to a secret-free option shape so credentials never
   // reach the client.
   const availableConnections = canManageMirrors
-    ? (await dataConnectionsTable.listAll())
-        .filter((c) => canUseDataConnectionFor(session, c, product.account_id))
-        .map(toDataConnectionOption)
+    ? (await listUsableDataConnections(session, [product.account_id])).map(
+        toDataConnectionOption
+      )
     : [];
 
   // A mirror only links to a connection's admin form when the product owner
@@ -99,6 +100,7 @@ export default async function ProductDataConnectionsPage({
       ownedConnectionIds={ownedConnectionIds}
       connectionInfo={connectionInfo}
       editablePrefixConnectionIds={editablePrefixConnectionIds}
+      accounts={ownerAccount ? { [ownerAccount.account_id]: publicView(ownerAccount) } : {}}
     />
   );
 }

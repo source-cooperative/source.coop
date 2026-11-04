@@ -24,15 +24,15 @@ const days: UsagePoint[] = Array.from({ length: 30 }, (_, i) => ({
 
 const totals = { bytes: 10 * 1024 ** 3, requests: 12847, countries: 42 };
 
-it("shows window downloads, data served, and countries", () => {
+it("shows window requests, data served, and countries", () => {
   renderPanel(<UsagePanel days={days} totals={totals} />);
-  expect(screen.getByText("Downloads")).toBeInTheDocument();
+  expect(screen.getByText("Requests")).toBeInTheDocument();
   expect(screen.getByText("12,847")).toBeInTheDocument();
   expect(screen.getByText("Data served")).toBeInTheDocument();
   expect(screen.getByText("10 GB")).toBeInTheDocument();
   expect(screen.getByText("Countries")).toBeInTheDocument();
   expect(screen.getByText("42")).toBeInTheDocument();
-  expect(screen.getByText("30-day downloads")).toBeInTheDocument();
+  expect(screen.getByText("30-day requests")).toBeInTheDocument();
 });
 
 it("renders no tab selector or users content in the card", () => {

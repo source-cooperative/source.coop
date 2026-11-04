@@ -5,7 +5,7 @@ import { Flex } from "@radix-ui/themes";
 import type { UsagePoint, UsageTotals } from "@/lib/clients/analytics";
 import { formatBytes } from "@/lib/format";
 import {
-  DownloadsChart,
+  RequestsChart,
   HELP,
   HoverCaption,
   numberFormat,
@@ -22,8 +22,8 @@ interface UsagePanelProps {
 }
 
 /**
- * Compact analytics card panel (issue #257 mocks): a stats row (downloads,
- * data served, countries) over a daily downloads bar chart — hovering a bar
+ * Compact analytics card panel (issue #257 mocks): a stats row (requests,
+ * data served, countries) over a daily requests bar chart — hovering a bar
  * shows that day's numbers. Users/audience detail lives on the full
  * analytics page, not in the card.
  */
@@ -35,8 +35,8 @@ export function UsagePanel({ days, totals }: UsagePanelProps) {
     <>
       <StatRow mt="3" pb="3" style={{ borderBottom: "1px solid var(--gray-4)" }}>
         <Stat
-          label="Downloads"
-          help={HELP.downloads}
+          label="Requests"
+          help={HELP.requests}
           value={numberFormat.format(Math.round(shown.requests))}
         />
         <Stat
@@ -53,7 +53,7 @@ export function UsagePanel({ days, totals }: UsagePanelProps) {
 
       <Flex mt="3" direction="column">
         <HoverCaption days={days} hovered={hovered} />
-        <DownloadsChart
+        <RequestsChart
           days={days}
           hovered={hovered}
           onHover={setHovered}

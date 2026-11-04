@@ -6,13 +6,15 @@ import {
   UpdateMembershipSchema,
 } from "@/lib/operations/memberships";
 
+type Params = { membership_id: string };
+
 registry.registerPath({
   method: "patch",
   path: "/memberships/{membership_id}",
   tags: ["Memberships"],
-  summary: "Change a member's role",
+  summary: "Change a membership",
   description:
-    "Changes the role of an active membership. A service account can only hold `read_data` or `write_data`.",
+    "Changes a membership's `role` or `state`, one per request. Managers change roles and revoke. Members accept, decline or leave.",
   security: bearer,
   request: {
     params: membershipIdParams,
@@ -24,7 +26,6 @@ registry.registerPath({
   },
 });
 
-export const PATCH = withApiSession<{ membership_id: string }>(
-  async ({ session, params, body }) =>
-    toResponse(await updateMembership(session, params.membership_id, body))
+export const PATCH = withApiSession<Params>(async ({ session, params, body }) =>
+  toResponse(await updateMembership(session, params.membership_id, body))
 );

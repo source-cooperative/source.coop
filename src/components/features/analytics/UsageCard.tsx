@@ -12,7 +12,7 @@ interface UsageCardProps {
 
 /**
  * Server component: fetches recent usage and renders the analytics card —
- * the same downloads summary for every viewer (the full analytics page is
+ * the same requests summary for every viewer (the full analytics page is
  * reached via the manager-only ANALYTICS tab). Renders nothing when
  * analytics is unconfigured or the query fails, so the page never depends
  * on the analytics backend. Render inside <Suspense>.
@@ -25,7 +25,7 @@ export async function UsageCard({ accountId, productId }: UsageCardProps) {
     // flexShrink 0: in the grid-stretched meta column an over-constrained
     // flex layout would otherwise crush the card and clip the chart
     // (Radix Card is overflow:hidden).
-    <Card size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
+    <Card id="analytics" size={{ initial: "2", sm: "1" }} style={{ flexShrink: 0 }}>
       <SectionHeader
         title="Analytics"
         rightButton={

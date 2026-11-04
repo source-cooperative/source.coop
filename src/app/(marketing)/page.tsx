@@ -113,7 +113,9 @@ export default async function Landing() {
                 <Heading size="8" mb="6">
                   Featured Products
                 </Heading>
-                <ProductsList products={products} grid />
+                {/* The landing page skips the catalog download (several MB)
+                    that the object-type rows need. */}
+                <ProductsList products={products} grid showCatalog={false} />
               </Container>
             </Section>
             <Section px="4">

@@ -8,7 +8,7 @@ import {
 import { CONFIG } from "@/lib/config";
 import { accountsTable, membershipsTable } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
-import { Actions, isServiceAccount, UserSession } from "@/types";
+import { Account, Actions, isServiceAccount, UserSession } from "@/types";
 import { LOGGER } from "../logging";
 
 let jwks: ReturnType<typeof createRemoteJWKSet> | null = null;
@@ -211,10 +211,23 @@ export async function authenticateWithOidcToken(
     });
     return null;
   }
+  return sessionForAccount(account, oryId, "authenticateWithOidcToken");
+}
+
+/**
+ * The session a verified token's subject acts as: the account and the
+ * memberships it may see. Null for a disabled account. Shared by every kind of
+ * bearer token the API accepts, so they all act with exactly the same rights.
+ */
+export async function sessionForAccount(
+  account: Account,
+  sub: string,
+  operation: string,
+): Promise<UserSession | null> {
   if (account.disabled) {
-    LOGGER.warn("OIDC token subject resolves to a disabled account", {
-      operation: "authenticateWithOidcToken",
-      metadata: { sub: oryId, account_id: account.account_id },
+    LOGGER.warn("Token subject resolves to a disabled account", {
+      operation,
+      metadata: { sub, account_id: account.account_id },
     });
     return null;
   }
@@ -227,8 +240,8 @@ export async function authenticateWithOidcToken(
     isAuthorized({ account, identity_id }, membership, Actions.GetMembership),
   );
 
-  LOGGER.debug("OIDC authentication resolved a session", {
-    operation: "authenticateWithOidcToken",
+  LOGGER.debug("Token authentication resolved a session", {
+    operation,
     metadata: {
       account_id: account.account_id,
       memberships: filteredMemberships.length,

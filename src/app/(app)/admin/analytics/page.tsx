@@ -41,6 +41,9 @@ import { AdminFiltersForm } from "@/components/features/analytics/AdminFiltersFo
 import { GroupByChips } from "@/components/features/analytics/GroupByChips";
 import { adminAnalyticsUrl, formatBytes } from "@/lib";
 import { accountUrl } from "@/lib/urls";
+import { accountsTable } from "@/lib/clients/database";
+import { publicView } from "@/lib/operations/accounts";
+import { AccountMention } from "@/components/core/AccountMention";
 
 export const metadata: Metadata = { title: "Admin — Analytics" };
 
@@ -219,6 +222,18 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
   } catch (error) {
     queryError = error instanceof Error ? error.message : String(error);
   }
+
+  // Grouped by account, each row names one, so it gets the account's card.
+  const accounts =
+    breakdown && state.groupBy.length === 1 && state.groupBy[0] === "account"
+      ? Object.fromEntries(
+          (
+            await accountsTable.fetchManyByIds(
+              breakdown.groups.map((g) => g.key).filter((k) => k !== OTHER_KEY)
+            )
+          ).map((a) => [a.account_id, publicView(a)])
+        )
+      : {};
 
   const seriesColors = new Map(
     breakdown?.series.map((key, i) => [key, seriesColor(key, i, OTHER_KEY)]),
@@ -531,7 +546,9 @@ export default async function AdminAnalyticsPage({ searchParams }: PageProps) {
                           }}
                         />
                         <Text size="1" style={mono()}>
-                          {href ? (
+                          {accounts[group.key] ? (
+                            <AccountMention id={group.key} accounts={accounts} />
+                          ) : href ? (
                             <Link href={href}>{group.key}</Link>
                           ) : (
                             group.key

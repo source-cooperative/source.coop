@@ -1,4 +1,5 @@
 import type { Product, ProductMirror } from "@/types";
+import { isConditionalCheckFailed } from "./errors";
 import {
   PutItemCommand,
   ResourceNotFoundException,
@@ -311,10 +312,7 @@ export class ProductsTable extends BaseTable {
       await this.client.send(command);
       return [product, true];
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.name === "ConditionalCheckFailedException"
-      ) {
+      if (isConditionalCheckFailed(error)) {
         return [product, false];
       }
       this.logError("upsert", error, {
@@ -366,6 +364,49 @@ export class ProductsTable extends BaseTable {
       ...item,
       account: accountMap.get(item.account_id) || undefined,
     }));
+  }
+
+  /**
+   * Every product that carries any tag, public or not. Scans the whole table
+   * like listProductsByConnectionId; meant for admin review of suggested tags.
+   */
+  async listTagged(): Promise<Product[]> {
+    const matches: Product[] = [];
+    let lastEvaluatedKey: any = undefined;
+    do {
+      const result = await this.list(1000, lastEvaluatedKey);
+      matches.push(...result.products.filter((p) => p.metadata?.tags?.length));
+      lastEvaluatedKey = result.lastEvaluatedKey;
+    } while (lastEvaluatedKey);
+    return matches;
+  }
+
+  /** Every product carrying the tag, public or not. */
+  async listByTag(tag: string): Promise<Product[]> {
+    return (await this.listTagged()).filter((p) =>
+      p.metadata.tags!.includes(tag)
+    );
+  }
+
+  /** Replaces a product's tags, and nothing else about it. */
+  async setTags(
+    account_id: string,
+    product_id: string,
+    tags: string[]
+  ): Promise<void> {
+    try {
+      await this.client.send(
+        new UpdateCommand({
+          TableName: this.table,
+          Key: { account_id, product_id },
+          UpdateExpression: "SET metadata.tags = :tags",
+          ExpressionAttributeValues: { ":tags": tags },
+        })
+      );
+    } catch (error) {
+      this.logError("setTags", error, { account_id, product_id });
+      throw error;
+    }
   }
 
   async delete(account_id: string, product_id: string): Promise<void> {

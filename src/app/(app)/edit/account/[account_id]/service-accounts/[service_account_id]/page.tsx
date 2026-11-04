@@ -5,12 +5,14 @@ import { Box, Button } from "@radix-ui/themes";
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { ServiceAccountDetail } from "@/components/features/service-accounts";
 import {
+  accountsTable,
   accountTrustsTable,
   membershipsTable,
   productsTable,
   serviceAccountKeysTable,
 } from "@/lib/clients/database";
 import { CONFIG } from "@/lib/config";
+import { publicView } from "@/lib/operations/accounts";
 import { getPageSession } from "@/lib/api/utils";
 import { managedServiceAccount } from "@/lib/accounts/service-accounts";
 import { editAccountServiceAccountsUrl } from "@/lib/urls";
@@ -34,6 +36,14 @@ export default async function ServiceAccountPage({ params }: PageProps) {
     productsTable.listByAccountAll(account_id),
     serviceAccountKeysTable.listByAccount(account.account_id),
   ]);
+  // The owner, and whoever issued or revoked a key, for their cards.
+  const named = [account_id, ...keys.flatMap((k) => [k.created_by, k.revoked_by])];
+  const accounts = Object.fromEntries(
+    (await accountsTable.fetchManyByIds([...new Set(named.filter((id) => id != null))])).map((a) => [
+      a.account_id,
+      publicView(a),
+    ])
+  );
 
   return (
     <Box>
@@ -52,6 +62,7 @@ export default async function ServiceAccountPage({ params }: PageProps) {
         }}
         products={products.map(({ product_id, title }) => ({ product_id, title }))}
         proxyOrigin={CONFIG.storage.endpoint}
+        accounts={accounts}
       />
     </Box>
   );

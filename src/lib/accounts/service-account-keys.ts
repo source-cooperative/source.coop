@@ -13,12 +13,17 @@ import {
 /** Hex SHA-256 of a key: what the record holds, and what the proxy presents. */
 export const hashApiKey = (key: string) => createHash("sha256").update(key).digest("hex");
 
+/** The furthest ahead a key may expire. */
+export const MAX_EXPIRY_DAYS = 3650;
+
+export const EXPIRY_DAYS_RANGE = `Expiry must be between 1 and ${MAX_EXPIRY_DAYS} days`;
+
 /** `expires_in_days` from a form: null for no expiry, undefined when out of range. */
 export function expiryFrom(formData: FormData): string | null | undefined {
   const raw = String(formData.get("expires_in_days") ?? "").trim();
   if (raw === "") return null;
   const days = Number(raw);
-  if (!Number.isInteger(days) || days < 1 || days > 3650) return undefined;
+  if (!Number.isInteger(days) || days < 1 || days > MAX_EXPIRY_DAYS) return undefined;
   return new Date(Date.now() + days * 86_400_000).toISOString();
 }
 

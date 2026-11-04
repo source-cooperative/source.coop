@@ -8,6 +8,19 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 import { BaseTable } from "./base";
 
 /**
+ * A stored membership names its product `repository_id`, as the table's
+ * indexes do; everything above this module calls it `product_id`.
+ */
+export const fromItem = ({ repository_id, ...rest }: Record<string, any>) =>
+  ({ ...rest, ...(repository_id ? { product_id: repository_id } : {}) }) as Membership;
+
+export const toItem = ({ product_id, ...rest }: Membership) => ({
+  ...rest,
+  // DynamoDB doesn't allow an empty string as an index key.
+  ...(product_id ? { repository_id: product_id } : {}),
+});
+
+/**
  * Class for managing membership operations in DynamoDB
  */
 export class MembershipsTable extends BaseTable {
@@ -24,7 +37,7 @@ export class MembershipsTable extends BaseTable {
           },
         })
       );
-      return (result.Items?.[0] as Membership) ?? null;
+      return result.Items?.[0] ? fromItem(result.Items[0]) : null;
     } catch (error) {
       if (error instanceof ResourceNotFoundException) return null;
 
@@ -45,7 +58,7 @@ export class MembershipsTable extends BaseTable {
           },
         })
       );
-      return result.Items?.map((item) => item as Membership) ?? [];
+      return result.Items?.map(fromItem) ?? [];
     } catch (error) {
       this.logError("listByUser", error, { accountId });
       throw error;
@@ -107,7 +120,7 @@ export class MembershipsTable extends BaseTable {
       const result = bypassCache
         ? await this.client.send(command)
         : await this.cachedSend(command);
-      return result.Items?.map((item) => item as Membership) ?? [];
+      return result.Items?.map(fromItem) ?? [];
     } catch (error) {
       this.logError("listByAccount", error, {
         membershipAccountId,
@@ -122,12 +135,7 @@ export class MembershipsTable extends BaseTable {
       await this.client.send(
         new PutCommand({
           TableName: this.table,
-          Item: {
-            ...membership,
-            // Remove repository_id if it's an empty string or undefined
-            // DynamoDB doesn't allow empty strings as key values in indexes
-            repository_id: membership.repository_id || undefined,
-          },
+          Item: toItem(membership),
         })
       );
       return membership;
@@ -159,9 +167,9 @@ export class MembershipsTable extends BaseTable {
       };
 
       // Only include repository_id if it exists
-      if (membership.repository_id !== undefined) {
+      if (membership.product_id !== undefined) {
         updateParts.push("repository_id = :repository_id");
-        expressionAttributeValues[":repository_id"] = membership.repository_id;
+        expressionAttributeValues[":repository_id"] = membership.product_id;
       }
 
       const result = await this.client.send(
@@ -179,7 +187,7 @@ export class MembershipsTable extends BaseTable {
           ReturnValues: "ALL_NEW",
         })
       );
-      return result.Attributes as Membership;
+      return fromItem(result.Attributes ?? {});
     } catch (error) {
       this.logError("update", error, {
         membershipId: membership.membership_id,

@@ -134,7 +134,7 @@ describe("GithubWorkflowFields", () => {
   it("warns when the repository customizes its subject, and says where to undo it", async () => {
     respond(200, {
       use_default: false,
-      include_claim_keys: ["repository_owner_id", "repository_id", "context"],
+      include_claim_keys: ["repository_owner_id", "product_id", "context"],
       sub_claim_prefix: "repo:cli/cli",
     });
     renderFor({ repository: "cli/cli" });

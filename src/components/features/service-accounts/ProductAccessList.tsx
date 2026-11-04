@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Flex, IconButton, SegmentedControl, Text, Tooltip } from "@radix-ui/themes";
 import { Cross2Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
 import { ItemList } from "@/components/core/ItemList";
+import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
 import { productUrl } from "@/lib/urls";
 import { MembershipRole, type Product } from "@/types";
 
@@ -49,8 +50,11 @@ export function ProductAccessList({
   access,
   onChange,
   disabled,
+  accounts,
 }: {
   ownerAccountId: string;
+  /** The owner's account, for its card on hover. */
+  accounts?: AccountsById;
   /** Every product the owner has; those in `access` are listed. */
   products: Pick<Product, "product_id" | "title">[];
   access: Record<string, ProductAccess>;
@@ -63,7 +67,7 @@ export function ProductAccessList({
   if (products.length === 0) {
     return (
       <Text size="2" color="gray">
-        {ownerAccountId} has no products yet.
+        <AccountMention id={ownerAccountId} accounts={accounts} /> has no products yet.
       </Text>
     );
   }

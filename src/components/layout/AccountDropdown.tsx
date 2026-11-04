@@ -8,6 +8,7 @@ import {
   newOrganizationUrl,
   newProductUrl,
   productUrl,
+  adminTagsUrl,
 } from "@/lib";
 import { DropdownSection, DropdownSubmenu } from "./DropdownSection";
 import { logout } from "./logout";
@@ -60,10 +61,13 @@ export function AccountDropdown({
   session,
   accounts = [],
   pendingInvitations = [],
+  hasPendingTags = false,
 }: {
   session: UserSession;
   accounts?: DropdownAccount[];
   pendingInvitations?: DropdownInvitation[];
+  /** There are suggested tags for an admin to review. */
+  hasPendingTags?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const hasInvitations = pendingInvitations.length > 0;
@@ -76,9 +80,13 @@ export function AccountDropdown({
           <Box style={{ position: "relative" }}>
             <ProfileAvatar account={session.account!} size="2" />
             <ActivityBadge />
-            {hasInvitations && (
+            {(hasInvitations || hasPendingTags) && (
               <Box
-                aria-label="You have pending invitations"
+                aria-label={
+                  hasInvitations
+                    ? "You have pending invitations"
+                    : "Tags are waiting for review"
+                }
                 style={{
                   position: "absolute",
                   bottom: -1,
@@ -226,11 +234,25 @@ export function AccountDropdown({
           }
         />
         <DropdownSubmenu
-          label="Admin"
+          label={
+            <span
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+            >
+              Admin
+              {hasPendingTags && <span className={styles.mobileDot} />}
+            </span>
+          }
           condition={isAdmin(session)}
           items={ADMIN_TOOLS.map((tool) => ({
             href: tool.href,
-            children: tool.name,
+            children: (
+              <>
+                {tool.name}
+                {hasPendingTags && tool.href === adminTagsUrl() && (
+                  <span className={styles.mobileDot} />
+                )}
+              </>
+            ),
           }))}
         />
         <ActivitySubmenu />

@@ -109,7 +109,7 @@ export const CustomizedSubject: Story = {
   beforeEach: githubAnswers("cli/cli", 200, {
     use_default: false,
     use_immutable_subject: false,
-    include_claim_keys: ["repository_owner_id", "repository_id", "context"],
+    include_claim_keys: ["repository_owner_id", "product_id", "context"],
     sub_claim_prefix: "repo:cli/cli",
   }),
 };

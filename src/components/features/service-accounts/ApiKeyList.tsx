@@ -13,8 +13,10 @@ import {
   type RevokedVia,
   type ServiceAccountKey,
 } from "@/types";
+import { formatRelative } from "@/lib/format";
 import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
 import { ExampleUsage } from "./ExampleUsage";
+import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
 import { apiKeyEnvironment } from "@/lib/services/service-account-usage";
 
 function Status({ state }: { state: ApiKeyActionState }) {
@@ -28,15 +30,6 @@ function Status({ state }: { state: ApiKeyActionState }) {
 const date = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 
-const RELATIVE = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
-const DAY_MS = 86_400_000;
-/** "3 days ago", "in 5 months": the row's reading; the exact date is in its tooltip. */
-const relative = (iso: string, now = Date.now()) => {
-  const days = Math.round((Date.parse(iso) - now) / DAY_MS);
-  if (Math.abs(days) < 30) return RELATIVE.format(days, "day");
-  if (Math.abs(days) < 365) return RELATIVE.format(Math.round(days / 30), "month");
-  return RELATIVE.format(Math.round(days / 365), "year");
-};
 
 const REVOKED_VIA: Record<RevokedVia, string> = {
   owner: " in settings",
@@ -44,26 +37,29 @@ const REVOKED_VIA: Record<RevokedVia, string> = {
   github: " by GitHub secret scanning",
 };
 
-/** Who revoked a key — the person, an anonymous holder, or GitHub — as a phrase to follow "Revoked …". */
+/**
+ * How a key was revoked, as a phrase to follow "Revoked …", when no one is
+ * named: a person who revoked it is named in the row, with their card.
+ */
 const revoker = (key: ServiceAccountKey) =>
-  key.revoked_by ? ` by ${key.revoked_by}` : key.revoked_via ? REVOKED_VIA[key.revoked_via] : "";
+  !key.revoked_by && key.revoked_via ? REVOKED_VIA[key.revoked_via] : "";
 
 /** What a key's row says of it, in two short lines: its use, then its end. */
 const keyStanding = (key: ServiceAccountKey) => ({
-  used: key.last_used_at ? `Used ${relative(key.last_used_at)}` : "Never used",
+  used: key.last_used_at ? `Used ${formatRelative(key.last_used_at)}` : "Never used",
   ends: key.revoked_at
-    ? `Revoked ${relative(key.revoked_at)}${revoker(key)}`
+    ? `Revoked ${formatRelative(key.revoked_at)}${revoker(key)}`
     : key.expires_at === null
       ? "Never expires"
       : Date.parse(key.expires_at) > Date.now()
-        ? `Expires ${relative(key.expires_at)}`
-        : `Expired ${relative(key.expires_at)}`,
+        ? `Expires ${formatRelative(key.expires_at)}`
+        : `Expired ${formatRelative(key.expires_at)}`,
 });
 
-/** The row's exact dates, and who revoked it, for its tooltip. */
+/** The row's exact dates, for its tooltip. */
 const keyDates = (key: ServiceAccountKey) =>
   [
-    `Issued ${date(key.created_at)} by ${key.created_by}`,
+    `Issued ${date(key.created_at)}`,
     key.last_used_at && `Last used ${date(key.last_used_at)}`,
     key.revoked_at
       ? `Revoked ${date(key.revoked_at)}${revoker(key)}`
@@ -85,12 +81,14 @@ function KeyRow({
   onRevoke,
   revoking,
   proxyOrigin,
+  accounts,
 }: {
   accountId: string;
   apiKey: ServiceAccountKey;
   onRevoke: (key_id: string) => void;
   revoking: boolean;
   proxyOrigin?: string;
+  accounts?: AccountsById;
 }) {
   const [changingExpiry, setChangingExpiry] = useState(false);
   const [showingUsage, setShowingUsage] = useState(false);
@@ -104,7 +102,14 @@ function KeyRow({
         </Text>
       }
       markers={marker && <ItemList.Marker>{marker}</ItemList.Marker>}
-      meta={maskedApiKey(apiKey) ?? undefined}
+      // Who issued it, here rather than in the tooltip, which can't hold
+      // their card.
+      meta={
+        <>
+          {maskedApiKey(apiKey) && `${maskedApiKey(apiKey)} · `}issued by{" "}
+          <AccountMention id={apiKey.created_by} accounts={accounts} />
+        </>
+      }
       aside={
         <Tooltip content={keyDates(apiKey)}>
           <Flex direction="column" align="end" style={{ cursor: "default" }}>
@@ -113,6 +118,12 @@ function KeyRow({
             </Text>
             <Text size="1" color="gray">
               {standing.ends}
+              {apiKey.revoked_at && apiKey.revoked_by && (
+                <>
+                  {" by "}
+                  <AccountMention id={apiKey.revoked_by} accounts={accounts} />
+                </>
+              )}
             </Text>
           </Flex>
         </Tooltip>
@@ -235,11 +246,14 @@ export function ApiKeyList({
   accountId,
   keys,
   proxyOrigin,
+  accounts,
 }: {
   accountId: string;
   keys: ServiceAccountKey[];
   /** The data proxy a key signs in to; without it, no example usage is shown. */
   proxyOrigin?: string;
+  /** Who issued and revoked the keys, for their cards on hover. */
+  accounts?: AccountsById;
 }) {
   const [revokeState, revokeAction, revoking] = useActionState(revokeApiKey, IDLE_API_KEY_ACTION_STATE);
   const revokeKey = (key_id: string) => {
@@ -266,6 +280,7 @@ export function ApiKeyList({
             onRevoke={revokeKey}
             revoking={revoking}
             proxyOrigin={proxyOrigin}
+            accounts={accounts}
           />
         ))}
       </ItemList.Root>

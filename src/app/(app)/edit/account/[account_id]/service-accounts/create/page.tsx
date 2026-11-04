@@ -7,6 +7,7 @@ import { accountsTable, productsTable } from "@/lib/clients/database";
 import { getPageSession } from "@/lib/api/utils";
 import { canManageAccountServiceAccounts } from "@/lib/api/authz";
 import { CONFIG } from "@/lib/config";
+import { publicView } from "@/lib/operations/accounts";
 
 export const metadata: Metadata = { title: "Create service account" };
 
@@ -33,6 +34,7 @@ export default async function CreateServiceAccountPage({ params }: PageProps) {
       />
       <ServiceAccountForm
         ownerAccountId={account_id}
+        accounts={{ [account_id]: publicView(owner) }}
         products={products}
         proxyOrigin={CONFIG.storage.endpoint}
       />

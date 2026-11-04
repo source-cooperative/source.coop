@@ -6,13 +6,12 @@ import { PlusIcon } from "@radix-ui/react-icons";
 import { FormTitle } from "@/components/core/FormTitle";
 import { ServiceAccountList } from "@/components/features/service-accounts";
 import {
-  accountsTable,
   accountTrustsTable,
   membershipsTable,
   serviceAccountKeysTable,
 } from "@/lib/clients/database";
 import { getPageSession } from "@/lib/api/utils";
-import { canManageAccountServiceAccounts } from "@/lib/api/authz";
+import { listServiceAccounts } from "@/lib/operations/service-accounts";
 import { createServiceAccountUrl } from "@/lib/urls";
 import { MembershipState, publicKey, type ServiceAccountSummary } from "@/types";
 
@@ -24,15 +23,11 @@ interface PageProps {
 
 export default async function ServiceAccountsPage({ params }: PageProps) {
   const { account_id } = await params;
-  const session = await getPageSession();
-  const owner = await accountsTable.fetchById(account_id);
-  if (!owner || !canManageAccountServiceAccounts(session, owner)) {
-    notFound();
-  }
+  const listed = await listServiceAccounts(await getPageSession(), account_id);
+  if (!listed.ok) notFound();
 
-  const accounts = await accountsTable.listByOwner(account_id);
   const summaries: ServiceAccountSummary[] = await Promise.all(
-    accounts.map(async (account) => ({
+    listed.value.items.map(async (account) => ({
       account,
       trusts: await accountTrustsTable.listByAccount(account.account_id),
       grants: (await membershipsTable.listByUser(account.account_id)).filter(

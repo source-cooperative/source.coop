@@ -2,9 +2,10 @@ import { AccountDropdown } from "./AccountDropdown";
 import { MobileMenu, LoggedOutMobileMenu } from "./MobileMenu";
 import { NavLinks } from "./NavLinks";
 import { getPageSession } from "@/lib/api/utils";
-import { isAuthorized } from "@/lib/api/authz";
+import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import {
   accountsTable,
+  anyPendingTags,
   isOrganizationalAccount,
   productsTable,
 } from "@/lib/clients/database";
@@ -31,7 +32,7 @@ export async function AuthButtons() {
           .filter(
             (m) =>
               m.state === MembershipState.Member &&
-              m.repository_id === undefined
+              m.product_id === undefined
           )
           .map((m) => m.membership_account_id)
       ),
@@ -41,29 +42,32 @@ export async function AuthButtons() {
     );
 
     // One round trip: org accounts (member + invited, for names), the products
-    // owned by you and by each org you belong to, and titles for product invites.
+    // owned by you and by each org you belong to, titles for product invites,
+    // and, for admins, whether any suggested tag awaits review.
     const productAccountIds = [self.account_id, ...memberOrgIds];
-    const [orgAccounts, productLists, invitedProducts] = await Promise.all([
-      accountsTable.fetchManyByIds([
-        ...memberOrgIds,
-        ...invited.map((m) => m.membership_account_id),
-      ]),
-      Promise.all(
-        productAccountIds.map((id) =>
-          // Over-fetch, then filter by authz, then cap in toProducts — capping
-          // at the query would drop authorized products behind restricted ones.
-          // ponytail: 100-deep window; paginate if accounts commonly exceed it.
-          productsTable.listByAccount(id, 100).then((r) => r.products)
-        )
-      ),
-      Promise.all(
-        invited
-          .filter((m) => m.repository_id)
-          .map((m) =>
-            productsTable.fetchById(m.membership_account_id, m.repository_id!)
+    const [orgAccounts, productLists, invitedProducts, hasPendingTags] =
+      await Promise.all([
+        accountsTable.fetchManyByIds([
+          ...memberOrgIds,
+          ...invited.map((m) => m.membership_account_id),
+        ]),
+        Promise.all(
+          productAccountIds.map((id) =>
+            // Over-fetch, then filter by authz, then cap in toProducts — capping
+            // at the query would drop authorized products behind restricted ones.
+            // ponytail: 100-deep window; paginate if accounts commonly exceed it.
+            productsTable.listByAccount(id, 100).then((r) => r.products)
           )
-      ),
-    ]);
+        ),
+        Promise.all(
+          invited
+            .filter((m) => m.product_id)
+            .map((m) =>
+              productsTable.fetchById(m.membership_account_id, m.product_id!)
+            )
+        ),
+        isAdmin(session) && anyPendingTags(),
+      ]);
 
     const accountsById = new Map(orgAccounts.map((a) => [a.account_id, a]));
     const productsByAccount = new Map(
@@ -98,8 +102,8 @@ export async function AuthButtons() {
     const pendingInvitations = invited.map((m) =>
       invitationLink(m, {
         organizationName: accountsById.get(m.membership_account_id)?.name,
-        productTitle: m.repository_id
-          ? productTitleByKey.get(`${m.membership_account_id}/${m.repository_id}`)
+        productTitle: m.product_id
+          ? productTitleByKey.get(`${m.membership_account_id}/${m.product_id}`)
           : undefined,
       })
     );
@@ -113,6 +117,7 @@ export async function AuthButtons() {
             session={session}
             accounts={accounts}
             pendingInvitations={pendingInvitations}
+            hasPendingTags={hasPendingTags}
           />
         </Flex>
         {/* Mobile: single hamburger → full-screen sheet */}
@@ -121,6 +126,7 @@ export async function AuthButtons() {
             session={session}
             accounts={accounts}
             pendingInvitations={pendingInvitations}
+            hasPendingTags={hasPendingTags}
           />
         </Box>
       </>

@@ -1,13 +1,13 @@
 /** @jest-environment node */
 import { NextRequest } from "next/server";
 import { accountTrustsTable } from "@/lib/clients/database";
-import { getApiSession } from "@/lib/api/utils";
+import { authenticateWithOidcToken } from "@/lib/api/oidc";
 import { isAdmin } from "@/lib/api/authz";
 
 jest.mock("@/lib/clients/database", () => ({
   accountTrustsTable: { isTrusted: jest.fn() },
 }));
-jest.mock("@/lib/api/utils", () => ({ getApiSession: jest.fn() }));
+jest.mock("@/lib/api/oidc", () => ({ authenticateWithOidcToken: jest.fn() }));
 jest.mock("@/lib/api/authz", () => ({ isAdmin: jest.fn() }));
 
 const { POST } = require("./route");
@@ -18,13 +18,14 @@ const params = { params: { account_id: "nightly-sync" } };
 const post = (body: unknown) =>
   new NextRequest("http://localhost/api/v1/accounts/nightly-sync/trusts/exchanges", {
     method: "POST",
+    headers: { "x-vercel-id": "iad1::req-1" },
     body: JSON.stringify(body),
   });
 
 describe("POST /api/v1/accounts/[account_id]/trusts/exchanges", () => {
   beforeEach(() => {
     jest.resetAllMocks();
-    (getApiSession as jest.Mock).mockResolvedValue({ account: { account_id: "nightly-sync" } });
+    (authenticateWithOidcToken as jest.Mock).mockResolvedValue({ account: { account_id: "nightly-sync" } });
     (isAdmin as jest.Mock).mockReturnValue(false);
     (accountTrustsTable.isTrusted as jest.Mock).mockResolvedValue(true);
   });
@@ -40,22 +41,30 @@ describe("POST /api/v1/accounts/[account_id]/trusts/exchanges", () => {
     (accountTrustsTable.isTrusted as jest.Mock).mockResolvedValue(false);
     const res = await POST(post({ issuer: ISSUER, subject: SUBJECT }), params);
     expect(res.status).toBe(403);
-    await expect(res.json()).resolves.toEqual({ trusted: false });
+    expect(res.headers.get("content-type")).toBe("application/problem+json");
+    await expect(res.json()).resolves.toMatchObject({
+      type: "http://localhost/api/problems/forbidden",
+      status: 403,
+      code: "forbidden",
+      trusted: false,
+      instance: "http://localhost/api/v1/accounts/nightly-sync/trusts/exchanges",
+      request_id: "iad1::req-1",
+    });
   });
 
   test("answers an admin asking about any account", async () => {
-    (getApiSession as jest.Mock).mockResolvedValue({ account: { account_id: "an-admin" } });
+    (authenticateWithOidcToken as jest.Mock).mockResolvedValue({ account: { account_id: "an-admin" } });
     (isAdmin as jest.Mock).mockReturnValue(true);
     expect((await POST(post({ issuer: ISSUER, subject: SUBJECT }), params)).status).toBe(200);
     expect(accountTrustsTable.isTrusted).toHaveBeenCalledWith("nightly-sync", ISSUER, SUBJECT);
   });
 
   test("is 401 for any other account, and 400 without an issuer and subject", async () => {
-    (getApiSession as jest.Mock).mockResolvedValue({ account: { account_id: "someone-else" } });
+    (authenticateWithOidcToken as jest.Mock).mockResolvedValue({ account: { account_id: "someone-else" } });
     expect((await POST(post({ issuer: ISSUER, subject: SUBJECT }), params)).status).toBe(401);
     expect(accountTrustsTable.isTrusted).not.toHaveBeenCalled();
 
-    (getApiSession as jest.Mock).mockResolvedValue({ account: { account_id: "nightly-sync" } });
+    (authenticateWithOidcToken as jest.Mock).mockResolvedValue({ account: { account_id: "nightly-sync" } });
     expect((await POST(post({ issuer: ISSUER }), params)).status).toBe(400);
   });
 });

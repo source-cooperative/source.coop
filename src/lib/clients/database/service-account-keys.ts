@@ -1,4 +1,4 @@
-import { GetCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, GetCommand, PutCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import type { RevokedVia, ServiceAccountKeyRecord } from "@/types";
 import { BaseTable } from "./base";
 
@@ -76,6 +76,10 @@ export class ServiceAccountKeysTable extends BaseTable {
         ConditionExpression: "attribute_exists(key_hash)",
       })
     );
+  }
+
+  async delete(key_hash: string): Promise<void> {
+    await this.client.send(new DeleteCommand({ TableName: this.table, Key: { key_hash } }));
   }
 }
 

@@ -102,3 +102,19 @@ export const WithServiceAccount: Story = {
     ]),
   },
 };
+
+/**
+ * A member whose account is gone, such as a deleted one. With no account to
+ * show, the row names it by its id, and its role can still be changed or
+ * revoked.
+ */
+export const MissingAccount: Story = {
+  args: {
+    ...base,
+    editable: true,
+    memberships: [
+      ...memberships,
+      membership("departed", MembershipRole.ReadData, MembershipState.Member),
+    ],
+  },
+};

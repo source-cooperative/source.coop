@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { userEvent, within } from "storybook/test";
 import { ProductCreationForm } from "./ProductCreationForm";
 import {
   type Account,
@@ -19,9 +20,12 @@ import {
  * nothing.
  */
 const meta = {
-  title: "Features/Settings/Details/ProductCreationForm",
+  title: "Features/Settings/Products/ProductCreationForm",
   component: ProductCreationForm,
   parameters: { layout: "padded" },
+  args: {
+    tagOptions: ["acoustics", "bathymetry", "cetaceans", "climate"],
+  },
 } satisfies Meta<typeof ProductCreationForm>;
 
 export default meta;
@@ -90,6 +94,31 @@ export const ChoosingAnOwner: Story = {
     potentialOwnerAccounts: [individual, organization],
     dataConnections,
     defaultOwnerId: "miskatonic",
+  },
+};
+
+/**
+ * An ID another product already holds, even one the viewer may not see: the
+ * availability check calls any product that exists "not available". Here the
+ * check is answered with a 403, as it is for a restricted product.
+ */
+export const IdTaken: Story = {
+  args: {
+    potentialOwnerAccounts: [individual],
+    dataConnections,
+  },
+  beforeEach: () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = async (input, init) =>
+      init?.method === "HEAD" ? new Response(null, { status: 403 }) : realFetch(input, init);
+    return () => {
+      globalThis.fetch = realFetch;
+    };
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(canvas.getByLabelText(/Product ID/), "abyssal-acoustics");
+    await canvas.findByText(/Product ID is not available/, {}, { timeout: 3000 });
   },
 };
 

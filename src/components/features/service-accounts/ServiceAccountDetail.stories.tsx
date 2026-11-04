@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { storyAccounts } from "@/components/core/story-accounts";
 import { ServiceAccountDetail } from "./ServiceAccountDetail";
 import { handOffIssuedKey } from "./IssuedApiKeyDialog";
 import {
@@ -35,6 +36,7 @@ const meta = {
   parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 640 } } },
   args: {
     proxyOrigin: "https://data.source.coop",
+    accounts: storyAccounts,
     products: [
       { product_id: "climate-data", title: "Climate Data" },
       { product_id: "reference-data", title: "Reference Data" },
@@ -67,11 +69,11 @@ const trust = (subject: string) => ({
   created_by: "acoltrane",
 });
 
-const grant = (repository_id: string, role: MembershipRole) => ({
-  membership_id: `m-${repository_id}`,
+const grant = (product_id: string, role: MembershipRole) => ({
+  membership_id: `m-${product_id}`,
   account_id: "miskatonic--nightly-sync",
   membership_account_id: "miskatonic",
-  repository_id,
+  product_id,
   role,
   state: MembershipState.Member,
   state_changed: "2026-03-12T00:00:00Z",

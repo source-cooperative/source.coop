@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Flex } from "@radix-ui/themes";
 import { AvatarLinkCompact, DisplayNameLink } from "./AccountLinks";
-import type { Account } from "@/types";
+import type { Account, PublicAccount } from "@/types";
 
 /**
  * The two ways an account is linked to from a list or a byline: with its
@@ -58,4 +58,30 @@ export const NotALink: Story = {
 export const NameOnly: Story = {
   args: { account: individual },
   render: () => <DisplayNameLink account={individual} />,
+};
+
+/**
+ * A product's account as a signed-out reader gets it: the public view, which
+ * has no emails to find a Gravatar with, so it carries its picture already
+ * worked out. Inline SVG stands in for that picture so the story does not
+ * depend on the network.
+ */
+export const PublicView: Story = {
+  args: {
+    account: {
+      account_id: "acoltrane",
+      name: "Alice Coltrane",
+      type: "individual",
+      disabled: false,
+      metadata_public: individual.metadata_public,
+      profile_image:
+        "data:image/svg+xml," +
+        encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96">' +
+            '<rect width="96" height="96" fill="#7a4aa7"/>' +
+            '<circle cx="48" cy="38" r="16" fill="#fff"/>' +
+            '<ellipse cx="48" cy="82" rx="26" ry="22" fill="#fff"/></svg>'
+        ),
+    } as PublicAccount,
+  },
 };

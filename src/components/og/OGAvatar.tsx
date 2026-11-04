@@ -1,4 +1,4 @@
-import md5 from "md5";
+import { avatarUrl } from "@/lib/avatar";
 import type { Account } from "@/types";
 
 interface OGAvatarProps {
@@ -11,23 +11,7 @@ interface OGAvatarProps {
  * Cannot use Radix UI Avatar since OG image generation requires pure server-side rendering.
  */
 export function OGAvatar({ account, size = 350 }: OGAvatarProps) {
-  let avatarSrc: string | undefined;
-
-  // Priority 1: Use profile_image if set
-  if (account.metadata_public?.profile_image) {
-    avatarSrc = account.metadata_public.profile_image;
-  }
-  // Priority 2: Use Gravatar for individuals
-  else if (account.type === "individual") {
-    const primaryEmail = account.emails?.find(
-      (email) => email.is_primary
-    )?.address;
-
-    if (primaryEmail) {
-      const hash = md5(primaryEmail.toLowerCase().trim());
-      avatarSrc = `https://www.gravatar.com/avatar/${hash}?d=identicon&s=${size}`;
-    }
-  }
+  const avatarSrc = avatarUrl(account, size);
 
   // If we have an avatar source, render it
   if (avatarSrc) {

@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { getApiSession } from "./utils";
 import { toResponse, withApiSession } from "./handler";
+import { PROBLEM_CONTENT_TYPE } from "./problems";
 import {
   conflict,
   forbidden,
@@ -28,23 +29,43 @@ describe("toResponse", () => {
     [forbidden("No"), 403],
     [notFound("Gone"), 404],
     [conflict("Taken"), 409],
-  ])("maps a %j failure to %i", async (result, status) => {
+  ])("maps a %j failure to a %i problem", async (result, status) => {
     const res = toResponse(result);
     expect(res.status).toBe(status);
-    await expect(res.json()).resolves.toEqual({
-      error: {
-        code: result.error,
-        message: result.message,
-        field_errors: result.fieldErrors,
-      },
+    expect(res.headers.get("content-type")).toBe(PROBLEM_CONTENT_TYPE);
+    await expect(res.json()).resolves.toMatchObject({
+      type: `/api/problems/${result.error}`,
+      title: expect.any(String),
+      status,
+      detail: result.message,
+      code: result.error,
     });
   });
 
-  it("names each invalid field", async () => {
-    const res = toResponse(fromZodError(z.object({ a: z.string() }).safeParse({}).error!));
+  it("points at each invalid body field", async () => {
+    const schema = z.object({ a: z.string(), b: z.object({ "c/d e": z.number() }) });
+    const res = toResponse(fromZodError(schema.safeParse({ b: {} }).error!));
+    const body = await res.json();
+    expect(body.errors).toEqual([
+      { detail: "Required", pointer: "#/a" },
+      { detail: "Required", pointer: "#/b/c~1d%20e" },
+    ]);
+  });
+
+  it("names each invalid query parameter", async () => {
+    const res = toResponse(
+      fromZodError(z.object({ limit: z.number() }).safeParse({}).error!),
+      200,
+      "query"
+    );
     await expect(res.json()).resolves.toMatchObject({
-      error: { field_errors: { a: ["Required"] } },
+      errors: [{ detail: "Required", parameter: "limit" }],
     });
+  });
+
+  it("leaves out errors when no field is at fault", async () => {
+    const body = await toResponse(conflict("Taken")).json();
+    expect(body).not.toHaveProperty("errors");
   });
 });
 
@@ -81,7 +102,42 @@ describe("withApiSession", () => {
   it("refuses a body that isn't JSON", async () => {
     const res = await call({ method: "PATCH", body: "{", headers: { Authorization: "Bearer t" } });
     expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toMatchObject({ code: "invalid", instance: "http://localhost/api/v1/x" });
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("adds where a problem happened, and the platform's request ID", async () => {
+    handler.mockResolvedValueOnce(toResponse(notFound("Gone")) as never);
+    const res = await call({ headers: { "x-vercel-id": "iad1::abc" } });
+    expect(res.status).toBe(404);
+    expect(res.headers.get("content-type")).toBe(PROBLEM_CONTENT_TYPE);
+    await expect(res.json()).resolves.toMatchObject({
+      code: "not_found",
+      detail: "Gone",
+      instance: "http://localhost/api/v1/x",
+      request_id: "iad1::abc",
+    });
+  });
+
+  it("challenges every 401, and says when a bearer token was refused", async () => {
+    const challenge = async (headers: HeadersInit = {}) => {
+      handler.mockResolvedValueOnce(toResponse(unauthenticated()) as never);
+      const res = await call({ headers });
+      expect(res.status).toBe(401);
+      return res.headers.get("WWW-Authenticate");
+    };
+    await expect(challenge()).resolves.toBe("Bearer");
+    await expect(challenge({ Authorization: "Basic dTpw" })).resolves.toBe("Bearer");
+    await expect(challenge({ Authorization: "Bearer t" })).resolves.toBe(
+      'Bearer error="invalid_token"'
+    );
+    handler.mockResolvedValueOnce(toResponse(forbidden("No")) as never);
+    expect((await call()).headers.has("WWW-Authenticate")).toBe(false);
+  });
+
+  it("leaves a success alone", async () => {
+    handler.mockResolvedValueOnce(toResponse(ok({ a: 1 })) as never);
+    await expect((await call()).json()).resolves.toEqual({ a: 1 });
   });
 
   it("turns a throw into a 500 that reveals nothing", async () => {
@@ -89,7 +145,12 @@ describe("withApiSession", () => {
     const res = await call();
     expect(res.status).toBe(500);
     await expect(res.json()).resolves.toEqual({
-      error: { code: "internal", message: "Internal server error" },
+      type: "http://localhost/api/problems/internal",
+      title: "Internal server error",
+      status: 500,
+      detail: "Internal server error",
+      code: "internal",
+      instance: "http://localhost/api/v1/x",
     });
   });
 });

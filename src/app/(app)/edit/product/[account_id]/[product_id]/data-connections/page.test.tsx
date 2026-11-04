@@ -12,7 +12,7 @@ import { getPageSession } from "@/lib/api/utils";
 import { canManageAccount, isAdmin } from "@/lib/api/authz";
 import {
   canManageDataConnection,
-  canUseDataConnectionFor,
+  listUsableDataConnections,
 } from "@/lib/data-connections";
 import { accountsTable, productsTable, dataConnectionsTable } from "@/lib/clients";
 import {
@@ -31,12 +31,12 @@ jest.mock("@/lib/api/authz", () => ({
 }));
 jest.mock("@/lib/data-connections", () => ({
   canManageDataConnection: jest.fn(),
-  canUseDataConnectionFor: jest.fn(),
+  listUsableDataConnections: jest.fn(),
 }));
 jest.mock("@/lib/clients", () => ({
   accountsTable: { fetchById: jest.fn() },
   productsTable: { fetchById: jest.fn() },
-  dataConnectionsTable: { fetchById: jest.fn(), listAll: jest.fn() },
+  dataConnectionsTable: { fetchById: jest.fn() },
 }));
 jest.mock("@/components/features/data-connections", () => ({
   ProductMirrorsManager: () => null,
@@ -54,8 +54,9 @@ const mockCanManageAccount = canManageAccount as jest.MockedFunction<
   typeof canManageAccount
 >;
 const mockIsAdmin = isAdmin as jest.MockedFunction<typeof isAdmin>;
-const mockCanUseDataConnectionFor =
-  canUseDataConnectionFor as jest.MockedFunction<typeof canUseDataConnectionFor>;
+const mockListUsable = listUsableDataConnections as jest.MockedFunction<
+  typeof listUsableDataConnections
+>;
 const mockCanManageDataConnection =
   canManageDataConnection as jest.MockedFunction<typeof canManageDataConnection>;
 const mockAccountsTable = accountsTable as jest.Mocked<typeof accountsTable>;
@@ -122,18 +123,15 @@ beforeEach(() => {
     account_id: "organization",
   } as Account);
   mockProductsTable.fetchById.mockResolvedValue(orgProduct);
-  mockDataConnectionsTable.listAll.mockResolvedValue([
-    orgConnection,
-    systemConnection,
-    otherAccountConnection,
-  ]);
   mockDataConnectionsTable.fetchById.mockResolvedValue(orgConnection);
   mockCanManageDataConnection.mockResolvedValue(true);
   mockIsAdmin.mockReturnValue(false);
   mockCanManageAccount.mockReturnValue(true);
-  // Stand in for the real predicate (unit-tested in data-connections.test.ts).
-  mockCanUseDataConnectionFor.mockImplementation(
-    (_session, conn, accountId) => !conn.owner || conn.owner === accountId
+  // Stand in for the real listing (unit-tested in data-connections.test.ts).
+  mockListUsable.mockImplementation(async (_session, [accountId]) =>
+    [orgConnection, systemConnection, otherAccountConnection].filter(
+      (conn) => !conn.owner || conn.owner === accountId
+    )
   );
 });
 
@@ -156,7 +154,7 @@ describe("issue #461: product data-connections picker", () => {
     expect(props.canManageMirrors).toBe(false);
     expect(props.availableConnections).toEqual([]);
     // The listing is skipped entirely rather than filtered client-side.
-    expect(mockDataConnectionsTable.listAll).not.toHaveBeenCalled();
+    expect(mockListUsable).not.toHaveBeenCalled();
     // Nor may they re-point an existing mirror's prefix, even on a connection
     // they could otherwise manage.
     expect(props.editablePrefixConnectionIds).toEqual([]);

@@ -2,9 +2,8 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Box, Flex, Button } from "@radix-ui/themes";
 import Link from "next/link";
-import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { getPageSession } from "@/lib/api/utils";
-import { canManageAccountDataConnections } from "@/lib/api/authz";
+import { listAllDataConnections } from "@/lib/operations/data-connections";
 import { FormTitle } from "@/components/core/FormTitle";
 import { DataConnectionsList } from "@/components/features/data-connections";
 import {
@@ -22,21 +21,12 @@ interface PageProps {
 
 export default async function AccountDataConnectionsPage({ params }: PageProps) {
   const { account_id } = await params;
-  const session = await getPageSession();
-  const account = await accountsTable.fetchById(account_id);
-  if (!account || !canManageAccountDataConnections(session, account)) {
-    notFound();
-  }
-
-  // ponytail: scan + filter by owner; add an owner GSI only if the connection
-  // table actually grows. Mirrors the admin list, which also scans.
-  const connections = (await dataConnectionsTable.listAll())
-    .filter((conn) => conn.owner === account_id)
-    .sort(
-      (a, b) =>
-        a.details.provider.localeCompare(b.details.provider) ||
-        a.name.localeCompare(b.name)
-    );
+  // Refused unless the visitor manages this account's connections.
+  const result = await listAllDataConnections(await getPageSession(), {
+    owner: account_id,
+  });
+  if (!result.ok) notFound();
+  const connections = result.value;
 
   return (
     <Box>

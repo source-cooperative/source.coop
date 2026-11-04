@@ -84,4 +84,4 @@ UI changes carry their stories with them — a new component gets stories, a cha
 
 ### Server Actions & API Routes
 
-Server actions (`src/lib/actions/`) handle form submissions — they validate with Zod, return `FormState` objects, and call `revalidatePath()` after mutations. API routes (`src/app/api/v1/`) return JSON and use status codes from the `http-status-codes` library. Both use `isAuthorized()` for permission checks.
+Both are adapters over one operation in `src/lib/operations/`, which parses the input, applies the rules and checks permissions with `isAuthorized()`. Server actions (`src/lib/actions/`) handle form submissions and return `FormState` objects; API routes (`src/app/api/v1/`) return JSON and document themselves in the generated reference at `/api/docs`. See [API.md](API.md) for the conventions an endpoint follows.

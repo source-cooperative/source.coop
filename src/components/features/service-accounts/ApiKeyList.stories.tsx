@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { storyAccounts } from "@/components/core/story-accounts";
 import { ApiKeyList } from "./ApiKeyList";
 import type { ServiceAccountKey } from "@/types";
 
@@ -23,7 +24,11 @@ const meta = {
   title: "Features/Settings/Service accounts/Detail/ApiKeyList",
   component: ApiKeyList,
   parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 560 } } },
-  args: { accountId: "miskatonic--nightly-sync", proxyOrigin: "https://data.source.coop" },
+  args: {
+    accountId: "miskatonic--nightly-sync",
+    proxyOrigin: "https://data.source.coop",
+    accounts: storyAccounts,
+  },
 } satisfies Meta<typeof ApiKeyList>;
 
 export default meta;

@@ -79,7 +79,7 @@ type ActionResourceMap = {
   [Actions.UpdateMembershipRole]: Membership;
   [Actions.InviteMembership]: Pick<
     Membership,
-    "membership_account_id" | "repository_id"
+    "membership_account_id" | "product_id"
   > &
     Partial<Pick<Membership, "role">>;
 
@@ -218,7 +218,7 @@ export function isAuthorized(
 ): boolean;
 export function isAuthorized(
   principal: UserSession | null,
-  resource: Pick<Membership, "membership_account_id" | "repository_id"> &
+  resource: Pick<Membership, "membership_account_id" | "product_id"> &
     Partial<Pick<Membership, "role">>,
   action: Actions.InviteMembership
 ): boolean;
@@ -1194,7 +1194,7 @@ function createRepository(
     const hasOrgRole = principal?.memberships?.some(
       (m) =>
         m.state === MembershipState.Member &&
-        !m.repository_id &&
+        !m.product_id &&
         (m.role === MembershipRole.Owners ||
           m.role === MembershipRole.Maintainers)
     );
@@ -1376,7 +1376,7 @@ function getMembership(
     principal,
     [MembershipRole.Owners, MembershipRole.Maintainers],
     membership.membership_account_id,
-    membership.repository_id
+    membership.product_id
   );
 }
 
@@ -1449,7 +1449,7 @@ function revokeMembership(
     principal,
     grantors(membership.role),
     membership.membership_account_id,
-    membership.repository_id
+    membership.product_id
   );
 }
 
@@ -1473,13 +1473,13 @@ function updateMembershipRole(
     principal,
     grantors(membership.role),
     membership.membership_account_id,
-    membership.repository_id
+    membership.product_id
   );
 }
 
 function inviteMembership(
   principal: UserSession | null,
-  membership: Pick<Membership, "membership_account_id" | "repository_id"> &
+  membership: Pick<Membership, "membership_account_id" | "product_id"> &
     Partial<Pick<Membership, "role">>
 ): boolean {
   // If the user is disabled, they are not authorized
@@ -1498,7 +1498,7 @@ function inviteMembership(
     principal,
     grantors(membership.role),
     membership.membership_account_id,
-    membership.repository_id
+    membership.product_id
   );
 }
 
@@ -1526,7 +1526,7 @@ function hasRole(
   principal: UserSession | null,
   roles: MembershipRole[],
   account_id: string,
-  repository_id?: string
+  product_id?: string
 ): boolean {
   // A person is authorized on their own account
   if (isSelf(principal, account_id)) {
@@ -1552,17 +1552,17 @@ function hasRole(
 
     // If the membership is organizationship-wide, return true
     if (
-      !membership.repository_id &&
+      !membership.product_id &&
       membership.membership_account_id === account_id
     ) {
       return true;
     }
 
-    // If the membership is repository-specific, check the repository_id
+    // If the membership is repository-specific, check the product_id
     if (
-      membership.repository_id &&
+      membership.product_id &&
       membership.membership_account_id === account_id &&
-      membership.repository_id === repository_id
+      membership.product_id === product_id
     ) {
       return true;
     }
