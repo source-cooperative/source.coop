@@ -1,6 +1,7 @@
 import { AccountsTable } from "./accounts";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { AccountType, type Account } from "@/types";
+import { AccountType, MembershipRole, MembershipState, type Account } from "@/types";
+import { isConditionalCheckFailed } from "./errors";
 
 jest.mock("@/lib/config", () => ({
   CONFIG: {
@@ -120,5 +121,50 @@ describe("AccountsTable.create", () => {
     await expect(table.create(newcomer)).resolves.toEqual(newcomer);
     expect(store.get("newcomer")?.identity_id).toBe("ory-identity-newcomer");
     expect(store.size).toBe(2);
+  });
+});
+
+describe("AccountsTable.createWithOwner", () => {
+  it("writes the account and its owner in one idempotent transaction", async () => {
+    const send = jest.fn().mockResolvedValue({});
+    const table = new AccountsTable({ client: { send } as unknown as DynamoDBDocumentClient });
+    const acme = makeAccount({ account_id: "acme", type: AccountType.ORGANIZATION });
+    const owner = {
+      membership_id: "m-1",
+      account_id: "alice",
+      membership_account_id: "acme",
+      role: MembershipRole.Owners,
+      state: MembershipState.Member,
+      state_changed: "2024-01-01T00:00:00Z",
+    };
+
+    await expect(table.createWithOwner(acme, owner)).resolves.toEqual(acme);
+    expect(send).toHaveBeenCalledTimes(1);
+    const { ClientRequestToken, TransactItems } = send.mock.calls[0][0].input;
+    expect(ClientRequestToken).toBe("m-1");
+    expect(TransactItems).toEqual([
+      {
+        Put: expect.objectContaining({
+          Item: acme,
+          ConditionExpression: "attribute_not_exists(account_id)",
+        }),
+      },
+      { Put: expect.objectContaining({ Item: owner }) },
+    ]);
+  });
+});
+
+describe("isConditionalCheckFailed", () => {
+  const cancelled = (...codes: string[]) =>
+    Object.assign(new Error(), {
+      name: "TransactionCanceledException",
+      CancellationReasons: codes.map((Code) => ({ Code })),
+    });
+
+  it("recognises a transaction cancelled by a condition, and nothing else", () => {
+    expect(isConditionalCheckFailed(cancelled("ConditionalCheckFailed", "None"))).toBe(true);
+    expect(isConditionalCheckFailed(cancelled("None", "ThrottlingError"))).toBe(false);
+    expect(isConditionalCheckFailed(new Error("boom"))).toBe(false);
+    expect(isConditionalCheckFailed(null)).toBe(false);
   });
 });

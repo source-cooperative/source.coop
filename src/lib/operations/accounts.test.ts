@@ -22,10 +22,10 @@ jest.mock("@/lib/clients/database", () => ({
     fetchById: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
-    create: jest.fn(),
+    createWithOwner: jest.fn(),
     searchMemberCandidates: jest.fn(),
   },
-  membershipsTable: { listByUser: jest.fn(), delete: jest.fn(), create: jest.fn() },
+  membershipsTable: { listByUser: jest.fn(), delete: jest.fn() },
   serviceAccountKeysTable: { listByAccount: jest.fn(), delete: jest.fn() },
 }));
 jest.mock("@/lib/accounts/service-accounts", () => ({ managedServiceAccount: jest.fn() }));
@@ -450,7 +450,7 @@ describe("searchAccounts", () => {
 });
 
 describe("createOrganization", () => {
-  const create = accountsTable.create as jest.Mock;
+  const create = accountsTable.createWithOwner as jest.Mock;
   const input = { account_id: "acme", name: "Acme Corp" };
 
   it("creates the organization and makes the caller its owner", async () => {
@@ -459,8 +459,8 @@ describe("createOrganization", () => {
       value: { account_id: "acme", type: AccountType.ORGANIZATION, flags: [] },
     });
     expect(isAuthorized).toHaveBeenCalledWith(SESSION, "*", Actions.CreateAccount);
-    expect(create).toHaveBeenCalledWith(expect.objectContaining({ account_id: "acme" }));
-    expect(membershipsTable.create).toHaveBeenCalledWith(
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ account_id: "acme" }),
       expect.objectContaining({ account_id: "alice", membership_account_id: "acme", role: "owners" })
     );
   });
@@ -483,31 +483,27 @@ describe("createOrganization", () => {
 
     fetchById.mockResolvedValue(account({ account_id: "bob" }));
     expect(await createOrganization(SESSION, forBob)).toMatchObject({ ok: true });
-    expect(membershipsTable.create).toHaveBeenCalledWith(
+    expect(create).toHaveBeenCalledWith(
+      expect.anything(),
       expect.objectContaining({ account_id: "bob" })
     );
   });
 
-  it("answers a taken ID as a conflict and grants nothing", async () => {
+  it("answers a taken ID as a conflict", async () => {
     create.mockRejectedValue(
-      Object.assign(new Error("taken"), { name: "ConditionalCheckFailedException" })
+      Object.assign(new Error("cancelled"), {
+        name: "TransactionCanceledException",
+        CancellationReasons: [{ Code: "ConditionalCheckFailed" }, { Code: "None" }],
+      })
     );
     expect(await createOrganization(SESSION, input)).toMatchObject({
       error: "conflict",
       fieldErrors: { account_id: ["That account ID is already taken."] },
     });
-    expect(membershipsTable.create).not.toHaveBeenCalled();
   });
 
-  it("deletes the organization if its owner can't be written", async () => {
-    (membershipsTable.create as jest.Mock).mockRejectedValue(new Error("throttled"));
-    await expect(createOrganization(SESSION, input)).rejects.toThrow("throttled");
-    expect(accountsTable.delete).toHaveBeenCalledWith("acme");
-  });
-
-  it("raises the owner's error even if the organization can't be deleted", async () => {
-    (membershipsTable.create as jest.Mock).mockRejectedValue(new Error("throttled"));
-    (accountsTable.delete as jest.Mock).mockRejectedValueOnce(new Error("delete failed"));
+  it("raises any other failure", async () => {
+    create.mockRejectedValue(new Error("throttled"));
     await expect(createOrganization(SESSION, input)).rejects.toThrow("throttled");
   });
 });

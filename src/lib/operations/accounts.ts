@@ -432,19 +432,7 @@ export async function createOrganization(
   // `account_id` is never checked beforehand, so the conditional write is what
   // stops one account being written over another.
   try {
-    await accountsTable.create(organization);
-  } catch (error) {
-    if (isConditionalCheckFailed(error)) {
-      return conflict("That account ID is already taken", {
-        account_id: ["That account ID is already taken."],
-      });
-    }
-    throw error;
-  }
-  // An organization without an owner is one nobody but an admin can manage,
-  // so it goes if its owner can't be written.
-  try {
-    await membershipsTable.create({
+    await accountsTable.createWithOwner(organization, {
       membership_id: randomUUID(),
       account_id: owner_account_id,
       membership_account_id: account_id,
@@ -453,14 +441,9 @@ export async function createOrganization(
       state_changed: now,
     });
   } catch (error) {
-    // The membership failure is the error worth raising; a failed cleanup is
-    // logged so the ownerless organization can be found.
-    try {
-      await accountsTable.delete(account_id);
-    } catch (cleanupError) {
-      LOGGER.error("Could not delete an organization left without an owner", {
-        operation: "createOrganization",
-        metadata: { account_id, error: cleanupError },
+    if (isConditionalCheckFailed(error)) {
+      return conflict("That account ID is already taken", {
+        account_id: ["That account ID is already taken."],
       });
     }
     throw error;
