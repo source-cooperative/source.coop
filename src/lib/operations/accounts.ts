@@ -139,6 +139,7 @@ export const CreateOrganizationSchema = AccountCreationRequestSchema.pick({
   account_id: true,
   name: true,
 })
+  .merge(UpdateAccountSchema.pick({ bio: true, websites: true, email: true }))
   .extend({
     owner_account_id: z.string().optional().openapi({
       description:
@@ -149,6 +150,31 @@ export const CreateOrganizationSchema = AccountCreationRequestSchema.pick({
 
 // The profile fields: everything a service account, which has only a name, lacks.
 const PROFILE_FIELDS = ["bio", "location", "orcid", "ror_id", "websites", "email"] as const;
+
+type Domains = NonNullable<Account["metadata_public"]["domains"]>;
+
+/**
+ * Websites as domain records, a URL without a scheme taken as `https://`. A
+ * website already in `existing` keeps its record, verification included.
+ * Null if one isn't a URL.
+ */
+function toDomains(websites: string[], now: string, existing: Domains = []): Domains | null {
+  const urls = websites
+    .map((w) => w.trim())
+    .filter(Boolean)
+    .map((w) => (/^https?:\/\//.test(w) ? w : `https://${w}`));
+  if (!urls.every((url) => URL.canParse(url))) return null;
+  return urls.map(
+    (domain) =>
+      existing.find((d) => d.domain === domain) ?? {
+        domain,
+        status: "unverified" as const,
+        created_at: now,
+      }
+  );
+}
+
+const isEmailAddress = (email: string) => AccountEmailSchema.shape.address.safeParse(email).success;
 
 async function fetchAccount(account_id: string) {
   return account_id ? ((await accountsTable.fetchById(account_id)) ?? null) : null;
@@ -235,22 +261,9 @@ export async function updateAccount(
 
   let domains = account.metadata_public.domains;
   if (websites) {
-    const urls = websites
-      .map((w) => w.trim())
-      .filter(Boolean)
-      .map((w) => (/^https?:\/\//.test(w) ? w : `https://${w}`));
-    if (!urls.every((url) => URL.canParse(url))) {
-      return invalid("Each website must be a URL", "websites");
-    }
-    // An unchanged website keeps its record, verification included.
-    domains = urls.map(
-      (domain) =>
-        account.metadata_public.domains?.find((d) => d.domain === domain) ?? {
-          domain,
-          status: "unverified" as const,
-          created_at: now,
-        }
-    );
+    const updated = toDomains(websites, now, domains);
+    if (!updated) return invalid("Each website must be a URL", "websites");
+    domains = updated;
   }
 
   let emails: Account["emails"];
@@ -261,7 +274,7 @@ export async function updateAccount(
     } else if (email !== current?.address) {
       // Only a changed address is rewritten, so resubmitting the current one
       // keeps its verified state.
-      if (!AccountEmailSchema.shape.address.safeParse(email).success) {
+      if (!isEmailAddress(email)) {
         return invalid("Invalid email address", "email");
       }
       emails = [{ address: email, verified: false, is_primary: true, added_at: now }];
@@ -376,9 +389,9 @@ export async function searchAccounts(
   if (!parsed.success) return fromZodError(parsed.error);
   const { q, member_of } = parsed.data;
   // Only a whole address, so a half-typed one is still an ordinary search.
-  if (z.string().email().safeParse(q).success) {
+  if (isEmailAddress(q)) {
     if (!isAdmin(session)) return deny(session, "Only an admin may search by email");
-    return ok(onePage((await searchUsers(q, session.account?.account_id)).results));
+    return ok(onePage((await searchUsers(q, session.account.account_id)).results));
   }
   // An account's service accounts are visible only to whoever may grant them
   // access; to anyone else this is an ordinary search of people.
@@ -405,7 +418,7 @@ export async function createOrganization(
   const parsed = CreateOrganizationSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
   const caller = session.account.account_id;
-  const { account_id, name, owner_account_id = caller } = parsed.data;
+  const { account_id, name, owner_account_id = caller, bio, websites = [], email } = parsed.data;
   if (owner_account_id !== caller) {
     if (!isAdmin(session)) {
       return deny(session, "Only an admin may create an organization for someone else");
@@ -417,6 +430,10 @@ export async function createOrganization(
   }
 
   const now = new Date().toISOString();
+  // Checked before the write, so a bad website or address leaves no account.
+  const domains = toDomains(websites, now);
+  if (!domains) return invalid("Each website must be a URL", "websites");
+  if (email && !isEmailAddress(email)) return invalid("Invalid email address", "email");
   const organization: OrganizationalAccount = {
     account_id,
     type: AccountType.ORGANIZATION,
@@ -426,8 +443,9 @@ export async function createOrganization(
     disabled: false,
     flags: DEFAULT_ORGANIZATION_FLAGS,
     identity_id: undefined,
-    metadata_public: {},
+    metadata_public: { bio: bio || undefined, ...(domains.length && { domains }) },
     metadata_private: {},
+    ...(email && { emails: [{ address: email, verified: false, is_primary: true, added_at: now }] }),
   };
   // `account_id` is never checked beforehand, so the conditional write is what
   // stops one account being written over another.
@@ -452,5 +470,6 @@ export async function createOrganization(
     operation: "createOrganization",
     metadata: { account_id, owner_account_id, by: caller },
   });
+  revalidatePath(accountUrl(owner_account_id));
   return ok(organization);
 }

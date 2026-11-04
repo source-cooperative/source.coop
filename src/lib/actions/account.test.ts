@@ -1,4 +1,4 @@
-import { searchAccounts, updateAccountProfile } from "./account";
+import { createOrganization, searchAccounts, updateAccountProfile } from "./account";
 import { getPageSession } from "../api/utils";
 import { Account, AccountType, UserSession } from "@/types";
 import * as ops from "@/lib/operations/accounts";
@@ -22,6 +22,7 @@ jest.mock("../api/authz", () => ({
 jest.mock("@/lib/operations/accounts", () => ({
   updateAccount: jest.fn(),
   searchAccounts: jest.fn(),
+  createOrganization: jest.fn(),
 }));
 
 jest.mock("next/cache", () => ({
@@ -95,5 +96,40 @@ describe("searchAccounts", () => {
 
     (ops.searchAccounts as jest.Mock).mockResolvedValue({ ok: false, error: "invalid", message: "" });
     expect(await searchAccounts("b")).toEqual([]);
+  });
+});
+
+describe("createOrganization", () => {
+  const form = (fields: Record<string, string>) => {
+    const data = new FormData();
+    for (const [k, v] of Object.entries(fields)) data.set(k, v);
+    return data;
+  };
+
+  it("shows the operation's bio and websites errors on the form's own fields", async () => {
+    (ops.createOrganization as jest.Mock).mockResolvedValue({
+      ok: false,
+      error: "invalid",
+      message: "Invalid input",
+      fieldErrors: { websites: ["Each website must be a URL"], bio: ["Too long"], name: ["Short"] },
+    });
+    const state = await createOrganization(null, form({ website: "https://", description: "x" }));
+    expect(ops.createOrganization).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ bio: "x", websites: ["https://"] })
+    );
+    expect(state.fieldErrors).toEqual({
+      website: ["Each website must be a URL"],
+      description: ["Too long"],
+      name: ["Short"],
+    });
+  });
+
+  it("redirects to the new organization, and reports a failed write on the form", async () => {
+    (ops.createOrganization as jest.Mock).mockResolvedValue({ ok: true, value: { account_id: "acme" } });
+    expect(await createOrganization(null, form({}))).toMatchObject({ success: true, redirectTo: "/acme" });
+
+    (ops.createOrganization as jest.Mock).mockRejectedValue(new Error("throttled"));
+    expect(await createOrganization(null, form({}))).toMatchObject({ success: false });
   });
 });

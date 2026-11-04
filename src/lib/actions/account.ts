@@ -159,10 +159,13 @@ async function adapt<T>(
   operation: string,
   formData: FormData,
   successMessage: string,
-  run: () => Promise<OperationResult<T>>
+  run: () => Promise<OperationResult<T>>,
+  redirectTo?: (value: T) => string
 ): Promise<FormState<any>> {
   try {
-    return toFormState(await run(), formData, successMessage);
+    const result = await run();
+    const redirect = result.ok ? redirectTo?.(result.value) : undefined;
+    return toFormState(result, formData, successMessage, redirect);
   } catch (error) {
     LOGGER.error("Account update failed", { operation, error });
     return toFormState(
@@ -175,8 +178,34 @@ async function adapt<T>(
 
 /** The new-organization form's adapter for `createOrganization`. */
 export async function createOrganization(initialState: any, formData: FormData) {
-  const result = await ops.createOrganization(await getPageSession(), Object.fromEntries(formData));
-  return toFormState(result, formData, "", result.ok ? accountUrl(result.value.account_id) : undefined);
+  const field = (name: string) => (formData.get(name) as string | null) ?? undefined;
+  return adapt(
+    "createOrganization",
+    formData,
+    "",
+    async () => {
+      const result = await ops.createOrganization(await getPageSession(), {
+        account_id: field("account_id"),
+        name: field("name"),
+        owner_account_id: field("owner_account_id"),
+        bio: field("description"),
+        email: field("email"),
+        websites: [field("website") ?? ""],
+      });
+      // The form names two fields apart from the operation, so their errors
+      // are moved to where the form shows them.
+      if (!result.ok && result.fieldErrors) {
+        const { bio, websites, ...rest } = result.fieldErrors;
+        result.fieldErrors = {
+          ...rest,
+          ...(bio && { description: bio }),
+          ...(websites && { website: websites }),
+        };
+      }
+      return result;
+    },
+    (organization) => accountUrl(organization.account_id)
+  );
 }
 
 /**
