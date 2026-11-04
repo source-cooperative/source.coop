@@ -465,6 +465,40 @@ describe("createOrganization", () => {
     );
   });
 
+  it("saves the bio, websites and contact address it is given", async () => {
+    await createOrganization(SESSION, {
+      ...input,
+      bio: "Maps of everything",
+      websites: ["acme.example", " "],
+      email: "maps@acme.example",
+    });
+    const [organization] = create.mock.calls[0];
+    expect(organization.metadata_public).toEqual({
+      bio: "Maps of everything",
+      domains: [expect.objectContaining({ domain: "https://acme.example", status: "unverified" })],
+    });
+    expect(organization.emails).toEqual([
+      expect.objectContaining({ address: "maps@acme.example", verified: false, is_primary: true }),
+    ]);
+  });
+
+  it("leaves out empty profile fields", async () => {
+    await createOrganization(SESSION, { ...input, bio: "", websites: [""], email: "" });
+    const [organization] = create.mock.calls[0];
+    expect(organization.metadata_public).toEqual({ bio: undefined });
+    expect(organization.emails).toBeUndefined();
+  });
+
+  it("refuses a bad website or address before writing anything", async () => {
+    expect(await createOrganization(SESSION, { ...input, websites: ["https://"] })).toMatchObject({
+      error: "invalid",
+    });
+    expect(await createOrganization(SESSION, { ...input, email: "not-an-address" })).toMatchObject({
+      error: "invalid",
+    });
+    expect(create).not.toHaveBeenCalled();
+  });
+
   it("refuses whoever may not create organizations, before reading the input", async () => {
     (isAuthorized as jest.Mock).mockReturnValue(false);
     expect(await createOrganization(SESSION, {})).toMatchObject({ error: "forbidden" });

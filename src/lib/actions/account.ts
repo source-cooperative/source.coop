@@ -175,7 +175,15 @@ async function adapt<T>(
 
 /** The new-organization form's adapter for `createOrganization`. */
 export async function createOrganization(initialState: any, formData: FormData) {
-  const result = await ops.createOrganization(await getPageSession(), Object.fromEntries(formData));
+  const field = (name: string) => (formData.get(name) as string | null) ?? undefined;
+  const result = await ops.createOrganization(await getPageSession(), {
+    account_id: field("account_id"),
+    name: field("name"),
+    owner_account_id: field("owner_account_id"),
+    bio: field("description"),
+    email: field("email"),
+    websites: [field("website") ?? ""],
+  });
   return toFormState(result, formData, "", result.ok ? accountUrl(result.value.account_id) : undefined);
 }
 
