@@ -8,6 +8,7 @@ import {
   Actions,
   DEFAULT_INDIVIDUAL_FLAGS,
   AccountType,
+  AccountCreationRequest,
   IndividualAccount,
 } from "@/types";
 import { isAuthorized } from "../api/authz";
@@ -20,13 +21,12 @@ import * as ops from "@/lib/operations/accounts";
 import { OperationResult, toFormState } from "@/lib/operations/result";
 
 /**
- * Creates the signed-in person's own account at onboarding, or, from the
- * new-organization form, an organization through `createOrganization`.
+ * Creates the signed-in person's own account at onboarding.
  */
 export async function createAccount(
   initialState: any,
   formData: FormData
-): Promise<FormState<any>> {
+): Promise<FormState<AccountCreationRequest>> {
   const session = await getPageSession();
 
   if (!session?.identity_id) {
@@ -38,17 +38,6 @@ export async function createAccount(
     };
   }
 
-  // Extract data from FormData
-  const type = formData.get("type");
-  // Service accounts have their own action, createServiceAccount, which
-  // settles the owner and composes the id.
-  if (type === AccountType.SERVICE) {
-    return { fieldErrors: {}, data: formData, message: "Invalid form data", success: false };
-  }
-  if (type === AccountType.ORGANIZATION) {
-    const result = await ops.createOrganization(session, Object.fromEntries(formData));
-    return toFormState(result, formData, "", result.ok ? accountUrl(result.value.account_id) : undefined);
-  }
   const validatedFields = AccountCreationRequestSchema.safeParse(Object.fromEntries(formData));
 
   if (!validatedFields.success) {
@@ -182,6 +171,12 @@ async function adapt<T>(
       ""
     );
   }
+}
+
+/** The new-organization form's adapter for `createOrganization`. */
+export async function createOrganization(initialState: any, formData: FormData) {
+  const result = await ops.createOrganization(await getPageSession(), Object.fromEntries(formData));
+  return toFormState(result, formData, "", result.ok ? accountUrl(result.value.account_id) : undefined);
 }
 
 /**
