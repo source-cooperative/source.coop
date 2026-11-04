@@ -389,9 +389,9 @@ export async function searchAccounts(
   if (!parsed.success) return fromZodError(parsed.error);
   const { q, member_of } = parsed.data;
   // Only a whole address, so a half-typed one is still an ordinary search.
-  if (z.string().email().safeParse(q).success) {
+  if (isEmailAddress(q)) {
     if (!isAdmin(session)) return deny(session, "Only an admin may search by email");
-    return ok(onePage((await searchUsers(q, session.account?.account_id)).results));
+    return ok(onePage((await searchUsers(q, session.account.account_id)).results));
   }
   // An account's service accounts are visible only to whoever may grant them
   // access; to anyone else this is an ordinary search of people.
@@ -470,5 +470,6 @@ export async function createOrganization(
     operation: "createOrganization",
     metadata: { account_id, owner_account_id, by: caller },
   });
+  revalidatePath(accountUrl(owner_account_id));
   return ok(organization);
 }
