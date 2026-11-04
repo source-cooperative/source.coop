@@ -39,6 +39,9 @@ export const searchAccounts: typeof Real.searchAccounts = fn(
 ).mockName("searchAccounts");
 
 export const createAccount: typeof Real.createAccount = fn(async () => idle()).mockName("createAccount");
+export const createOrganization: typeof Real.createOrganization = fn(async () => idle()).mockName(
+  "createOrganization"
+);
 export const updateAccountProfile: typeof Real.updateAccountProfile = fn(async () => idle()).mockName(
   "updateAccountProfile"
 );

@@ -239,15 +239,6 @@ export type AccountCreationRequest = z.infer<
   typeof AccountCreationRequestSchema
 >;
 
-export const OrganizationCreationRequestSchema =
-  AccountCreationRequestSchema.extend({
-    owner_account_id: z.string(),
-  });
-
-export type OrganizationCreationRequest = z.infer<
-  typeof OrganizationCreationRequestSchema
->;
-
 /**
  * What the create form posts: the display name, the owner, and the service
  * account's own short id, which the action joins to the owner's id.

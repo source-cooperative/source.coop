@@ -14,11 +14,13 @@ import {
   type Account,
   AccountType,
   type IndividualAccount,
+  type Membership,
   type ServiceAccount,
 } from "@/types";
 
 import { BaseTable } from "./base";
 import { AccountTrustsTable, accountTrustsTable, identityKey } from "./account-trusts";
+import { membershipsTable, toItem } from "./memberships";
 import { LOGGER } from "@/lib/logging";
 
 /**
@@ -255,6 +257,40 @@ export class AccountsTable extends BaseTable {
       throw error;
     }
 
+    return account;
+  }
+
+  /**
+   * Creates an account with the membership that makes someone its owner, in
+   * one transaction. Written apart, an owner row could outlive a failed
+   * account write and make its person an owner of whoever takes the ID next.
+   * The membership's ID is the idempotency token, so the SDK's retry of a
+   * write that landed but timed out replays it rather than failing on the
+   * now-taken ID.
+   */
+  async createWithOwner(account: Account, owner: Membership): Promise<Account> {
+    try {
+      await this.client.send(
+        new TransactWriteCommand({
+          ClientRequestToken: owner.membership_id,
+          TransactItems: [
+            {
+              Put: {
+                TableName: this.table,
+                Item: account,
+                ConditionExpression: "attribute_not_exists(account_id)",
+              },
+            },
+            { Put: { TableName: membershipsTable.table, Item: toItem(owner) } },
+          ],
+        })
+      );
+    } catch (error) {
+      if (!isConditionalCheckFailed(error)) {
+        this.logError("createWithOwner", error, { account_id: account.account_id });
+      }
+      throw error;
+    }
     return account;
   }
 

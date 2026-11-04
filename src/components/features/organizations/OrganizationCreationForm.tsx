@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { Text } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
-import { createAccount } from "@/lib/actions/account";
-import { AccountType } from "@/types";
+import { createOrganization } from "@/lib/actions/account";
 import { useAccountIdValidation } from "@/hooks/useIdValidation";
 
 interface OrganizationCreationFormProps {
@@ -86,11 +85,10 @@ export function OrganizationCreationForm({
   return (
     <DynamicForm<OrganizationFormData>
       fields={fields}
-      action={createAccount}
+      action={createOrganization}
       submitButtonText="Create"
       hiddenFields={{
         owner_account_id: ownerAccountId,
-        type: AccountType.ORGANIZATION,
       }}
     />
   );
