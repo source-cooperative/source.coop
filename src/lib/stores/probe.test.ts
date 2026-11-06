@@ -221,7 +221,7 @@ describe("probeStore — Icechunk", () => {
   });
 });
 
-describe("probeStore — Icechunk (spec 2.x repo-info layout, no refs/)", () => {
+describe("probeStore — Icechunk (spec 2.x repo-info layout)", () => {
   // Icechunk >=2.x drops the refs/ prefix: branch/tag pointers and config live
   // in a single root `repo` info object that starts with the Icechunk magic
   // header (e.g. "ICE🧊CHUNKic-2.1.1…"). See https://icechunk.io/en/stable/spec/.
@@ -246,9 +246,47 @@ describe("probeStore — Icechunk (spec 2.x repo-info layout, no refs/)", () => 
     );
   });
 
+  it("reports version 2 when a 2.x repo also keeps a legacy refs/ pointer", async () => {
+    // Seen in beyond-weather/ecmwf-ifs-analysis: both `repo` and
+    // refs/branch.main/ref.json exist, and the snapshot it names is present.
+    const s3 = fakeS3({
+      "s.icechunk/repo": repoInfo,
+      "s.icechunk/refs/branch.main/ref.json": json({ snapshot: "SNAP1" }),
+      "s.icechunk/snapshots/SNAP1": ICECHUNK_MAGIC,
+    });
+    const r = await probeStore({ ...base, s3, storePath: "s.icechunk", extension: "icechunk" });
+    expect(r).toMatchObject({ renderable: true, format: "icechunk", icechunkVersion: 2 });
+  });
+
   it("is not renderable when the root `repo` object lacks the Icechunk magic", async () => {
     const s3 = fakeS3({ "s.icechunk/repo": Buffer.from("not an icechunk repo") });
     const r = await probeStore({ ...base, s3, storePath: "s.icechunk", extension: "icechunk" });
     expect(r.renderable).toBe(false);
+  });
+});
+
+describe("probeStore — store at the product root (empty storePath)", () => {
+  it("reads an Icechunk repo object at the root key, not under a leading slash", async () => {
+    const s3 = fakeS3({ repo: Buffer.concat([ICECHUNK_MAGIC, Buffer.from("ic-2.1.1")]) });
+    const r = await probeStore({ ...base, s3, storePath: "", extension: "icechunk" });
+    expect(r).toMatchObject({ renderable: true, format: "icechunk", icechunkVersion: 2 });
+  });
+
+  it("lists a Zarr v3 group's children under the product prefix", async () => {
+    const s3 = fakeS3(
+      {
+        "zarr.json": json({ zarr_format: 3, node_type: "group" }),
+        "temp/zarr.json": json({
+          zarr_format: 3,
+          node_type: "array",
+          shape: [3],
+          data_type: "float32",
+          chunk_grid: { name: "regular", configuration: { chunk_shape: [3] } },
+        }),
+      },
+      { "prod/": ["prod/temp/"] },
+    );
+    const r = await probeStore({ ...base, s3, storePath: "", extension: "zarr" });
+    expect(r).toMatchObject({ renderable: true, format: "zarr3" });
   });
 });

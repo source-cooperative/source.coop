@@ -9,6 +9,7 @@ import { storeViewerUrl, storeLabelFromResult } from "@/components/features/prod
 import { getAuthorizedProduct } from "../data";
 import { fileSourceUrl } from "@/lib/urls";
 import { getExtension, isStoreExtension } from "@/lib/files";
+import { storeFormatFromListing } from "@/lib/stores/markers";
 import { getIframeSrc, fileTypeLabel } from "@/components/features/products/object-browser/ObjectPreviewExternal";
 import { ObjectPreviewCard } from "@/components/features/products/object-browser/ObjectPreviewCard";
 
@@ -54,10 +55,62 @@ async function isFile(
 }
 
 /**
+ * The store a directory (`""` for the product root) looks like from its own
+ * listing, or `null` when it has no store markers or can't be listed.
+ */
+async function storeFormatOfDirectory(
+  account_id: string,
+  product_id: string,
+  object_path: string,
+  creds: ProxyCredentials | null,
+): Promise<"icechunk" | "zarr" | null> {
+  const prefix = object_path
+    ? `${product_id}/${object_path}/`
+    : `${product_id}/`;
+  try {
+    const s3 = await getStorageClient(creds);
+    const listing = await s3.listObjects({ bucket: account_id, prefix });
+    return storeFormatFromListing({
+      objects: listing.objects.map((o) => o.key.slice(prefix.length)),
+      directories: listing.directories.map((d) =>
+        d.slice(prefix.length).replace(/\/$/, ""),
+      ),
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function storePreview(
+  account_id: string,
+  product_id: string,
+  object_path: string,
+  extension: string,
+  creds: ProxyCredentials | null,
+) {
+  const store = await storeViewerUrl({
+    account_id,
+    product_id,
+    object_path,
+    extension,
+    creds,
+  });
+  if (!store) return null;
+  return previewCard(
+    store.url,
+    storeLabelFromResult(store),
+    <PreviewIframe
+      src={store.url}
+      title={`Preview of ${object_path || product_id}`}
+    />,
+  );
+}
+
+/**
  * Full-width object preview below the product grid (mirrors the @readme
- * slot), for both single files and `.zarr` / `.icechunk` stores. Renders only
- * when there's something to show; directories, the product root, credential
- * gating, and backend failures are the main slot's story.
+ * slot), for single files and for Zarr / Icechunk stores. Renders only when
+ * there's something to show; credential gating and backend failures are the
+ * main slot's story.
  */
 export default async function ObjectPreviewSlot({ params }: PageProps) {
   const { account_id, product_id, path = [] } = await params;
@@ -67,7 +120,6 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
     .map((p) => decodeURIComponent(p))
     .join("/")
     .replace(/\/$/, "");
-  if (!object_path) return null;
 
   // Same gates as the main slot: authorize the viewer (notFound for those who
   // may not read the product), and for a restricted/disabled product with no
@@ -84,23 +136,25 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
   // A store is a key prefix, not a single object, so it's gated on the store
   // probe rather than a HEAD. The main slot still lists its contents.
   if (isStoreExtension(extension)) {
-    const store = await storeViewerUrl({
+    return storePreview(account_id, product_id, object_path, extension, creds ?? null);
+  }
+
+  // Anything that isn't a single object is a directory, and a directory of any
+  // name may be a store's root. Its own listing shows the markers, so only a
+  // directory that has them pays for the probe.
+  if (
+    !object_path ||
+    !(await isFile(account_id, product_id, object_path, creds ?? null))
+  ) {
+    const format = await storeFormatOfDirectory(
       account_id,
       product_id,
       object_path,
-      extension,
-      creds: creds ?? null,
-    });
-    if (!store) return null;
-    return previewCard(
-      store.url,
-      storeLabelFromResult(store),
-      <PreviewIframe src={store.url} title={`Preview of ${object_path}`} />,
+      creds ?? null,
     );
-  }
-
-  if (!(await isFile(account_id, product_id, object_path, creds ?? null))) {
-    return null;
+    return format
+      ? storePreview(account_id, product_id, object_path, format, creds ?? null)
+      : null;
   }
 
   const sourceUrl = fileSourceUrl({ account_id, product_id, object_path });
