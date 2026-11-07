@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Text, Spinner, Flex } from "@radix-ui/themes";
 import { DynamicForm, FormField } from "@/components/core";
-import { Account, DataConnection } from "@/types";
+import { DataConnection, type PublicAccount } from "@/types";
 import { Product, ProductVisibility } from "@/types/product";
 import { useProductIdValidation } from "@/hooks/useIdValidation";
 import { createProduct, updateProduct } from "@/lib/actions/products";
@@ -76,7 +76,7 @@ function describeConnection(connection: DataConnection): string {
 }
 
 interface ProductCreationFormProps {
-  potentialOwnerAccounts: Account[];
+  potentialOwnerAccounts: PublicAccount[];
   dataConnections?: DataConnection[]; // Connections the user may create against
   product?: Product; // Optional product for edit mode
   mode?: "create" | "edit"; // Mode of operation

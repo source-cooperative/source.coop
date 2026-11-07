@@ -1,3 +1,4 @@
+import { publicView } from "@/types";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
@@ -71,7 +72,7 @@ export default async function DetailsPage({ params }: PageProps) {
   return (
     <>
       <ProductCreationForm
-        potentialOwnerAccounts={[account]}
+        potentialOwnerAccounts={[publicView(account)]}
         product={product}
         dataConnections={dataConnections}
         mode="edit"
