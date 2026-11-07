@@ -1,6 +1,6 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import { AccountSchema } from "@/types/account";
+import { AccountSchema, type PublicAccount } from "@/types/account";
 import { MIN_ID_LENGTH, MAX_ID_LENGTH, ID_REGEX } from "@/types/shared";
 
 extendZodWithOpenApi(z);
@@ -77,7 +77,11 @@ export const ProductSchema = z
   })
   .openapi("Product");
 
-export type Product = z.infer<typeof ProductSchema>;
+// `account` is the public view: products reach client components whole, and
+// a full `Account` here would be serialized into the page.
+export type Product = Omit<z.infer<typeof ProductSchema>, "account"> & {
+  account?: PublicAccount;
+};
 
 export const ProductCreationRequestSchema = ProductSchema.omit({
   created_at: true,

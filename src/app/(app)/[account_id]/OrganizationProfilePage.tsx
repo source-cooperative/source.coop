@@ -1,3 +1,4 @@
+import { publicView } from "@/types";
 import { Container, Box } from "@radix-ui/themes";
 import { OrganizationProfile } from "@/components/features/profiles/OrganizationProfile";
 import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
@@ -91,11 +92,12 @@ export async function OrganizationProfilePage({
 
       <Box py="6">
         <OrganizationProfile
-          account={account}
+          account={publicView(account)}
+          email={account.emails?.find((e) => e.is_primary)?.address}
           products={products}
-          owners={owners}
-          admins={admins}
-          members={members}
+          owners={owners.map(publicView)}
+          admins={admins.map(publicView)}
+          members={members.map(publicView)}
           canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
           canCreateProduct={canCreateProductForAccount(session, account)}
         />

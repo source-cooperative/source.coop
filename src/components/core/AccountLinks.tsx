@@ -1,7 +1,7 @@
 import { Text, Flex, Link as RadixLink } from "@radix-ui/themes";
 import { AccountInfoHoverCard } from "./AccountInfoHoverCard";
 import { accountUrl } from "@/lib/urls";
-import { Account } from "@/types";
+import type { PublicAccount } from "@/types";
 import Link from "next/link";
 // Deep import, not the `../features/profiles` barrel: that barrel also
 // re-exports EditProfileForm and OrganizationMembers, which reach server-only
@@ -10,7 +10,7 @@ import Link from "next/link";
 import { ProfileAvatar } from "../features/profiles/ProfileAvatar";
 
 interface AccountDisplayProps {
-  account: Account;
+  account: PublicAccount;
   showHoverCard?: boolean;
   size?: React.ComponentProps<typeof ProfileAvatar>["size"];
 }

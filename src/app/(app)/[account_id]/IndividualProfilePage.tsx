@@ -1,3 +1,4 @@
+import { publicView } from "@/types";
 import {
   accountsTable,
   isOrganizationalAccount,
@@ -40,7 +41,9 @@ export async function IndividualProfilePage({
     await accountsTable.fetchManyByIds(
       memberships.map((membership) => membership.membership_account_id)
     )
-  ).filter(isOrganizationalAccount);
+  )
+    .filter(isOrganizationalAccount)
+    .map(publicView);
 
   // For individual accounts
   return (

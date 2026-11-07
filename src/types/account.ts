@@ -11,6 +11,7 @@
 
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
+import md5 from "md5";
 import {
   MIN_ID_LENGTH,
   MAX_ID_LENGTH,
@@ -176,6 +177,39 @@ export const AccountSchema = z
   .openapi("Account");
 
 export type Account = z.infer<typeof AccountSchema>;
+
+/**
+ * The part of an account anyone may read. The private keys are typed `never`
+ * so a full `Account` doesn't satisfy it structurally: wherever an account
+ * crosses to the browser, the compiler demands `publicView()`.
+ */
+export type PublicAccount = Pick<
+  Account,
+  "account_id" | "type" | "name" | "disabled" | "metadata_public"
+> & {
+  /** The uploaded profile image, or else a Gravatar. */
+  profile_image?: string;
+  emails?: never;
+  flags?: never;
+  identity_id?: never;
+  metadata_private?: never;
+};
+
+/**
+ * What a client component may receive of an account. Its props are serialized
+ * into the page whether or not they are rendered, so the avatar is worked out
+ * here, while the emails are still at hand.
+ */
+export function publicView(account: Account): PublicAccount {
+  const { account_id, type, name, disabled, metadata_public } = account;
+  const email = account.emails?.find((e) => e.is_primary)?.address;
+  const profile_image =
+    metadata_public?.profile_image ??
+    (type === "individual" && email
+      ? `https://www.gravatar.com/avatar/${md5(email.toLowerCase().trim())}?d=identicon&s=200`
+      : undefined);
+  return { account_id, type, name, disabled, metadata_public, profile_image };
+}
 
 export type AccountProfile = z.infer<typeof AccountProfileSchema>;
 

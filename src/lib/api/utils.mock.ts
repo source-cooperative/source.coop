@@ -61,7 +61,7 @@ export const memberships: Membership[] = loadAndValidateJson(
 export const products: Product[] = loadAndValidateJson(
   path.join("fixtures", "products.json"),
   z.array(ProductSchema)
-);
+) as Product[];
 
 export const dataConnections: DataConnection[] = loadAndValidateJson(
   path.join("fixtures", "data-connections.json"),

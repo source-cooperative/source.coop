@@ -1,3 +1,4 @@
+import { publicView } from "@/types";
 import { Metadata } from "next";
 import { accountsTable, dataConnectionsTable } from "@/lib/clients";
 import { Flex, Button, Heading } from "@radix-ui/themes";
@@ -25,7 +26,7 @@ export default async function DataConnectionsPage() {
   const ownerAccounts = Object.fromEntries(
     (await accountsTable.fetchManyByIds(ownerIds)).map((acct) => [
       acct.account_id,
-      acct,
+      publicView(acct),
     ])
   );
 

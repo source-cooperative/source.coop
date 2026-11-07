@@ -593,7 +593,7 @@ function canManageWithFlag(
  */
 export function canCreateProductForAccount(
   session: UserSession | null,
-  account: Account
+  account: Pick<Account, "account_id">
 ): boolean {
   return isAuthorized(
     session,
