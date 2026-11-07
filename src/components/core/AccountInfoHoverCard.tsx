@@ -1,5 +1,5 @@
 import { Badge, Text, Flex, HoverCard } from "@radix-ui/themes";
-import { Account, AccountType, PublicAccount } from "@/types";
+import { AccountType, type PublicAccount } from "@/types";
 import { AccountIdentity, accountCardSurface } from "./AccountIdentity";
 // Deep import, not the `../features/profiles` barrel: that barrel also
 // re-exports EditProfileForm and OrganizationMembers, which reach server-only
@@ -8,7 +8,7 @@ import { AccountIdentity, accountCardSurface } from "./AccountIdentity";
 import { ProfileAvatar } from "../features/profiles/ProfileAvatar";
 
 interface AccountInfoHoverCardProps {
-  account: Account | PublicAccount;
+  account: PublicAccount;
   children: React.ReactNode;
   showHoverCard?: boolean;
   isLink?: boolean;

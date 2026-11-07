@@ -13,6 +13,7 @@ import {
   isAuthorized,
 } from "@/lib/api/authz";
 import { IndividualProfile } from "@/components/features/profiles/IndividualProfile";
+import { publicView } from "@/types";
 
 interface IndividualProfilePageProps {
   account: IndividualAccount;
@@ -43,7 +44,9 @@ export async function IndividualProfilePage({
     await accountsTable.fetchManyByIds(
       memberships.map((membership) => membership.membership_account_id)
     )
-  ).filter(isOrganizationalAccount);
+  )
+    .filter(isOrganizationalAccount)
+    .map(publicView);
 
   // For individual accounts
   return (

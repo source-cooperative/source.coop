@@ -112,10 +112,11 @@ describe("listProducts", () => {
     });
   });
 
-  test("shows an account's public profile to whoever may not read the account", async () => {
+  test("lists an account's products with only the public view of the account", async () => {
     (accountsTable.fetchById as jest.Mock).mockResolvedValue({
       account_id: "alice",
       name: "Alice",
+      created_at: "2024-01-01T00:00:00Z",
       emails: [{ address: "alice@example.com" }],
       identity_id: "ory-alice",
       flags: ["admin"],
@@ -124,7 +125,6 @@ describe("listProducts", () => {
     });
     (productsTable.listByAccount as jest.Mock).mockResolvedValue({ products: [product()] });
     (canListOnProfile as jest.Mock).mockReturnValue(true);
-    allowExcept(Actions.GetAccount);
 
     const result = await listProducts(null, {}, "alice");
 
@@ -218,18 +218,6 @@ describe("getProduct", () => {
   test("returns a product the caller may see", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue(product());
     expect(await getProduct(null, "alice", "my-product")).toMatchObject({ ok: true });
-  });
-
-  test("shows the whole account only to whoever may read it", async () => {
-    const account = { account_id: "alice", name: "Alice", emails: [{ address: "a@b.c" }] };
-    (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ account }));
-
-    const mine = await getProduct(SESSION, "alice", "my-product");
-    expect(mine.ok && mine.value.account).toEqual(account);
-
-    allowExcept(Actions.GetAccount);
-    const theirs = await getProduct(null, "alice", "my-product");
-    expect(theirs.ok && theirs.value.account).toEqual({ account_id: "alice", name: "Alice" });
   });
 
   test("refuses a stranger, asking for credentials when there are none", async () => {

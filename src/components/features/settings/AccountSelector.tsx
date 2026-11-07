@@ -4,15 +4,15 @@ import { useState } from "react";
 import { Flex, DropdownMenu } from "@radix-ui/themes";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Account } from "@/types";
+import type { PublicAccount } from "@/types";
 import { AvatarLinkCompact } from "@/components/core/AccountLinks";
 import { editAccountViewUrl } from "@/lib/urls";
 import { ChevronIcon } from "@/components/icons";
 import { dropdownMenuLinkStyle } from "@/components/layout/DropdownSection";
 
 interface AccountSelectorProps {
-  currentAccount: Account;
-  manageableAccounts: Account[];
+  currentAccount: PublicAccount;
+  manageableAccounts: PublicAccount[];
   linkToSameView?: boolean;
 }
 

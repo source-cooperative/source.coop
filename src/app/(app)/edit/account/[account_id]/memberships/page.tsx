@@ -1,3 +1,4 @@
+import { publicView } from "@/types";
 import { Metadata } from "next";
 import { Box, Flex } from "@radix-ui/themes";
 import { Actions, Membership, MembershipRole, MembershipState } from "@/types";
@@ -63,7 +64,7 @@ export default async function MembershipsPage({ params }: PageProps) {
   const memberAccountIds = activeMemberships.map((m) => m.account_id);
   const memberAccounts = await accountsTable.fetchManyByIds(memberAccountIds);
   const memberAccountsMap = new Map(
-    memberAccounts.map((acc) => [acc.account_id, acc])
+    memberAccounts.map((acc) => [acc.account_id, publicView(acc)])
   );
 
   const canInviteMembership = isAuthorized(

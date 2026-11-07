@@ -26,7 +26,7 @@ import { randomUUID } from "crypto";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { searchUsers } from "@/lib/api/user-lookup";
 import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
-import { avatarUrl } from "@/lib/avatar";
+import { publicView } from "@/types";
 import { LOGGER } from "@/lib/logging";
 import {
   accountsTable,
@@ -213,11 +213,7 @@ export async function accountExists(account_id: string): Promise<boolean> {
   return !!(await fetchAccount(account_id));
 }
 
-/** The part of an account anyone may read. */
-export function publicView(account: Account): PublicAccount {
-  const { account_id, type, name, disabled, metadata_public } = account;
-  return { account_id, type, name, disabled, metadata_public, profile_image: avatarUrl(account) };
-}
+export { publicView };
 
 /**
  * Changes the fields given and leaves the rest. Editing takes PutAccountProfile,

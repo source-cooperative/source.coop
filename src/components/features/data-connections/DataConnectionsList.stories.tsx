@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { DataConnectionsList } from "./DataConnectionsList";
-import type { Account, DataConnection } from "@/types";
+import type { DataConnection, PublicAccount } from "@/types";
 import { DataProvider } from "@/types";
 
 /**
@@ -87,7 +87,7 @@ const ownerAccounts = {
     name: "Miskatonic University",
     type: "organization",
   },
-} as unknown as Record<string, Account>;
+} as unknown as Record<string, PublicAccount>;
 
 /**
  * An account's own list. Ownership is omitted: every connection here has the
