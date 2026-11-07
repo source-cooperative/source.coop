@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Flex } from "@radix-ui/themes";
 import { ProfileAvatar } from "./ProfileAvatar";
-import type { Account } from "@/types";
+import type { PublicAccount } from "@/types";
 
 /**
  * An account's picture, with a three-step fallback: an uploaded
@@ -24,13 +24,13 @@ const individual = {
   account_id: "acoltrane",
   name: "Alice Coltrane",
   type: "individual",
-} as unknown as Account;
+} as unknown as PublicAccount;
 
 const organization = {
   account_id: "miskatonic",
   name: "Miskatonic University",
   type: "organization",
-} as unknown as Account;
+} as unknown as PublicAccount;
 
 /** Round for a person, squared for an organization. */
 export const Shapes: Story = {
@@ -73,6 +73,6 @@ export const WithImage: Story = {
               '<ellipse cx="48" cy="82" rx="26" ry="22" fill="#fff"/></svg>'
           ),
       },
-    } as unknown as Account,
+    } as unknown as PublicAccount,
   },
 };

@@ -12,10 +12,10 @@ export async function ProductSchemaMetadata({ product }: { product: Product }) {
         "@type": account.type === "organization" ? "Organization" : "Person",
         name: account.name,
         url: `${baseUrl}${accountUrl(account.account_id)}`,
-        ...(account.type === "individual" && account.metadata_public?.orcid
+        ...("orcid" in account.metadata_public && account.metadata_public.orcid
           ? { sameAs: `https://orcid.org/${account.metadata_public.orcid}` }
           : {}),
-        ...(account.type === "organization" && account.metadata_public?.ror_id
+        ...("ror_id" in account.metadata_public && account.metadata_public.ror_id
           ? { sameAs: `https://ror.org/${account.metadata_public.ror_id}` }
           : {}),
       }

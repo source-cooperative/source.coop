@@ -14,6 +14,7 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { accountsTable } from "./accounts";
+import { publicView } from "@/lib/avatar";
 import { BaseTable } from "./base";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
@@ -218,7 +219,7 @@ export class ProductsTable extends BaseTable {
 
       return {
         ...(result.Item as Product),
-        account: account || undefined,
+        account: account ? publicView(account) : undefined,
       };
     } catch (error) {
       if (error instanceof ResourceNotFoundException) return null;
@@ -358,7 +359,7 @@ export class ProductsTable extends BaseTable {
     const accounts = await accountsTable.fetchManyByIds(
       products.map((p) => p.account_id).filter((id) => id)
     );
-    const accountMap = new Map(accounts.map((acc) => [acc.account_id, acc]));
+    const accountMap = new Map(accounts.map((acc) => [acc.account_id, publicView(acc)]));
 
     return products.map((item) => ({
       ...item,

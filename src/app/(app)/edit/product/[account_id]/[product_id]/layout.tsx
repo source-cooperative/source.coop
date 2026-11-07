@@ -1,3 +1,4 @@
+import { publicView } from "@/lib/avatar";
 import { ReactNode } from "react";
 import { Pencil1Icon, PersonIcon, Link1Icon } from "@radix-ui/react-icons";
 import { Flex } from "@radix-ui/themes";
@@ -97,7 +98,7 @@ export default async function ProductLayout({
         <Flex align="center" gap="4">
           <AccountSelector
             currentAccount={product.account!}
-            manageableAccounts={manageableAccounts}
+            manageableAccounts={manageableAccounts.map(publicView)}
           />
           <ProductSelector
             currentProduct={product}

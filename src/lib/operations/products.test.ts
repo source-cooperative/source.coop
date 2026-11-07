@@ -112,29 +112,6 @@ describe("listProducts", () => {
     });
   });
 
-  test("shows an account's public profile to whoever may not read the account", async () => {
-    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
-      account_id: "alice",
-      name: "Alice",
-      emails: [{ address: "alice@example.com" }],
-      identity_id: "ory-alice",
-      flags: ["admin"],
-      metadata_private: { note: "secret" },
-      metadata_public: { bio: "hi" },
-    });
-    (productsTable.listByAccount as jest.Mock).mockResolvedValue({ products: [product()] });
-    (canListOnProfile as jest.Mock).mockReturnValue(true);
-    allowExcept(Actions.GetAccount);
-
-    const result = await listProducts(null, {}, "alice");
-
-    expect(result.ok && result.value.items[0].account).toEqual({
-      account_id: "alice",
-      name: "Alice",
-      metadata_public: { bio: "hi" },
-    });
-  });
-
   test("refuses an unfeatured cursor when listing featured products", async () => {
     (productsTable.listPublic as jest.Mock).mockResolvedValue({ products: [] });
     const unfeatured = encode({ ...key, visibility: "public", featured: 0 });
@@ -218,18 +195,6 @@ describe("getProduct", () => {
   test("returns a product the caller may see", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue(product());
     expect(await getProduct(null, "alice", "my-product")).toMatchObject({ ok: true });
-  });
-
-  test("shows the whole account only to whoever may read it", async () => {
-    const account = { account_id: "alice", name: "Alice", emails: [{ address: "a@b.c" }] };
-    (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ account }));
-
-    const mine = await getProduct(SESSION, "alice", "my-product");
-    expect(mine.ok && mine.value.account).toEqual(account);
-
-    allowExcept(Actions.GetAccount);
-    const theirs = await getProduct(null, "alice", "my-product");
-    expect(theirs.ok && theirs.value.account).toEqual({ account_id: "alice", name: "Alice" });
   });
 
   test("refuses a stranger, asking for credentials when there are none", async () => {

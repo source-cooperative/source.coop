@@ -8,11 +8,8 @@ import {
 } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
-import type {
-  IndividualAccount,
-  OrganizationalAccount,
-  Product,
-} from "@/types";
+import type { IndividualAccount, Product, PublicAccount } from "@/types";
+import { publicView } from "@/lib/avatar";
 import { editAccountProfileUrl, newProductUrl } from "@/lib/urls";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProductsList } from "../products/ProductsList";
@@ -26,7 +23,7 @@ interface IndividualProfileProps {
   isOwner: boolean; // Whether the current user is the owner of the account
   ownedProducts: Product[];
   contributedProducts: Product[];
-  organizations: OrganizationalAccount[];
+  organizations: PublicAccount[];
   showWelcome?: boolean;
   canEdit: boolean;
   canCreateProduct: boolean;
@@ -52,7 +49,7 @@ export function IndividualProfile({
       <Box mb="6">
         <Flex gap="4" align="center" justify="between">
           <Flex gap="4" align="center">
-            <ProfileAvatar account={account} size="6" />
+            <ProfileAvatar account={publicView(account)}size="6" />
             <Box>
               <Flex gap="2" align="center">
                 <Heading size="8">{account.name}</Heading>

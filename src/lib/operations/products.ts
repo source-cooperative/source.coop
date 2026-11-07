@@ -42,7 +42,6 @@ import {
   encodeCursor,
   unauthenticated,
 } from "./result";
-import { publicView } from "./accounts";
 import { canonTag } from "@/lib/tags/canon";
 import { planSuggestions } from "./tags";
 
@@ -168,18 +167,6 @@ const publicCursor = (featuredOnly: boolean) =>
 const editsTags = (session: UserSession | null) => (product: Product) =>
   isAuthorized(session, product, Actions.PutRepository);
 
-/**
- * `product` with as much of its account as the caller may read: the whole
- * record for whoever GetAccount allows, and otherwise its public view. The
- * record also holds its people's emails, Ory identity, flags and private
- * metadata.
- */
-function shown(session: UserSession | null, product: Product): ProductResponse {
-  const { account } = product;
-  if (!account || isAuthorized(session, account, Actions.GetAccount)) return product;
-  return { ...product, account: publicView(account) };
-}
-
 // ponytail: filtering after the read can leave a page short of `limit`; the
 // cursor still moves on correctly.
 const page = (
@@ -187,7 +174,7 @@ const page = (
   items: Product[],
   lastEvaluatedKey: unknown
 ): Page<ProductResponse> => ({
-  items: items.map((p) => shown(session, p)),
+  items,
   next_cursor: encodeCursor(lastEvaluatedKey),
 });
 
@@ -298,7 +285,7 @@ export async function getProduct(
     return refuse(session, product, "You may not view this product");
   }
   const [visible] = await hidePendingTags([product], editsTags(session));
-  return ok(shown(session, visible));
+  return ok(visible);
 }
 
 /**
@@ -461,7 +448,7 @@ export async function updateProduct(
       ...(changes.metadata && { tags: changes.metadata.tags, suggested: toSuggest }),
     },
   });
-  return ok(shown(session, updated));
+  return ok(updated);
 }
 
 /**
@@ -517,7 +504,7 @@ export async function deleteProduct(
     operation: "deleteProduct",
     metadata: { account_id, product_id, by: session.account?.account_id, preserveData },
   });
-  return ok(shown(session, product));
+  return ok(product);
 }
 
 /**

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { MembershipsTable } from "./MembershipsTable";
 import {
-  type Account,
+  type PublicAccount,
   type Membership,
   MembershipRole,
   MembershipState,
@@ -27,7 +27,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const account = (account_id: string, name: string, type = "individual") =>
-  ({ account_id, name, type }) as unknown as Account;
+  ({ account_id, name, type }) as unknown as PublicAccount;
 
 const membership = (
   account_id: string,

@@ -1,4 +1,5 @@
 "use client";
+import { publicView } from "@/lib/avatar";
 import { useState, type CSSProperties } from "react";
 import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
 import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";
@@ -78,7 +79,7 @@ export function AccountDropdown({
       <DropdownMenu.Trigger>
         <Flex align="center" gap="2" style={{ cursor: "pointer" }}>
           <Box style={{ position: "relative" }}>
-            <ProfileAvatar account={session.account!} size="2" />
+            <ProfileAvatar account={publicView(session.account!)} size="2" />
             <ActivityBadge />
             {(hasInvitations || hasPendingTags) && (
               <Box
@@ -120,7 +121,7 @@ export function AccountDropdown({
               key={account.account_id}
               label={
                 <Flex align="center" gap="2">
-                  <ProfileAvatar account={account} size="1" />
+                  <ProfileAvatar account={publicView(account)} size="1" />
                   <Text style={entityNameStyle}>{account.name}</Text>
                   {isSelf && (
                     <Text size="1" color="gray">

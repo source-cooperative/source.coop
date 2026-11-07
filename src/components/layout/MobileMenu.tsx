@@ -1,4 +1,5 @@
 "use client";
+import { publicView } from "@/lib/avatar";
 import { useState, type ReactNode } from "react";
 import NextLink from "next/link";
 import { Dialog, Flex, IconButton, Text } from "@radix-ui/themes";
@@ -115,7 +116,7 @@ export function MobileMenu({
                 onToggle={() => toggle(account.account_id)}
                 label={
                   <Flex align="center" gap="2">
-                    <ProfileAvatar account={account} size="1" />
+                    <ProfileAvatar account={publicView(account)} size="1" />
                     <Text>{account.name}</Text>
                     {isSelf && (
                       <Text size="1" color="gray">

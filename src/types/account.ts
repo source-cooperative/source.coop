@@ -199,7 +199,15 @@ export const PublicAccountSchema = z
       "The part of an account anyone may read: no emails, flags, sign-in identity or private metadata.",
   });
 
-export type PublicAccount = z.infer<typeof PublicAccountSchema>;
+// The private keys are typed `never` so a full `Account` doesn't satisfy
+// `PublicAccount` structurally: wherever an account crosses to the browser,
+// the compiler demands `publicView()`.
+export type PublicAccount = z.infer<typeof PublicAccountSchema> & {
+  emails?: never;
+  flags?: never;
+  identity_id?: never;
+  metadata_private?: never;
+};
 
 export const AccountCreationRequestSchema = z
   .object({

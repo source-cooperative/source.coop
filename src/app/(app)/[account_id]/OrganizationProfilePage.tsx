@@ -22,6 +22,7 @@ import {
   isAuthorized,
 } from "@/lib/api/authz";
 import { getPendingInvitation } from "@/lib/actions/memberships";
+import { publicView } from "@/lib/avatar";
 
 interface OrganizationProfilePageProps {
   account: OrganizationalAccount;
@@ -94,11 +95,12 @@ export async function OrganizationProfilePage({
 
       <Box py="6">
         <OrganizationProfile
-          account={account}
+          account={publicView(account)}
+          email={account.emails?.find((e) => e.is_primary)?.address}
           products={products}
-          owners={owners}
-          admins={admins}
-          members={members}
+          owners={owners.map(publicView)}
+          admins={admins.map(publicView)}
+          members={members.map(publicView)}
           canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
           canCreateProduct={canCreateProductForAccount(session, account)}
         />

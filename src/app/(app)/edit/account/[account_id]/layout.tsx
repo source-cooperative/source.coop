@@ -1,3 +1,4 @@
+import { publicView } from "@/lib/avatar";
 import { ReactNode } from "react";
 import {
   AccountSelector,
@@ -166,8 +167,8 @@ export default async function AccountLayout({
     <>
       <SettingsHeader>
         <AccountSelector
-          currentAccount={accountToEdit}
-          manageableAccounts={manageableAccounts}
+          currentAccount={publicView(accountToEdit)}
+          manageableAccounts={manageableAccounts.map(publicView)}
           linkToSameView
         />
 

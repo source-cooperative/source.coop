@@ -2,10 +2,10 @@
 
 import { Avatar } from "@radix-ui/themes";
 import { avatarUrl } from "@/lib/avatar";
-import type { Account, PublicAccount } from "@/types";
+import type { PublicAccount } from "@/types";
 
 interface ProfileAvatarProps {
-  account: Account | PublicAccount;
+  account: PublicAccount;
   size?: "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
 }
 
