@@ -63,16 +63,14 @@ export const WithImage: Story = {
   args: {
     account: {
       ...individual,
-      metadata_public: {
-        profile_image:
-          "data:image/svg+xml," +
-          encodeURIComponent(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96">' +
-              '<rect width="96" height="96" fill="#4a7ba7"/>' +
-              '<circle cx="48" cy="38" r="16" fill="#fff"/>' +
-              '<ellipse cx="48" cy="82" rx="26" ry="22" fill="#fff"/></svg>'
-          ),
-      },
+      profile_image:
+        "data:image/svg+xml," +
+        encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96">' +
+            '<rect width="96" height="96" fill="#4a7ba7"/>' +
+            '<circle cx="48" cy="38" r="16" fill="#fff"/>' +
+            '<ellipse cx="48" cy="82" rx="26" ry="22" fill="#fff"/></svg>'
+        ),
     } as unknown as PublicAccount,
   },
 };

@@ -5,6 +5,7 @@ import { serializeJsonLd } from "@/lib/jsonLd";
 
 export async function ProductSchemaMetadata({ product }: { product: Product }) {
   const account = product.account;
+  const profile = account?.metadata_public ?? {};
   const baseUrl = await getBaseUrl();
 
   const creator = account
@@ -12,11 +13,11 @@ export async function ProductSchemaMetadata({ product }: { product: Product }) {
         "@type": account.type === "organization" ? "Organization" : "Person",
         name: account.name,
         url: `${baseUrl}${accountUrl(account.account_id)}`,
-        ...("orcid" in account.metadata_public && account.metadata_public.orcid
-          ? { sameAs: `https://orcid.org/${account.metadata_public.orcid}` }
+        ...("orcid" in profile && profile.orcid
+          ? { sameAs: `https://orcid.org/${profile.orcid}` }
           : {}),
-        ...("ror_id" in account.metadata_public && account.metadata_public.ror_id
-          ? { sameAs: `https://ror.org/${account.metadata_public.ror_id}` }
+        ...("ror_id" in profile && profile.ror_id
+          ? { sameAs: `https://ror.org/${profile.ror_id}` }
           : {}),
       }
     : undefined;

@@ -4,10 +4,9 @@ import type { Account, PublicAccount } from "@/types";
 /**
  * The picture that stands for an account: its uploaded image, else a person's
  * Gravatar (an identicon when they have none), else nothing. A public view
- * carries it already, worked out while the emails were still there.
+ * carries it as `profile_image`, worked out while the emails were still there.
  */
-export function avatarUrl(account: Account | PublicAccount, size = 200): string | undefined {
-  if (!("created_at" in account)) return account.profile_image;
+export function avatarUrl(account: Account, size = 200): string | undefined {
   if (account.metadata_public?.profile_image) {
     return account.metadata_public.profile_image;
   }

@@ -49,7 +49,7 @@ export function IndividualProfile({
       <Box mb="6">
         <Flex gap="4" align="center" justify="between">
           <Flex gap="4" align="center">
-            <ProfileAvatar account={publicView(account)}size="6" />
+            <ProfileAvatar account={publicView(account)} size="6" />
             <Box>
               <Flex gap="2" align="center">
                 <Heading size="8">{account.name}</Heading>

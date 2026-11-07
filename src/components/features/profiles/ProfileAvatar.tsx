@@ -1,7 +1,6 @@
 "use client";
 
 import { Avatar } from "@radix-ui/themes";
-import { avatarUrl } from "@/lib/avatar";
 import type { PublicAccount } from "@/types";
 
 interface ProfileAvatarProps {
@@ -10,12 +9,10 @@ interface ProfileAvatarProps {
 }
 
 export function ProfileAvatar({ account, size = "6" }: ProfileAvatarProps) {
-  const avatarSrc = avatarUrl(account);
-
   return (
     <Avatar
       size={size}
-      src={avatarSrc}
+      src={account.profile_image}
       fallback={account.name?.[0]?.toUpperCase() || ""}
       radius={account.type === "individual" ? "full" : "medium"}
     />

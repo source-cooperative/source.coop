@@ -112,6 +112,29 @@ describe("listProducts", () => {
     });
   });
 
+  test("lists an account's products with only the public view of the account", async () => {
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
+      account_id: "alice",
+      name: "Alice",
+      created_at: "2024-01-01T00:00:00Z",
+      emails: [{ address: "alice@example.com" }],
+      identity_id: "ory-alice",
+      flags: ["admin"],
+      metadata_private: { note: "secret" },
+      metadata_public: { bio: "hi" },
+    });
+    (productsTable.listByAccount as jest.Mock).mockResolvedValue({ products: [product()] });
+    (canListOnProfile as jest.Mock).mockReturnValue(true);
+
+    const result = await listProducts(null, {}, "alice");
+
+    expect(result.ok && result.value.items[0].account).toEqual({
+      account_id: "alice",
+      name: "Alice",
+      metadata_public: { bio: "hi" },
+    });
+  });
+
   test("refuses an unfeatured cursor when listing featured products", async () => {
     (productsTable.listPublic as jest.Mock).mockResolvedValue({ products: [] });
     const unfeatured = encode({ ...key, visibility: "public", featured: 0 });

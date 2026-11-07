@@ -15,6 +15,7 @@ import { Account, Actions, MembershipState } from "@/types";
 import { onboardingUrl } from "@/lib/urls";
 import { LoginButton } from "@/components/core";
 import { invitationLink } from "./accountMenu";
+import { publicView } from "@/lib/avatar";
 
 export async function AuthButtons() {
   const session = await getPageSession();
@@ -84,12 +85,12 @@ export async function AuthButtons() {
 
     // Accounts you can browse: yourself first, then each org you belong to.
     const accounts = [
-      { account: self, isSelf: true, products: toProducts(self.account_id) },
+      { account: publicView(self), isSelf: true, products: toProducts(self.account_id) },
       ...memberOrgIds
         .map((id) => accountsById.get(id))
         .filter((a): a is Account => !!a && isOrganizationalAccount(a))
         .map((a) => ({
-          account: a,
+          account: publicView(a),
           isSelf: false,
           products: toProducts(a.account_id),
         })),

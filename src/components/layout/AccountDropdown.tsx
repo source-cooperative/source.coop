@@ -15,7 +15,7 @@ import { DropdownSection, DropdownSubmenu } from "./DropdownSection";
 import { logout } from "./logout";
 import { canCreateProductForAccount, isAdmin, isAuthorized } from "@/lib/api/authz";
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";
-import { Account, Actions, UserSession } from "@/types";
+import { Actions, type PublicAccount, UserSession } from "@/types";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
 import { ActivityBadge } from "@/components/features/uploader/ActivityBadge";
 import { ActivitySubmenu } from "@/components/features/uploader/ActivitySubmenu";
@@ -46,9 +46,10 @@ export interface DropdownAccountProduct {
 }
 
 // An account the user can browse from the menu: themselves or an org they
-// belong to, plus that account's products. The full account drives the avatar.
+// belong to, plus that account's products. The public view, since the menu is
+// on every page and an organization's record holds its private details.
 export interface DropdownAccount {
-  account: Account;
+  account: PublicAccount;
   isSelf: boolean;
   products: DropdownAccountProduct[];
 }
@@ -121,7 +122,7 @@ export function AccountDropdown({
               key={account.account_id}
               label={
                 <Flex align="center" gap="2">
-                  <ProfileAvatar account={publicView(account)} size="1" />
+                  <ProfileAvatar account={account} size="1" />
                   <Text style={entityNameStyle}>{account.name}</Text>
                   {isSelf && (
                     <Text size="1" color="gray">

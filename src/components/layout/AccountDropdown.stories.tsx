@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
 import { AccountDropdown } from "./AccountDropdown";
+import { publicView } from "@/lib/avatar";
 import { S3CredentialsProvider } from "@/components/features/uploader/CredentialsProvider";
 import { UploadProvider } from "@/components/features/uploader/UploadProvider";
 import {
@@ -56,7 +57,7 @@ const session = (flags: AccountFlags[]) =>
 
 const accounts = [
   {
-    account: alice,
+    account: publicView(alice),
     isSelf: true,
     products: [{ product_id: "abyssal-acoustics", title: "Abyssal Acoustics" }],
   },

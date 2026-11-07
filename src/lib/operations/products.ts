@@ -43,6 +43,7 @@ import {
   unauthenticated,
 } from "./result";
 import { canonTag } from "@/lib/tags/canon";
+import { publicView } from "@/lib/avatar";
 import { planSuggestions } from "./tags";
 
 export const ListProductsQuerySchema = PageQuerySchema.extend({
@@ -170,7 +171,6 @@ const editsTags = (session: UserSession | null) => (product: Product) =>
 // ponytail: filtering after the read can leave a page short of `limit`; the
 // cursor still moves on correctly.
 const page = (
-  session: UserSession | null,
   items: Product[],
   lastEvaluatedKey: unknown
 ): Page<ProductResponse> => ({
@@ -224,13 +224,13 @@ export async function listProducts(
       productsTable.listByAccount(account_id, limit, start),
     ]);
     if (!account) return notFound(`Account ${account_id} not found`);
+    const shown = publicView(account);
     return ok(
       page(
-        session,
         await hidePendingTags(
           result.products
             .filter((p) => canListOnProfile(session, p))
-            .map((p) => ({ ...p, account })),
+            .map((p) => ({ ...p, account: shown })),
           editsTags(session)
         ),
         result.lastEvaluatedKey
@@ -253,7 +253,6 @@ export async function listProducts(
   );
   return ok(
     page(
-      session,
       // Matched again on the tags the caller sees, so filtering by a pending
       // tag doesn't reveal which products carry it.
       visible.filter((p) => wanted.every((t) => p.metadata?.tags?.includes(t))),
