@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/source-cooperative/source.coop/compare/v1.7.0...v1.7.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **accounts:** hand the browser only public views of accounts ([#737](https://github.com/source-cooperative/source.coop/issues/737))
+
 ## [1.7.0](https://github.com/source-cooperative/source.coop/compare/v1.6.0...v1.7.0) (2026-10-05)
 
 
