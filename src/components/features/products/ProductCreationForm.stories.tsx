@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ProductCreationForm } from "./ProductCreationForm";
 import {
-  type Account,
+  type PublicAccount,
   type DataConnection,
   DataProvider,
   type Product,
@@ -31,13 +31,13 @@ const individual = {
   account_id: "acoltrane",
   name: "Alice Coltrane",
   type: "individual",
-} as unknown as Account;
+} as unknown as PublicAccount;
 
 const organization = {
   account_id: "miskatonic",
   name: "Miskatonic University",
   type: "organization",
-} as unknown as Account;
+} as unknown as PublicAccount;
 
 const dataConnections = [
   {

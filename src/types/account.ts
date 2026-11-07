@@ -204,7 +204,7 @@ export function publicView(account: Account): PublicAccount {
   const { account_id, type, name, disabled, metadata_public } = account;
   const email = account.emails?.find((e) => e.is_primary)?.address;
   const profile_image =
-    metadata_public?.profile_image ??
+    metadata_public?.profile_image ||
     (type === "individual" && email
       ? `https://www.gravatar.com/avatar/${md5(email.toLowerCase().trim())}?d=identicon&s=200`
       : undefined);

@@ -101,7 +101,7 @@ export default async function MembershipsPage({ params }: PageProps) {
           description="Manage product members and their roles"
         />
         {canInviteMembership && (
-          <InviteMemberForm organization={account} product={product} />
+          <InviteMemberForm organization={publicView(account)} product={product} />
         )}
       </Flex>
 
