@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Account, MembershipRole, Product } from "@/types";
+import { MembershipRole, Product, type PublicAccount } from "@/types";
 import { Flex, Button, Dialog } from "@radix-ui/themes";
 import {
   AccountSearchInput,
@@ -12,7 +12,7 @@ import { inviteMember } from "@/lib/actions/memberships";
 import { PlusIcon } from "@radix-ui/react-icons";
 
 interface InviteMemberFormProps {
-  organization: Account;
+  organization: PublicAccount;
   product?: Product;
 }
 
