@@ -1,5 +1,5 @@
 "use client";
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 import { useState, type CSSProperties } from "react";
 import { Flex, DropdownMenu, Text, Box } from "@radix-ui/themes";
 import { ChevronDownIcon, PlusIcon } from "@radix-ui/react-icons";

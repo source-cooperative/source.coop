@@ -21,6 +21,7 @@ import {
   MIN_NAME_LENGTH,
   MAX_NAME_LENGTH,
 } from "./shared";
+import { avatarUrl } from "@/lib/avatar";
 
 extendZodWithOpenApi(z);
 
@@ -270,3 +271,13 @@ export const isOrganizationalAccount = (acc: Account): acc is OrganizationalAcco
 
 export const isServiceAccount = (acc: Account): acc is ServiceAccount =>
   acc.type === AccountType.SERVICE;
+
+/**
+ * The part of an account anyone may read. Anything that hands an account to
+ * the browser hands it this, since a client component's props are serialized
+ * into the page whether or not they are rendered.
+ */
+export function publicView(account: Account): PublicAccount {
+  const { account_id, type, name, disabled, metadata_public } = account;
+  return { account_id, type, name, disabled, metadata_public, profile_image: avatarUrl(account) };
+}

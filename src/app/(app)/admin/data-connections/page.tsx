@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import { accountsTable } from "@/lib/clients";
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 import { getPageSession } from "@/lib/api/utils";
 import { listAllDataConnections } from "@/lib/operations/data-connections";
 import { Flex, Button, Heading } from "@radix-ui/themes";

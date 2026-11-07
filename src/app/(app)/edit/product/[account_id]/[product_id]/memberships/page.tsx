@@ -1,4 +1,4 @@
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 import { Metadata } from "next";
 import { Box, Flex, Text } from "@radix-ui/themes";
 import { Actions, MembershipRole, MembershipState } from "@/types";

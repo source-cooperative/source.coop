@@ -26,7 +26,7 @@ import { randomUUID } from "crypto";
 import { isAdmin, isAuthorized } from "@/lib/api/authz";
 import { searchUsers } from "@/lib/api/user-lookup";
 import { isConditionalCheckFailed } from "@/lib/clients/database/errors";
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 import { LOGGER } from "@/lib/logging";
 import {
   accountsTable,

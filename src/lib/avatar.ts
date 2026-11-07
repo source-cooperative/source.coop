@@ -1,5 +1,5 @@
 import md5 from "md5";
-import type { Account, PublicAccount } from "@/types";
+import type { Account } from "@/types";
 
 /**
  * The picture that stands for an account: its uploaded image, else a person's
@@ -14,14 +14,4 @@ export function avatarUrl(account: Account, size = 200): string | undefined {
   if (account.type === "individual" && email) {
     return `https://www.gravatar.com/avatar/${md5(email.toLowerCase().trim())}?d=identicon&s=${size}`;
   }
-}
-
-/**
- * The part of an account anyone may read. Anything that hands an account to
- * the browser hands it this, since a client component's props are serialized
- * into the page whether or not they are rendered.
- */
-export function publicView(account: Account): PublicAccount {
-  const { account_id, type, name, disabled, metadata_public } = account;
-  return { account_id, type, name, disabled, metadata_public, profile_image: avatarUrl(account) };
 }

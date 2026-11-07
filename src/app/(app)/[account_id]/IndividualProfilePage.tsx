@@ -13,7 +13,7 @@ import {
   isAuthorized,
 } from "@/lib/api/authz";
 import { IndividualProfile } from "@/components/features/profiles/IndividualProfile";
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 
 interface IndividualProfilePageProps {
   account: IndividualAccount;

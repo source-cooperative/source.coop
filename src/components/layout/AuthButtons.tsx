@@ -15,7 +15,7 @@ import { Account, Actions, MembershipState } from "@/types";
 import { onboardingUrl } from "@/lib/urls";
 import { LoginButton } from "@/components/core";
 import { invitationLink } from "./accountMenu";
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 
 export async function AuthButtons() {
   const session = await getPageSession();

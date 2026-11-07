@@ -9,7 +9,7 @@ import {
 import { PlusIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 import type { IndividualAccount, Product, PublicAccount } from "@/types";
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 import { editAccountProfileUrl, newProductUrl } from "@/lib/urls";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProductsList } from "../products/ProductsList";

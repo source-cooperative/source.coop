@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { userEvent, within } from "storybook/test";
 import { AccountDropdown } from "./AccountDropdown";
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 import { S3CredentialsProvider } from "@/components/features/uploader/CredentialsProvider";
 import { UploadProvider } from "@/components/features/uploader/UploadProvider";
 import {

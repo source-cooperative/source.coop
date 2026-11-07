@@ -1,4 +1,4 @@
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 import { ReactNode } from "react";
 import {
   AccountSelector,

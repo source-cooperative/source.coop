@@ -22,7 +22,7 @@ import {
   isAuthorized,
 } from "@/lib/api/authz";
 import { getPendingInvitation } from "@/lib/actions/memberships";
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 
 interface OrganizationProfilePageProps {
   account: OrganizationalAccount;

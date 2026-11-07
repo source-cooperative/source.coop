@@ -43,7 +43,7 @@ import {
   unauthenticated,
 } from "./result";
 import { canonTag } from "@/lib/tags/canon";
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 import { planSuggestions } from "./tags";
 
 export const ListProductsQuerySchema = PageQuerySchema.extend({

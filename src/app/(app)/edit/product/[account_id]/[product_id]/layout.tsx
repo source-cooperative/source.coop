@@ -1,4 +1,4 @@
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 import { ReactNode } from "react";
 import { Pencil1Icon, PersonIcon, Link1Icon } from "@radix-ui/react-icons";
 import { Flex } from "@radix-ui/themes";

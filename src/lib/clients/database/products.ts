@@ -14,7 +14,7 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { accountsTable } from "./accounts";
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 import { BaseTable } from "./base";
 import { marshall } from "@aws-sdk/util-dynamodb";
 

@@ -1,5 +1,5 @@
 "use client";
-import { publicView } from "@/lib/avatar";
+import { publicView } from "@/types";
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
