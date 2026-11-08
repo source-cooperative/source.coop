@@ -9,6 +9,11 @@ export interface DataProxyConstructProps {
   readonly issuerUrl: string;
   /** Platform-hosted opendata buckets the proxy reads/writes for connections. */
   readonly writableBuckets: string[];
+  /**
+   * Ids of the platform's own data connections — the only ones whose proxy
+   * token may assume the access role.
+   */
+  readonly platformConnectionIds: string[];
 }
 
 /**
@@ -43,19 +48,25 @@ export class DataProxyConstruct extends Construct {
       assumedBy: new iam.FederatedPrincipal(
         provider.openIdConnectProviderArn,
         {
-          // ponytail: scope to aud only. `data.source.coop` is Source's own
-          // single-tenant proxy IdP, so any token it mints is the proxy itself;
-          // pinning aud = sts.amazonaws.com ensures the token was issued for STS.
-          // Add a `${issuerHost}:sub` condition if the proxy exposes a stable
-          // default subject worth pinning further.
-          StringEquals: { [`${issuerHost}:aud`]: "sts.amazonaws.com" },
+          // The proxy mints a token for every data connection, including ones
+          // an account creates for itself, and any of them may name this role.
+          // `sub` (`scv1:conn:{id}`) is what tells them apart, so only the
+          // platform's own connections may assume it. An allowlist, not a
+          // denylist, so a subject nobody anticipated fails closed.
+          StringEquals: {
+            [`${issuerHost}:aud`]: "sts.amazonaws.com",
+            [`${issuerHost}:sub`]: props.platformConnectionIds.map(
+              (id) => `scv1:conn:${id}`
+            ),
+          },
         },
         "sts:AssumeRoleWithWebIdentity"
       ),
     });
 
-    // Read+write across the hosted buckets; the proxy's per-request STS session
-    // policy narrows each assumption to the specific account/product prefix.
+    // ponytail: read+write across the hosted buckets, so keeping one account's
+    // products out of another's prefix is the proxy's job alone. Move it into
+    // IAM (a bucket policy keyed on `sub`) when subjects become account-scoped.
     for (const bucketName of props.writableBuckets) {
       s3.Bucket.fromBucketName(
         this,
