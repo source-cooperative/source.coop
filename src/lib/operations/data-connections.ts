@@ -110,11 +110,16 @@ function audit(operation: string, session: UserSession, c: DataConnection) {
 /**
  * The bucket a connection's details name, with the path of the field that
  * names it. An Azure container is only unique within its storage account.
+ * Lowercased because a bucket is reached by hostname, which ignores case, so
+ * `A.example` and `a.example` name the same bucket.
  */
 const bucketOf = (d: DataConnectionDetails) =>
   d.provider === DataProvider.Azure
-    ? { path: ["details", "container_name"], bucket: `${d.account_name}/${d.container_name}` }
-    : { path: ["details", "bucket"], bucket: d.bucket };
+    ? {
+        path: ["details", "container_name"],
+        bucket: `${d.account_name}/${d.container_name}`.toLowerCase(),
+      }
+    : { path: ["details", "bucket"], bucket: d.bucket.toLowerCase() };
 
 /**
  * The whole connection, checked across fields, as it is about to be written.

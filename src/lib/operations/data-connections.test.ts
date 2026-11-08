@@ -258,6 +258,9 @@ describe("createDataConnection", () => {
 
   test("keeps an owned connection off the platform's buckets", async () => {
     expect(await fieldErrors({ details: opendata.details })).toHaveProperty(["details.bucket"]);
+    // Hostnames ignore case, so a differently cased name is the same bucket.
+    const shouted = { ...opendata.details, bucket: opendata.details.bucket.toUpperCase() };
+    expect(await fieldErrors({ details: shouted })).toHaveProperty(["details.bucket"]);
   });
 
   test.each(["arn:aws:iam::111111111111:role/reader", "arn:aws:iam::111111111111:role/other"])(
