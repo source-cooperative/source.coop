@@ -147,3 +147,27 @@ export const WebIdentityRole: Story = {
     } as unknown as EditableDataConnection,
   },
 };
+
+/**
+ * The same role, with this connection's own audience. The proxy's tokens for
+ * it carry `scv1:conn:` and the connection id instead of the shared
+ * `sts.amazonaws.com`, so the role's AWS account registers that value as a
+ * client ID on its OIDC provider, and the trust policy below conditions on it.
+ * AWS then turns away a token minted for any other connection before it reads
+ * the trust policy at all.
+ */
+export const WebIdentityRoleOwnAudience: Story = {
+  args: {
+    mode: "edit",
+    ownerAccountId: "miskatonic",
+    proxyOrigin: "https://data.source.coop",
+    dataConnection: {
+      ...s3Connection,
+      authentication: {
+        type: DataConnectionAuthenticationType.S3WebIdentityRole,
+        role_arn: "arn:aws:iam::123456789012:role/source-cooperative-proxy",
+        audience: "scv1:conn:miskatonic--miskatonic-archive",
+      },
+    } as unknown as EditableDataConnection,
+  },
+};

@@ -140,8 +140,23 @@ export const S3WebIdentityRoleAuthenticationSchema = z
   .object({
     type: z.literal(DataConnectionAuthenticationType.S3WebIdentityRole),
     role_arn: z.string().regex(IAM_ROLE_ARN_REGEX, "Invalid IAM role ARN"),
+    audience: z.optional(z.string()).openapi({
+      description:
+        "The `aud` the proxy's tokens carry for this connection: `sts.amazonaws.com` (the default) or `scv1:conn:{data_connection_id}`, this connection's own.",
+    }),
   })
   .openapi("S3WebIdentityRoleAuthentication");
+
+/** The `aud` every connection shares unless it sets its own. */
+export const SHARED_AUDIENCE = "sts.amazonaws.com";
+
+/**
+ * The subject the data proxy presents for a connection, and the only audience
+ * of its own the connection may take. A role owner who registers exactly this
+ * client ID on their OIDC provider accepts no other connection's tokens.
+ */
+export const connectionSubject = (dataConnectionId: string) =>
+  `scv1:conn:${dataConnectionId}`;
 
 /**
  * V2 federated GCS access via GCP Workload Identity Federation. The proxy
@@ -352,6 +367,20 @@ export const DataConnectionSchema = DataConnectionObjectSchema.superRefine(
         });
       }
       return;
+    }
+    // An audience naming another connection would pass the very check a role
+    // owner registers their connection's audience for.
+    if (
+      authentication.type === DataConnectionAuthenticationType.S3WebIdentityRole &&
+      authentication.audience !== undefined &&
+      authentication.audience !== SHARED_AUDIENCE &&
+      authentication.audience !== connectionSubject(connection.data_connection_id)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["authentication", "audience"],
+        message: `Audience must be "${SHARED_AUDIENCE}" or "${connectionSubject(connection.data_connection_id)}"`,
+      });
     }
     if (
       !PROVIDER_AUTH_TYPES[details.provider].includes(authentication.type)

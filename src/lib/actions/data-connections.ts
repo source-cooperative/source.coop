@@ -197,6 +197,9 @@ function buildAuthenticationFromForm(
       return {
         type: DataConnectionAuthenticationType.S3WebIdentityRole,
         role_arn: formData.get("role_arn") as string,
+        // Always sent, so switching back to the shared audience overwrites a
+        // stored one rather than inheriting it on edit.
+        audience: (formData.get("audience") as string) || undefined,
       };
     case DataConnectionAuthenticationType.GcpWorkloadIdentity:
       return {
