@@ -198,6 +198,16 @@ export type DataConnectionAuthentication = z.infer<
 >;
 
 /**
+ * The authentication types the data proxy signs requests with; omitting
+ * `authentication` (unsigned) is the other way it reads. The remaining types
+ * stay in the schema so rows written with them still read, but a write may not
+ * choose one: the proxy answers every request on such a connection with an
+ * error, so a connection using one serves nothing.
+ */
+export const SUPPORTED_AUTH_TYPES: readonly DataConnectionAuthenticationType[] =
+  [DataConnectionAuthenticationType.S3WebIdentityRole];
+
+/**
  * A bare bucket/container name — not a URI (`s3://bucket`) or a path. Cloud
  * providers all forbid slashes in bucket names, so rejecting `/` also rejects
  * any scheme prefix; the scheme check just gives a clearer message.
@@ -376,6 +386,17 @@ export type DataConnection = z.infer<typeof DataConnectionSchema>;
  * a connection later (`addMirror`) call this, so the two paths can't
  * diverge on how a prefix is computed.
  */
+/**
+ * Whether a key prefix stays inside its bucket. Object keys are built by
+ * literal concatenation (`${prefix}${key}`), so a prefix may not climb out with
+ * `..` or start at the bucket root with `/`. Mirror prefixes and a
+ * connection's `base_prefix` and `prefix_template` all answer to it.
+ */
+export const isSafePrefix = (prefix: string) =>
+  !prefix.includes("..") && !prefix.startsWith("/");
+
+export const UNSAFE_PREFIX_MESSAGE = "Prefix can't start with '/' or contain '..'";
+
 export function resolveMirrorPrefix(
   prefixTemplate: string | undefined,
   accountId: string,

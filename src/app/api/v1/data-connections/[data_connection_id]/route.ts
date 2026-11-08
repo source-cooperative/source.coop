@@ -41,7 +41,7 @@ registry.registerPath({
   tags: ["Data Connections"],
   summary: "Update a data connection",
   description:
-    "Each field given replaces the stored one; `details` and `authentication` are replaced whole. Since secrets are never returned, a secret left blank or out under the same `authentication.type` keeps the stored one. A connection's ID and owner never change.",
+    "Each field given replaces the stored one; `details` and `authentication` are replaced whole. Since secrets are never returned, a secret left blank or out under the same `authentication.type` keeps the stored one. A connection's ID and owner never change. An owned connection's provider, bucket and authentication type never change either. Returns 400 when a change to them is sent.",
   security: bearer,
   request: {
     params,

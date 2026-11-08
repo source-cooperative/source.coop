@@ -46,8 +46,8 @@ const s3Connection = {
     region: "us-west-2",
   },
   authentication: {
-    type: DataConnectionAuthenticationType.S3AccessKey,
-    access_key_id: "AKIA3XV7QZEXAMPLE",
+    type: DataConnectionAuthenticationType.S3WebIdentityRole,
+    role_arn: "arn:aws:iam::123456789012:role/source-cooperative-proxy",
   },
 } as unknown as EditableDataConnection;
 
@@ -57,17 +57,28 @@ export const Create: Story = {
 };
 
 /**
- * Editing an S3 connection with a key already stored — the state the form was
- * rebuilt for. The secret says "Stored" rather than showing an empty password
- * box, and the worked example under Key layout resolves the whole location.
+ * Editing a connection saved with an access key, a type the data proxy doesn't
+ * sign requests with. The type stays selected and is marked as no longer
+ * offered, so the rest of the connection can be edited without replacing it.
+ * Once another type is picked, it can't be chosen again. The secret says
+ * "Stored" rather than showing an empty password box.
  */
-export const EditWithStoredKey: Story = {
-  args: { mode: "edit", dataConnection: s3Connection },
+export const RetiredAccessKey: Story = {
+  args: {
+    mode: "edit",
+    dataConnection: {
+      ...s3Connection,
+      authentication: {
+        type: DataConnectionAuthenticationType.S3AccessKey,
+        access_key_id: "AKIA3XV7QZEXAMPLE",
+      },
+    } as unknown as EditableDataConnection,
+  },
 };
 
 /**
- * Google Cloud federates without a key, so the Authentication section swaps to
- * workload identity and the Backend section loses its region.
+ * Google Cloud buckets are read unsigned, so Authentication offers only None
+ * and the Backend section loses its region.
  */
 export const GoogleCloud: Story = {
   args: {
@@ -80,19 +91,16 @@ export const GoogleCloud: Story = {
         bucket: "black-mesa-files",
         base_prefix: "",
       },
-      authentication: {
-        type: DataConnectionAuthenticationType.GcpWorkloadIdentity,
-        workload_identity_provider:
-          "//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/source/providers/source",
-        service_account: "source-reader@example.iam.gserviceaccount.com",
-      },
+      read_only: true,
+      authentication: undefined,
     } as unknown as EditableDataConnection,
   },
 };
 
 /**
  * Azure addresses a container inside a storage account, so Backend asks for
- * both where the others ask for one bucket.
+ * both where the others ask for one bucket. Like Google Cloud, it is read
+ * unsigned.
  */
 export const Azure: Story = {
   args: {
@@ -107,9 +115,8 @@ export const Azure: Story = {
         base_prefix: "",
         region: "westeurope",
       },
-      authentication: {
-        type: DataConnectionAuthenticationType.AzureSasToken,
-      },
+      read_only: true,
+      authentication: undefined,
     } as unknown as EditableDataConnection,
   },
 };
@@ -138,12 +145,6 @@ export const WebIdentityRole: Story = {
     mode: "edit",
     ownerAccountId: "miskatonic",
     proxyOrigin: "https://data.source.coop",
-    dataConnection: {
-      ...s3Connection,
-      authentication: {
-        type: DataConnectionAuthenticationType.S3WebIdentityRole,
-        role_arn: "arn:aws:iam::123456789012:role/source-cooperative-proxy",
-      },
-    } as unknown as EditableDataConnection,
+    dataConnection: s3Connection,
   },
 };

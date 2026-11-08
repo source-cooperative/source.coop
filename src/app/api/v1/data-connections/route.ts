@@ -1,7 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import { DataConnectionObjectSchema } from "@/types";
 import { withApiSession, toResponse } from "@/lib/api/handler";
-import { bearer, errors, json, optionalBearer, registry } from "@/lib/api/openapi";
+import { bearer, errors, json, registry } from "@/lib/api/openapi";
 import {
   createDataConnection,
   CreateDataConnectionSchema,
@@ -16,8 +16,8 @@ registry.registerPath({
   tags: ["Data Connections"],
   summary: "List data connections",
   description:
-    "The storage locations products can keep their data in: the platform's own, and the account-owned ones the caller manages. Static keys and SAS tokens are never returned; federated settings such as a role ARN are. `?usable_for=` answers which connections a new product under that account may use; `?owner=` lists the connections an account manages.",
-  security: optionalBearer,
+    "The storage locations products can keep their data in: the platform's own, and the account-owned ones the caller manages. Static keys and SAS tokens are never returned; federated settings such as a role ARN are. `?usable_for=` answers which connections a new product under that account may use; `?owner=` lists the connections an account manages.\n\nReturns 401 when you send no credentials.",
+  security: bearer,
   request: { query: ListDataConnectionsQuerySchema },
   responses: {
     200: json(
@@ -45,7 +45,7 @@ registry.registerPath({
   tags: ["Data Connections"],
   summary: "Create a data connection",
   description:
-    "Its ID is made from `name`, and from `owner` when an account owns it (`owner--name`). An account's owners and maintainers may create its connections once the platform has given it the `create_data_connections` flag; only platform admins create connections without an owner. An owned connection never carries a `required_flag`.",
+    "Its ID is made from `name`, and from `owner` when an account owns it (`owner--name`). An account's owners and maintainers may create its connections once the platform has given it the `create_data_connections` flag; only platform admins create connections without an owner. An owned connection never carries a `required_flag`.\n\nThe data proxy signs requests only with `s3_web_identity_role`, so that is the one `authentication.type` you may set. Leave `authentication` out for a public, read-only bucket. An owned connection may not use a bucket that a platform connection uses. Its role may not be in the AWS account of a platform connection's role. Neither `base_prefix` nor `prefix_template` may start with `/` or contain `..`.",
   security: bearer,
   request: {
     body: {

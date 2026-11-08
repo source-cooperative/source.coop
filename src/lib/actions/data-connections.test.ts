@@ -22,6 +22,7 @@ import {
 jest.mock("@/lib/clients/database", () => ({
   dataConnectionsTable: {
     fetchById: jest.fn(),
+    listAll: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
@@ -104,6 +105,7 @@ beforeEach(() => {
   } as Awaited<ReturnType<typeof getPageSession>>);
   mockIsAdmin.mockReturnValue(true);
   mockTable.fetchById.mockResolvedValue(null);
+  mockTable.listAll.mockResolvedValue([]);
   mockTable.create.mockImplementation(async (dc) => dc);
   mockTable.update.mockImplementation(async (dc) => dc);
   mockProductsTable.listProductsByConnectionId.mockResolvedValue([]);
@@ -121,9 +123,8 @@ describe("createDataConnection", () => {
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
-        auth_type: DataConnectionAuthenticationType.S3AccessKey,
-        access_key_id: "AKIA",
-        secret_access_key: "secret",
+        auth_type: DataConnectionAuthenticationType.S3WebIdentityRole,
+        role_arn: "arn:aws:iam::123456789012:role/my-role",
       })
     );
 
@@ -139,9 +140,8 @@ describe("createDataConnection", () => {
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
-        auth_type: DataConnectionAuthenticationType.S3AccessKey,
-        access_key_id: "AKIA",
-        secret_access_key: "secret",
+        auth_type: DataConnectionAuthenticationType.S3WebIdentityRole,
+        role_arn: "arn:aws:iam::123456789012:role/my-role",
       })
     );
 
@@ -150,15 +150,14 @@ describe("createDataConnection", () => {
     expect(mockTable.create).not.toHaveBeenCalled();
   });
 
-  test("creates an S3 access-key connection and redirects to the new connection", async () => {
+  test("creates a connection and redirects to it", async () => {
     const result = await createDataConnection(
       FORM_STATE,
       formDataFor({
         ...baseS3Fields,
         read_only: "on",
-        auth_type: DataConnectionAuthenticationType.S3AccessKey,
-        access_key_id: "AKIA",
-        secret_access_key: "secret",
+        auth_type: DataConnectionAuthenticationType.S3WebIdentityRole,
+        role_arn: "arn:aws:iam::123456789012:role/my-role",
       })
     );
 
@@ -173,11 +172,43 @@ describe("createDataConnection", () => {
       bucket: "my-bucket",
       region: "us-east-1",
     });
-    expect(created.authentication).toEqual({
-      type: DataConnectionAuthenticationType.S3AccessKey,
+  });
+
+  test.each([
+    {
+      ...baseS3Fields,
+      auth_type: DataConnectionAuthenticationType.S3AccessKey,
       access_key_id: "AKIA",
       secret_access_key: "secret",
-    });
+    },
+    {
+      ...baseAzureFields,
+      auth_type: DataConnectionAuthenticationType.AzureSasToken,
+      sas_token: "sv=2021-token",
+    },
+    {
+      ...baseAzureFields,
+      auth_type: DataConnectionAuthenticationType.AzureWorkloadIdentity,
+      tenant_id: "11111111-1111-1111-1111-111111111111",
+      client_id: "22222222-2222-2222-2222-222222222222",
+    },
+    {
+      name: "GCS Connection",
+      provider: DataProvider.GCS,
+      bucket: "my-gcs-bucket",
+      base_prefix: "",
+      visibility_public: "on",
+      auth_type: DataConnectionAuthenticationType.GcpWorkloadIdentity,
+      workload_identity_provider:
+        "//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/p/providers/pr",
+      service_account: "sa@my-project.iam.gserviceaccount.com",
+    },
+  ])("refuses $auth_type, which the data proxy can't sign with", async (fields) => {
+    const result = await createDataConnection(FORM_STATE, formDataFor(fields));
+
+    expect(result.success).toBe(false);
+    expect(result.message).toContain("can't sign requests");
+    expect(mockTable.create).not.toHaveBeenCalled();
   });
 
   test("creates an S3 web-identity-role connection with a valid ARN", async () => {
@@ -214,23 +245,6 @@ describe("createDataConnection", () => {
     expect(mockTable.create).not.toHaveBeenCalled();
   });
 
-  test("creates an Azure SAS-token connection", async () => {
-    const result = await createDataConnection(
-      FORM_STATE,
-      formDataFor({
-        ...baseAzureFields,
-        auth_type: DataConnectionAuthenticationType.AzureSasToken,
-        sas_token: "sv=2021-token",
-      })
-    );
-
-    expect(result.success).toBe(true);
-    expect(mockTable.create.mock.calls[0][0].authentication).toEqual({
-      type: DataConnectionAuthenticationType.AzureSasToken,
-      sas_token: "sv=2021-token",
-    });
-  });
-
   test("rejects a SAS-token connection submitted with a blank token", async () => {
     const result = await createDataConnection(
       FORM_STATE,
@@ -246,24 +260,6 @@ describe("createDataConnection", () => {
     expect(mockTable.create).not.toHaveBeenCalled();
   });
 
-  test("creates an Azure workload-identity connection with UUIDs", async () => {
-    const result = await createDataConnection(
-      FORM_STATE,
-      formDataFor({
-        ...baseAzureFields,
-        auth_type: DataConnectionAuthenticationType.AzureWorkloadIdentity,
-        tenant_id: "11111111-1111-1111-1111-111111111111",
-        client_id: "22222222-2222-2222-2222-222222222222",
-      })
-    );
-
-    expect(result.success).toBe(true);
-    expect(mockTable.create.mock.calls[0][0].authentication).toMatchObject({
-      type: DataConnectionAuthenticationType.AzureWorkloadIdentity,
-      tenant_id: "11111111-1111-1111-1111-111111111111",
-    });
-  });
-
   test("creates an R2 (S3-compatible) connection with a custom endpoint", async () => {
     const result = await createDataConnection(
       FORM_STATE,
@@ -271,9 +267,8 @@ describe("createDataConnection", () => {
         ...baseS3Fields,
         region: "auto",
         endpoint: "https://abc123.r2.cloudflarestorage.com",
-        auth_type: DataConnectionAuthenticationType.S3AccessKey,
-        access_key_id: "AKIA",
-        secret_access_key: "secret",
+        auth_type: DataConnectionAuthenticationType.S3WebIdentityRole,
+        role_arn: "arn:aws:iam::123456789012:role/my-role",
       })
     );
 
@@ -298,34 +293,6 @@ describe("createDataConnection", () => {
     expect(
       "endpoint" in mockTable.create.mock.calls[0][0].details
     ).toBe(false);
-  });
-
-  test("creates a GCS connection with workload-identity auth", async () => {
-    const result = await createDataConnection(
-      FORM_STATE,
-      formDataFor({
-        data_connection_id: "gcs-connection",
-        name: "GCS Connection",
-        provider: DataProvider.GCS,
-        bucket: "my-gcs-bucket",
-        base_prefix: "",
-        visibility_public: "on",
-        auth_type: DataConnectionAuthenticationType.GcpWorkloadIdentity,
-        workload_identity_provider:
-          "//iam.googleapis.com/projects/123/locations/global/workloadIdentityPools/p/providers/pr",
-        service_account: "sa@my-project.iam.gserviceaccount.com",
-      })
-    );
-
-    expect(result.success).toBe(true);
-    expect(mockTable.create.mock.calls[0][0].details).toMatchObject({
-      provider: DataProvider.GCS,
-      bucket: "my-gcs-bucket",
-    });
-    expect(mockTable.create.mock.calls[0][0].authentication).toMatchObject({
-      type: DataConnectionAuthenticationType.GcpWorkloadIdentity,
-      service_account: "sa@my-project.iam.gserviceaccount.com",
-    });
   });
 
   test("reports a taken name, found by the conditional put", async () => {
@@ -535,9 +502,8 @@ describe("account-owned connections", () => {
     ...baseS3Fields,
     name: "Myslug",
     owner: "acme",
-    auth_type: DataConnectionAuthenticationType.S3AccessKey,
-    access_key_id: "AKIA",
-    secret_access_key: "secret",
+    auth_type: DataConnectionAuthenticationType.S3WebIdentityRole,
+    role_arn: "arn:aws:iam::123456789012:role/my-role",
   };
 
   test("namespaces the id as ${owner}--${slug} and redirects to the account view", async () => {
@@ -622,9 +588,8 @@ describe("account-owned connections", () => {
       formDataFor({
         ...baseS3Fields,
         name: "Acme -- My Conn", // no `owner` field → unowned path
-        auth_type: DataConnectionAuthenticationType.S3AccessKey,
-        access_key_id: "AKIA",
-        secret_access_key: "secret",
+        auth_type: DataConnectionAuthenticationType.S3WebIdentityRole,
+        role_arn: "arn:aws:iam::123456789012:role/my-role",
       })
     );
 
@@ -640,9 +605,8 @@ describe("account-owned connections", () => {
       formDataFor({
         ...baseS3Fields,
         name: "!!",
-        auth_type: DataConnectionAuthenticationType.S3AccessKey,
-        access_key_id: "AKIA",
-        secret_access_key: "secret",
+        auth_type: DataConnectionAuthenticationType.S3WebIdentityRole,
+        role_arn: "arn:aws:iam::123456789012:role/my-role",
       })
     );
 
