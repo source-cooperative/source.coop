@@ -4,10 +4,17 @@ import {
   Actions,
   DataConnection,
   DataConnectionAuthenticationSchema,
+  DataConnectionAuthenticationType,
+  DataConnectionDetails,
   DataConnectionObjectSchema,
   DataConnectionSchema,
+  DataProvider,
+  isSafePrefix,
   MIN_ID_LENGTH,
+  resolveMirrorPrefix,
   slugifyToId,
+  SUPPORTED_AUTH_TYPES,
+  UNSAFE_PREFIX_MESSAGE,
   UserSession,
 } from "@/types";
 import {
@@ -101,14 +108,126 @@ function audit(operation: string, session: UserSession, c: DataConnection) {
 }
 
 /**
- * The whole connection, checked across fields. An owned connection is already
- * confined to its owner's products, so it never carries a platform flag.
+ * The bucket a connection's details name, with the path of the field that
+ * names it. An Azure container is only unique within its storage account.
+ * Lowercased because a bucket is reached by hostname, which ignores case, so
+ * `A.example` and `a.example` name the same bucket.
  */
-const complete = (c: Record<string, unknown>) =>
-  DataConnectionSchema.safeParse({
+const bucketOf = (d: DataConnectionDetails) =>
+  d.provider === DataProvider.Azure
+    ? {
+        path: ["details", "container_name"],
+        bucket: `${d.account_name}/${d.container_name}`.toLowerCase(),
+      }
+    : { path: ["details", "bucket"], bucket: d.bucket.toLowerCase() };
+
+/**
+ * The whole connection, checked across fields, as it is about to be written.
+ * An owned connection is already confined to its owner's products, so it never
+ * carries a platform flag. `stored` is the row an update starts from.
+ */
+const complete = (c: Record<string, unknown>, stored?: DataConnection) =>
+  DataConnectionSchema.superRefine((connection, ctx) => {
+    const issue = (path: (string | number)[], message: string) =>
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path, message });
+
+    // A row that already has an unsupported type may be edited without
+    // changing it, so editing its name or visibilities doesn't force a
+    // credential change at the same time.
+    const type = connection.authentication?.type;
+    if (
+      type &&
+      !SUPPORTED_AUTH_TYPES.includes(type) &&
+      type !== stored?.authentication?.type
+    ) {
+      issue(
+        ["authentication", "type"],
+        `The data proxy can't sign requests with "${type}". Use a web identity role, or no authentication for a public bucket.`
+      );
+    }
+
+    // Checked joined as well as apart: "a." and ".b" are each fine, but a
+    // product's keys would start with "a..b". The ids substituted here stand
+    // in for any real one, which can't hold a "." or "/".
+    const base = connection.details.base_prefix;
+    const template = connection.prefix_template ?? "";
+    if (!isSafePrefix(base)) {
+      issue(["details", "base_prefix"], UNSAFE_PREFIX_MESSAGE);
+    }
+    if (
+      !isSafePrefix(template) ||
+      !isSafePrefix(base + resolveMirrorPrefix(template, "account", "product"))
+    ) {
+      issue(["prefix_template"], UNSAFE_PREFIX_MESSAGE);
+    }
+
+    // Products already keep objects where an owned connection points, so its
+    // owner can't move it to another provider, bucket or kind of credential.
+    // A new connection is made for new storage instead.
+    if (stored?.owner) {
+      if (connection.details.provider !== stored.details.provider) {
+        issue(["details", "provider"], "An owned connection's provider can't change");
+      } else if (bucketOf(connection.details).bucket !== bucketOf(stored.details).bucket) {
+        issue(bucketOf(connection.details).path, "An owned connection's bucket can't change");
+      }
+      if (type !== stored.authentication?.type) {
+        issue(
+          ["authentication", "type"],
+          "An owned connection's authentication type can't change"
+        );
+      }
+    }
+  }).safeParse({
     ...c,
     required_flag: c.owner ? undefined : c.required_flag,
   });
+
+/**
+ * The AWS account an IAM role ARN belongs to
+ * (`arn:{partition}:iam::{account}:role/{name}`).
+ */
+const awsAccountOf = (roleArn: string) => roleArn.split(":")[4];
+
+const roleArnOf = (c: DataConnection) =>
+  c.authentication?.type === DataConnectionAuthenticationType.S3WebIdentityRole
+    ? c.authentication.role_arn
+    : undefined;
+
+/**
+ * Refuses an owned connection that names the platform's storage: a bucket
+ * that one of the platform's own (unowned) connections names, or a role in
+ * the same AWS account as one of theirs. The platform's set is read from the
+ * table on each write, so it follows the connections admins add.
+ *
+ * This is a check at write time, not the boundary. The trust policy on each
+ * platform role decides which connections may assume it; this only reports a
+ * connection that couldn't work when it is saved, rather than when a product
+ * on it is first read.
+ */
+async function namesPlatformStorage(
+  c: DataConnection
+): Promise<OperationResult<never> | null> {
+  if (!c.owner) return null;
+  const platform = (await dataConnectionsTable.listAll()).filter((p) => !p.owner);
+  const { path, bucket } = bucketOf(c.details);
+  if (platform.some((p) => bucketOf(p.details).bucket === bucket)) {
+    return invalid(
+      "This bucket holds Source Cooperative's own data. Use a bucket of your own.",
+      path.join(".")
+    );
+  }
+  const role = roleArnOf(c);
+  const accounts = new Set(
+    platform.map(roleArnOf).filter((arn) => arn !== undefined).map(awsAccountOf)
+  );
+  if (role && accounts.has(awsAccountOf(role))) {
+    return invalid(
+      "This role is in Source Cooperative's own AWS account. Use a role in an AWS account of your own.",
+      "authentication.role_arn"
+    );
+  }
+  return null;
+}
 
 /**
  * Secrets never leave the database, so a client editing a connection can't
@@ -154,6 +273,7 @@ export async function listDataConnections(
   session: UserSession | null,
   query: unknown
 ): Promise<OperationResult<Page<DataConnection>>> {
+  if (!session) return unauthenticated();
   const parsed = ListDataConnectionsQuerySchema.safeParse(query);
   if (!parsed.success) return fromZodError(parsed.error);
   const { owner, usable_for, cursor, limit } = parsed.data;
@@ -275,6 +395,8 @@ export async function createDataConnection(
   if (!(await canManageDataConnection(session, full.data))) {
     return forbidden("You may not create this data connection");
   }
+  const refused = await namesPlatformStorage(full.data);
+  if (refused) return refused;
 
   try {
     await dataConnectionsTable.create(full.data);
@@ -332,8 +454,10 @@ export async function updateDataConnection(
   const changes = Object.fromEntries(
     Object.entries(parsed.data).map(([k, v]) => [k, v ?? undefined])
   );
-  const full = complete({ ...existing, ...changes });
+  const full = complete({ ...existing, ...changes }, existing);
   if (!full.success) return fromZodError(full.error);
+  const refused = await namesPlatformStorage(full.data);
+  if (refused) return refused;
 
   try {
     // update() requires the row to still exist, so a concurrent delete isn't

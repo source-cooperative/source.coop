@@ -71,26 +71,16 @@ const providerOptions: Array<{
   {
     value: DataProvider.GCS,
     label: "Google Cloud",
-    description: "Keyless: federated through Workload Identity.",
+    description: "A public bucket, read without signing.",
   },
 ];
 
-const s3AuthTypes = [
-  DataConnectionAuthenticationType.S3AccessKey,
-  DataConnectionAuthenticationType.S3WebIdentityRole,
-];
-
-const azureAuthTypes = [
-  DataConnectionAuthenticationType.AzureSasToken,
-  DataConnectionAuthenticationType.AzureWorkloadIdentity,
-];
-
-const gcpAuthTypes = [DataConnectionAuthenticationType.GcpWorkloadIdentity];
-
+// The types offered are the ones the data proxy signs requests with
+// (SUPPORTED_AUTH_TYPES), so Azure and GCS connections are read unsigned.
 const authTypesByProvider: Record<string, DataConnectionAuthenticationType[]> = {
-  [DataProvider.S3]: s3AuthTypes,
-  [DataProvider.Azure]: azureAuthTypes,
-  [DataProvider.GCS]: gcpAuthTypes,
+  [DataProvider.S3]: [DataConnectionAuthenticationType.S3WebIdentityRole],
+  [DataProvider.Azure]: [],
+  [DataProvider.GCS]: [],
 };
 
 const AUTH_TYPE_LABELS: Record<DataConnectionAuthenticationType, string> = {
@@ -229,7 +219,16 @@ export function DataConnectionForm({
     setAuthType("");
   };
 
-  const authOptions = authTypesByProvider[provider] ?? s3AuthTypes;
+  const authOptions = authTypesByProvider[provider] ?? [];
+  // A connection saved with a type no longer offered keeps it on edit: it shows
+  // selected but can't be chosen again once left.
+  const storedAuthType = dataConnection?.authentication?.type;
+  const retiredAuthType =
+    storedAuthType &&
+    provider === dataConnection?.details.provider &&
+    !authOptions.includes(storedAuthType)
+      ? storedAuthType
+      : undefined;
 
   // Pre-fill non-secret authentication fields from the existing connection.
   // Secrets (access keys, SAS tokens) are intentionally never rendered.
@@ -671,6 +670,11 @@ export function DataConnectionForm({
                           {AUTH_TYPE_LABELS[type]}
                         </Select.Item>
                       ))}
+                      {retiredAuthType && (
+                        <Select.Item value={retiredAuthType} disabled>
+                          {AUTH_TYPE_LABELS[retiredAuthType]} (no longer offered)
+                        </Select.Item>
+                      )}
                     </Select.Content>
                   </Select.Root>
                 </>

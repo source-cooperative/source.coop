@@ -5,6 +5,7 @@ import {
   DataConnectionSchema,
   DataConnnectionDetailsSchema,
   DataProvider,
+  isSafePrefix,
   isSecretBearingAuth,
 } from "./data-connection";
 
@@ -215,6 +216,16 @@ describe("DataConnection V2 workload-identity variants", () => {
       },
     });
     expect(dc.authentication).toBeUndefined();
+  });
+});
+
+describe("isSafePrefix", () => {
+  test.each(["", "data/", "acct/prod/", "a.b/"])("accepts %p", (prefix) => {
+    expect(isSafePrefix(prefix)).toBe(true);
+  });
+
+  test.each(["/data/", "../", "data/../other/", "a..b"])("refuses %p", (prefix) => {
+    expect(isSafePrefix(prefix)).toBe(false);
   });
 });
 

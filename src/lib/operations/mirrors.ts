@@ -1,10 +1,12 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import {
+  isSafePrefix,
   Product,
   ProductMirror,
   ProductMirrorSchema,
   resolveMirrorPrefix,
+  UNSAFE_PREFIX_MESSAGE,
   UserSession,
 } from "@/types";
 import { canManageAccount } from "@/lib/api/authz";
@@ -56,8 +58,7 @@ export const AddMirrorSchema = z
   })
   .openapi("AddMirror");
 
-// Keys are built by literal concatenation (`${prefix}${key}`), so a prefix may
-// not climb out of the bucket or start at its root, and always ends in a
+// A prefix stays inside its bucket (isSafePrefix), and always ends in a
 // separator: without one, "acct/prod" also matches keys under "acct/prod2/" on
 // a shared connection.
 // ponytail: no cross-product collision scan; managing the connection already
@@ -65,10 +66,7 @@ export const AddMirrorSchema = z
 const PrefixSchema = z
   .string()
   .trim()
-  .refine(
-    (p) => !p.includes("..") && !p.startsWith("/"),
-    "Prefix can't start with '/' or contain '..'"
-  )
+  .refine(isSafePrefix, UNSAFE_PREFIX_MESSAGE)
   .transform((p) => (!p || p.endsWith("/") ? p : `${p}/`))
   .openapi({
     description:

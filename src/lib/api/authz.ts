@@ -364,6 +364,14 @@ export function isAuthorized(
   );
 }
 
+/**
+ * Open to anyone, signed in or not. The data proxy reads a connection by its id
+ * without credentials when it serves an anonymous request, and needs the
+ * federated settings (the role ARN) to sign requests to the connection's
+ * bucket. Static secrets are stripped from every read by
+ * `sanitizeDataConnection`. Listing connections is a separate operation, and
+ * needs a session.
+ */
 function getDataConnection(
   principal: UserSession | null,
   _dataConnection: DataConnection
