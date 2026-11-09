@@ -79,6 +79,7 @@ const SuggestTagsSchema = z.array(z.string()).openapi({
 export const CreateProductSchema = ProductCreationRequestSchema.omit({
   search_text: true,
 }).extend({
+  description: ProductSchema.shape.description.default(""),
   data_connection_id: z
     .string({ required_error: "A data connection is required" })
     .min(1, "A data connection is required")

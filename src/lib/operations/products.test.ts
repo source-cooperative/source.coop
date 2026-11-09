@@ -261,6 +261,13 @@ describe("createProduct", () => {
     ...overrides,
   });
 
+  test("stores an empty description when the request omits one", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+
+    expect((await createProduct(SESSION, input({ description: undefined }))).ok).toBe(true);
+    expect((productsTable.create as jest.Mock).mock.calls[0][0].description).toBe("");
+  });
+
   test("builds mirror metadata from the selected data connection", async () => {
     (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(
       connection({ prefix_template: "{{repository.account_id}}/{{repository.repository_id}}/" })
