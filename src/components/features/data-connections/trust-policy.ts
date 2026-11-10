@@ -1,3 +1,5 @@
+import { connectionSubject, SHARED_AUDIENCE } from "@/types/data-connection";
+
 const ROLE_ARN = /^arn:(aws[a-z-]*):iam::(\d{12}):role\//;
 
 /**
@@ -5,12 +7,15 @@ const ROLE_ARN = /^arn:(aws[a-z-]*):iam::(\d{12}):role\//;
  * `roleArn` for one connection and no other (data.source.coop ADR-006). The
  * proxy origin is its OIDC issuer, so the provider ARN and condition keys are
  * named after it; the AWS account and partition come from the role ARN, and
- * stand as placeholders until it's a valid one.
+ * stand as placeholders until it's a valid one. `audience` is the `aud` the
+ * proxy's tokens carry for the connection, the shared one unless it has its
+ * own.
  */
 export function trustPolicy(
   proxyOrigin: string,
   roleArn: string,
-  connectionId: string
+  connectionId: string,
+  audience: string = SHARED_AUDIENCE
 ): string {
   const [, partition = "aws", account = "<ACCOUNT_ID>"] =
     ROLE_ARN.exec(roleArn.trim()) ?? [];
@@ -26,8 +31,8 @@ export function trustPolicy(
         Action: "sts:AssumeRoleWithWebIdentity",
         Condition: {
           StringEquals: {
-            [`${issuer}:aud`]: "sts.amazonaws.com",
-            [`${issuer}:sub`]: `scv1:conn:${connectionId || "<CONNECTION_ID>"}`,
+            [`${issuer}:aud`]: audience,
+            [`${issuer}:sub`]: connectionSubject(connectionId || "<CONNECTION_ID>"),
           },
         },
       },

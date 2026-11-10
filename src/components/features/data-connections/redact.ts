@@ -22,7 +22,11 @@ export type RedactedAuthentication =
       access_key_id: string;
     }
   | { type: DataConnectionAuthenticationType.AzureSasToken }
-  | { type: DataConnectionAuthenticationType.S3WebIdentityRole; role_arn: string }
+  | {
+      type: DataConnectionAuthenticationType.S3WebIdentityRole;
+      role_arn: string;
+      audience?: string;
+    }
   | {
       type: DataConnectionAuthenticationType.GcpWorkloadIdentity;
       workload_identity_provider: string;
@@ -44,7 +48,7 @@ function redactAuthentication(
 ): RedactedAuthentication {
   switch (auth.type) {
     case DataConnectionAuthenticationType.S3WebIdentityRole:
-      return { type: auth.type, role_arn: auth.role_arn };
+      return { type: auth.type, role_arn: auth.role_arn, audience: auth.audience };
     case DataConnectionAuthenticationType.GcpWorkloadIdentity:
       return {
         type: auth.type,

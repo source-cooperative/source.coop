@@ -38,6 +38,21 @@ describe("trustPolicy", () => {
     expect(policy).toContain('"data.staging.source.coop:sub"');
   });
 
+  test("conditions on the connection's own audience when it has one", () => {
+    const policy = JSON.parse(
+      trustPolicy(
+        "https://data.source.coop",
+        "arn:aws:iam::123456789012:role/source",
+        "acme--bucket",
+        "scv1:conn:acme--bucket"
+      )
+    );
+    expect(policy.Statement[0].Condition.StringEquals).toEqual({
+      "data.source.coop:aud": "scv1:conn:acme--bucket",
+      "data.source.coop:sub": "scv1:conn:acme--bucket",
+    });
+  });
+
   test("leaves placeholders until the ARN and id exist", () => {
     const policy = trustPolicy("https://data.source.coop", "arn:aws:iam::", "");
     expect(policy).toContain("arn:aws:iam::<ACCOUNT_ID>:oidc-provider");

@@ -443,3 +443,39 @@ describe("DataConnection provider ↔ authentication cross-validation", () => {
     expect(dc.read_only).toBe(true);
   });
 });
+
+describe("DataConnection web-identity audience", () => {
+  const connection = (audience?: string) => ({
+    data_connection_id: "acme--bucket",
+    name: "Bucket",
+    read_only: false,
+    allowed_visibilities: [],
+    details: {
+      provider: "s3",
+      bucket: "example-bucket",
+      base_prefix: "",
+      region: "us-west-2",
+    },
+    authentication: {
+      type: "s3_web_identity_role",
+      role_arn: "arn:aws:iam::123456789012:role/source-coop",
+      audience,
+    },
+  });
+
+  test.each([undefined, "sts.amazonaws.com", "scv1:conn:acme--bucket"])(
+    "accepts %s",
+    (audience) => {
+      expect(DataConnectionSchema.safeParse(connection(audience)).success).toBe(true);
+    }
+  );
+
+  test.each(["scv1:conn:rival--bucket", "scv1:conn:acme--bucket:x", "anything"])(
+    "rejects %s, which isn't the shared audience or this connection's",
+    (audience) => {
+      const result = DataConnectionSchema.safeParse(connection(audience));
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0].path).toEqual(["authentication", "audience"]);
+    }
+  );
+});

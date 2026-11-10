@@ -23,6 +23,8 @@ import {
   AzureRegions,
   ProductVisibility,
   AccountFlags,
+  connectionSubject,
+  SHARED_AUDIENCE,
 } from "@/types";
 import {
   ConditionalGroup,
@@ -240,6 +242,13 @@ export function DataConnectionForm({
       : "";
   // Controlled so the trust policy below fills in its account as it's typed.
   const [roleArn, setRoleArn] = useState(initialRoleArn);
+  // Whether the proxy's tokens for this connection carry its own audience
+  // rather than the shared one; the trust policy below follows the choice.
+  const [ownAudience, setOwnAudience] = useState(
+    auth?.type === DataConnectionAuthenticationType.S3WebIdentityRole &&
+      !!auth.audience &&
+      auth.audience !== SHARED_AUDIENCE
+  );
   const initialTenantId =
     auth?.type === DataConnectionAuthenticationType.AzureWorkloadIdentity
       ? auth.tenant_id
@@ -750,6 +759,52 @@ export function DataConnectionForm({
                   )}
                 </Field>
 
+                <Field
+                  label="Audience"
+                  help={
+                    ownAudience ? (
+                      <>
+                        Register <Code>{connectionSubject(derivedId || "<CONNECTION_ID>")}</Code>{" "}
+                        as a client ID on the role&apos;s OIDC provider for{" "}
+                        <Code>{proxyOrigin ?? "the proxy"}</Code>. AWS then rejects
+                        tokens minted for any other connection before it reads the
+                        trust policy.
+                      </>
+                    ) : (
+                      <>
+                        Every connection&apos;s tokens carry{" "}
+                        <Code>{SHARED_AUDIENCE}</Code>, so the role&apos;s trust
+                        policy must pin the subject below to accept this
+                        connection only.
+                      </>
+                    )
+                  }
+                  errors={state.fieldErrors?.audience}
+                >
+                  {(props) => (
+                    <>
+                      <input
+                        type="hidden"
+                        name="audience"
+                        value={ownAudience ? connectionSubject(derivedId) : SHARED_AUDIENCE}
+                      />
+                      <Select.Root
+                        size="3"
+                        value={ownAudience ? "own" : "shared"}
+                        onValueChange={(value) => setOwnAudience(value === "own")}
+                      >
+                        <Select.Trigger {...props} style={{ width: "100%" }} />
+                        <Select.Content>
+                          <Select.Item value="shared">
+                            Shared ({SHARED_AUDIENCE})
+                          </Select.Item>
+                          <Select.Item value="own">This connection only</Select.Item>
+                        </Select.Content>
+                      </Select.Root>
+                    </>
+                  )}
+                </Field>
+
                 {proxyOrigin && (
                   <Field
                     label="Trust policy"
@@ -770,7 +825,14 @@ export function DataConnectionForm({
                     }
                   >
                     <TrustPolicy
-                      policy={trustPolicy(proxyOrigin, roleArn, derivedId)}
+                      policy={trustPolicy(
+                        proxyOrigin,
+                        roleArn,
+                        derivedId,
+                        ownAudience
+                          ? connectionSubject(derivedId || "<CONNECTION_ID>")
+                          : SHARED_AUDIENCE
+                      )}
                     />
                   </Field>
                 )}
