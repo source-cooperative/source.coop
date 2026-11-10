@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   Flex,
   IconButton,
+  Link,
   Text,
   TextField,
   Tooltip,
@@ -79,19 +80,22 @@ function TrustRow({
           // The repository, opening on GitHub; the exact subject on hover.
           <Flex align="center" gap="2">
             <Tooltip content={trust.subject}>
-              <a
+              {/* The row's name, so the same ink as an API key's; the icon
+                  and the underline on hover say it is a link. */}
+              <Link
                 href={`https://github.com/${github.repo}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "var(--accent-11)", textDecoration: "none", minWidth: 0 }}
+                size="2"
+                weight="medium"
+                color="gray"
+                highContrast
+                underline="hover"
+                style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)", minWidth: 0, overflowWrap: "anywhere" }}
               >
-                <Flex align="center" gap="1">
-                  <Text size="2" weight="medium" style={{ overflowWrap: "anywhere" }}>
-                    {github.repo}
-                  </Text>
-                  <ExternalLinkIcon width="12" height="12" aria-label="opens in a new tab" />
-                </Flex>
-              </a>
+                {github.repo}
+                <ExternalLinkIcon width="12" height="12" aria-label="opens in a new tab" />
+              </Link>
             </Tooltip>
             {github.pinned && (
               <Tooltip content="Pinned to the repository's ID, so a new repository given this name can't use it">
