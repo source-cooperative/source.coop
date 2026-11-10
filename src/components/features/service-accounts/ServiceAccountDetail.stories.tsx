@@ -85,6 +85,7 @@ const summary: ServiceAccountSummary = {
   trusts: [
     trust("repo:miskatonic/climate-data:ref:refs/heads/main", "2026-03-20T00:00:00Z"),
     trust("repo:miskatonic@8123456/climate-data@9456789:environment:production"),
+    trust("repo:miskatonic/field-notes:ref:refs/tags/v2.1.0", "2026-11-08T00:00:00Z"),
   ],
   grants: [
     grant("climate-data", MembershipRole.WriteData),
@@ -114,6 +115,12 @@ const summary: ServiceAccountSummary = {
   ],
 };
 
+/**
+ * Each trusted workflow is named by its repository, which opens on GitHub,
+ * with the branch, tag or environment it is pinned to beneath. Hover the
+ * repository for the exact subject; a lock marks one pinned to the
+ * repository's ID.
+ */
 export const Default: Story = { args: { summary } };
 
 /** Disabled: marked beside the name, with Enable in place of Disable. */

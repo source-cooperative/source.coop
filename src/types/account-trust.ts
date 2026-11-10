@@ -46,3 +46,33 @@ export const GITHUB_ACTIONS_ISSUER = "https://token.actions.githubusercontent.co
  */
 export const GITHUB_ACTIONS_SUBJECT_REGEX =
   /^repo:(?:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+@\d+\/[A-Za-z0-9_.-]+@\d+):(?:ref:refs\/[^\s:]*[^\s:/]|environment:[^:]+)$/;
+
+/** What a GitHub Actions subject names, in the parts a person reads. */
+export type GithubSubject = {
+  /** `owner/repo`, without ids. */
+  repo: string;
+  /** Named by permanent ids as well, so a recycled name cannot inherit it. */
+  pinned: boolean;
+  kind: "branch" | "tag" | "ref" | "environment";
+  /** The branch, tag or environment name; for any other ref, the whole ref. */
+  name: string;
+};
+
+const GITHUB_SUBJECT_PARTS =
+  /^repo:([A-Za-z0-9_.-]+)(@\d+)?\/([A-Za-z0-9_.-]+)(@\d+)?:(?:ref:refs\/(heads|tags)\/([^\s:]+)|ref:(refs\/[^\s:]+)|environment:([^:]+))$/;
+
+/** Splits a GitHub Actions subject into its parts, or null for any other shape. */
+export function parseGithubSubject(subject: string): GithubSubject | null {
+  const m = GITHUB_SUBJECT_PARTS.exec(subject);
+  if (!m) return null;
+  const [, owner, ownerId, repo, repoId, refKind, refName, otherRef, environment] = m;
+  return {
+    repo: `${owner}/${repo}`,
+    pinned: Boolean(ownerId && repoId),
+    ...(environment !== undefined
+      ? { kind: "environment", name: environment }
+      : refKind
+        ? { kind: refKind === "heads" ? "branch" : "tag", name: refName }
+        : { kind: "ref", name: otherRef }),
+  };
+}
