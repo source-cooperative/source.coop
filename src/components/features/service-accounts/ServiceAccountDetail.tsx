@@ -13,7 +13,7 @@ import {
   TextField,
   Tooltip,
 } from "@radix-ui/themes";
-import { DotsHorizontalIcon } from "@radix-ui/react-icons";
+import { DotsHorizontalIcon, ExternalLinkIcon, LockClosedIcon } from "@radix-ui/react-icons";
 import { Field, SectionHeader } from "@/components/core";
 import { ItemList } from "@/components/core/ItemList";
 import {
@@ -26,6 +26,7 @@ import {
 import {
   GITHUB_ACTIONS_ISSUER,
   IDLE_SERVICE_ACCOUNT_ACTION_STATE as IDLE,
+  parseGithubSubject,
   type AccountTrust,
   type Product,
   type ServiceAccountActionState,
@@ -70,25 +71,53 @@ function TrustRow({
 }) {
   const [showingUsage, setShowingUsage] = useState(false);
   const example = proxyOrigin && trust.issuer === GITHUB_ACTIONS_ISSUER;
+  const github = trust.issuer === GITHUB_ACTIONS_ISSUER ? parseGithubSubject(trust.subject) : null;
   return (
     <ItemList.Row
       title={
-        // Breaks after a `:` or `/` where it can, so a long subject wraps
-        // between its parts rather than mid-word.
-        <Text size="2" style={{ fontFamily: "var(--code-font-family)", overflowWrap: "anywhere" }}>
-          {trust.subject.split(/(?<=[:/])/).map((part, i) => (
-            <React.Fragment key={i}>
-              {i > 0 && <wbr />}
-              {part}
-            </React.Fragment>
-          ))}
-        </Text>
+        github ? (
+          // The repository, opening on GitHub; the exact subject on hover.
+          <Flex align="center" gap="2">
+            <Tooltip content={trust.subject}>
+              <a
+                href={`https://github.com/${github.repo}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--accent-11)", textDecoration: "none", minWidth: 0 }}
+              >
+                <Flex align="center" gap="1">
+                  <Text size="2" weight="medium" style={{ overflowWrap: "anywhere" }}>
+                    {github.repo}
+                  </Text>
+                  <ExternalLinkIcon width="12" height="12" aria-label="opens in a new tab" />
+                </Flex>
+              </a>
+            </Tooltip>
+            {github.pinned && (
+              <Tooltip content="Pinned to the repository's ID, so a new repository given this name can't use it">
+                <LockClosedIcon width="12" height="12" color="var(--gray-11)" aria-label="pinned to the repository's ID" />
+              </Tooltip>
+            )}
+          </Flex>
+        ) : (
+          // Breaks after a `:` or `/` where it can, so a long subject wraps
+          // between its parts rather than mid-word.
+          <Text size="2" style={{ fontFamily: "var(--code-font-family)", overflowWrap: "anywhere" }}>
+            {trust.subject.split(/(?<=[:/])/).map((part, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <wbr />}
+                {part}
+              </React.Fragment>
+            ))}
+          </Text>
+        )
       }
       // Who added it, here rather than in the tooltip, which can't hold their
-      // card.
+      // card. A GitHub trust names what it is pinned to in place of the
+      // issuer, which the list's heading already gives.
       meta={
         <>
-          {issuerLabel(trust.issuer)} · added by{" "}
+          {github ? `${github.kind} ${github.name}` : issuerLabel(trust.issuer)} · added by{" "}
           <AccountMention id={trust.created_by} accounts={accounts} />
         </>
       }
