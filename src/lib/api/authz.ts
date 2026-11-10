@@ -539,28 +539,12 @@ export function canManageAccountServiceAccounts(
  * admin-only. This helper takes the owner *account* (the account-scoped UI has
  * already fetched it) so it can additionally require the platform-granted
  * CREATE_DATA_CONNECTIONS flag: an account (individual or org) must hold it to
- * own connections at all. Admins bypass the flag.
+ * own connections at all. Admins bypass the flag. The flag is read from the
+ * account being managed, never the session's own.
  */
 export function canManageAccountDataConnections(
   session: UserSession | null,
   account: Account
-): boolean {
-  return canManageWithFlag(
-    session,
-    account,
-    AccountFlags.CREATE_DATA_CONNECTIONS
-  );
-}
-
-/**
- * Whether `session` manages `account` and `account` holds the platform-granted
- * capability `flag`. The flag is read from the account being managed, never
- * the session's own, and admins bypass it.
- */
-function canManageWithFlag(
-  session: UserSession | null,
-  account: Account,
-  flag: AccountFlags
 ): boolean {
   // canManageAccount already denies a disabled session or owner account.
   if (!canManageAccount(session, account)) {
@@ -571,7 +555,7 @@ function canManageWithFlag(
     return true;
   }
 
-  return !!account.flags?.includes(flag);
+  return !!account.flags?.includes(AccountFlags.CREATE_DATA_CONNECTIONS);
 }
 
 /**

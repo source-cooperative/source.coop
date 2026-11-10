@@ -3334,7 +3334,7 @@ describe("service accounts", () => {
   });
 
   test("are managed by whoever manages their owner, and by no one else", () => {
-    const owner = { ...org, flags: [] };
+    const owner = org;
     expect(canManageServiceAccount(sessions["organization-owner-user"], bot, owner)).toBe(true);
     expect(canManageServiceAccount(sessions["organization-maintainer-user"], bot, owner)).toBe(true);
     expect(canManageServiceAccount(sessions["admin"], bot, owner)).toBe(true);

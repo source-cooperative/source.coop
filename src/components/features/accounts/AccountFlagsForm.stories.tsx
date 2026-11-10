@@ -13,8 +13,8 @@ import {
  * products, organizations or data connections.
  *
  * An organization is offered only the capability an organization can use —
- * data connections. Only an admin may change the boxes;
- * anyone else who can see the page sees them read-only.
+ * data connections. Only an admin may change the boxes; anyone else who can
+ * see the page sees them read-only.
  *
  * `updateAccountFlags` is an `fn()` stub, so saving does nothing.
  */

@@ -22,7 +22,7 @@ registry.registerPath({
   tags: ["Service accounts"],
   summary: "List an account's service accounts",
   description:
-    "The service accounts an account owns. Open to whoever manages the account, once an admin has let it own service accounts.",
+    "The service accounts an account owns. Open to whoever manages the account.",
   security: bearer,
   request: { params },
   responses: {
