@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { accountTrustsTable } from "@/lib/clients/database";
 import { authenticateWithOidcToken } from "@/lib/api/oidc";
 import { isAdmin } from "@/lib/api/authz";
+import { LOGGER } from "@/lib/logging";
 
 jest.mock("@/lib/clients/database", () => ({
   accountTrustsTable: { isTrusted: jest.fn(), touch: jest.fn() },
@@ -49,6 +50,10 @@ describe("POST /api/v1/accounts/[account_id]/trusts/exchanges", () => {
   test("still answers trusted when recording the use fails", async () => {
     (accountTrustsTable.touch as jest.Mock).mockRejectedValue(new Error("throttled"));
     expect((await POST(post({ issuer: ISSUER, subject: SUBJECT }), params)).status).toBe(200);
+    expect(LOGGER.warn).toHaveBeenCalledWith(
+      "Could not record trust use",
+      expect.objectContaining({ metadata: expect.objectContaining({ error: "throttled" }) })
+    );
   });
 
   test("is 403 for a subject the account does not trust", async () => {

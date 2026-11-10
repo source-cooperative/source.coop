@@ -91,7 +91,7 @@ function TrustRow({
                 color="gray"
                 highContrast
                 underline="hover"
-                style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)", minWidth: 0, overflowWrap: "anywhere" }}
+                style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)", minWidth: 0 }}
               >
                 {github.repo}
                 <ExternalLinkIcon width="12" height="12" aria-label="opens in a new tab" />
@@ -104,14 +104,14 @@ function TrustRow({
             )}
           </Flex>
         ) : (
-          <Text size="2" style={{ fontFamily: "var(--code-font-family)", overflowWrap: "anywhere" }}>
+          <Text size="2" style={{ fontFamily: "var(--code-font-family)" }}>
             {trust.subject}
           </Text>
         )
       }
       // Who added it, here rather than in the tooltip, which can't hold their
-      // card. A GitHub trust names what it is pinned to in place of the
-      // issuer, which the list's heading already gives.
+      // card. A GitHub trust names its branch, tag or environment in place of
+      // the issuer, which the list's heading already gives.
       meta={
         <>
           {github ? `${github.kind} ${github.name}` : issuerLabel(trust.issuer)} · added by{" "}

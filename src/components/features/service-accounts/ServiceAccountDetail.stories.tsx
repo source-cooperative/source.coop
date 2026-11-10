@@ -117,7 +117,7 @@ const summary: ServiceAccountSummary = {
 
 /**
  * Each trusted workflow is named by its repository, which opens on GitHub,
- * with the branch, tag or environment it is pinned to beneath. Hover the
+ * with the branch, tag or environment it runs from beneath. Hover the
  * repository for the exact subject; a lock marks one pinned to the
  * repository's ID.
  */

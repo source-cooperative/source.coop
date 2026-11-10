@@ -81,8 +81,14 @@ function Row({
               rather than squeezing the name to a word per line. `min()` keeps
               the floor from overflowing a container narrower than it is. A
               zero basis makes that floor, not the name's length, decide when
-              the aside wraps: a long name breaks within its column instead. */}
-          <Box flexGrow="1" flexBasis="0" style={{ minWidth: "min(13rem, 100%)" }}>
+              the aside wraps: a long name breaks within its column instead,
+              even a word with no break in it, which would otherwise run on
+              under the aside. */}
+          <Box
+            flexGrow="1"
+            flexBasis="0"
+            style={{ minWidth: "min(13rem, 100%)", overflowWrap: "anywhere" }}
+          >
             <Flex align="center" gap="2" wrap="wrap">
               {href ? (
                 <Link href={href} className={styles.title}>
@@ -100,7 +106,6 @@ function Row({
                 style={{
                   fontFamily: "var(--code-font-family)",
                   display: "block",
-                  overflowWrap: "anywhere",
                 }}
               >
                 {meta}
