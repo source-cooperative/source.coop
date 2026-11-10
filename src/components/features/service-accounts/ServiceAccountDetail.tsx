@@ -74,13 +74,9 @@ function TrustRow({
           {trust.subject}
         </Text>
       }
-      meta={
-        // No "Never used": a trust added before uses were recorded may have
-        // been used all along.
-        trust.last_used_at
-          ? `${issuerLabel(trust.issuer)} · Used ${formatRelative(trust.last_used_at)}`
-          : issuerLabel(trust.issuer)
-      }
+      meta={`${issuerLabel(trust.issuer)} · ${
+        trust.last_used_at ? `Used ${formatRelative(trust.last_used_at)}` : "Never used"
+      }`}
       actions={
         <>
           <DropdownMenu.Root>
