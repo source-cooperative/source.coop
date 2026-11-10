@@ -99,18 +99,23 @@ export class AccountTrustsTable extends BaseTable {
 
   /**
    * Records that a token was exchanged under the trust. Only an existing
-   * trust is written: a use racing a removal must not bring the trust back.
+   * trust is written: a use racing a removal must not bring the trust back,
+   * and finding the trust gone is that race, not a failure.
    */
   async touch(account_id: string, issuer: string, subject: string): Promise<void> {
-    await this.client.send(
-      new UpdateCommand({
-        TableName: this.table,
-        Key: { account_id, identity: identityKey(issuer, subject) },
-        UpdateExpression: "SET last_used_at = :at",
-        ExpressionAttributeValues: { ":at": new Date().toISOString() },
-        ConditionExpression: "attribute_exists(account_id)",
-      })
-    );
+    try {
+      await this.client.send(
+        new UpdateCommand({
+          TableName: this.table,
+          Key: { account_id, identity: identityKey(issuer, subject) },
+          UpdateExpression: "SET last_used_at = :at",
+          ExpressionAttributeValues: { ":at": new Date().toISOString() },
+          ConditionExpression: "attribute_exists(account_id)",
+        })
+      );
+    } catch (error) {
+      if (!isConditionalCheckFailed(error)) throw error;
+    }
   }
 
   async delete(account_id: string, issuer: string, subject: string): Promise<void> {

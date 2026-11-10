@@ -111,4 +111,12 @@ describe("AccountTrustsTable", () => {
     expect(input.UpdateExpression).toBe("SET last_used_at = :at");
     expect(input.ConditionExpression).toBe("attribute_exists(account_id)");
   });
+
+  it("treats a trust removed mid-use as nothing to record, and rethrows anything else", async () => {
+    const gone = Object.assign(new Error("gone"), { name: "ConditionalCheckFailedException" });
+    await expect(tableWith(jest.fn().mockRejectedValue(gone)).touch("o-bot", trust.issuer, trust.subject)).resolves.toBeUndefined();
+
+    const throttled = Object.assign(new Error("slow down"), { name: "ProvisionedThroughputExceededException" });
+    await expect(tableWith(jest.fn().mockRejectedValue(throttled)).touch("o-bot", trust.issuer, trust.subject)).rejects.toBe(throttled);
+  });
 });

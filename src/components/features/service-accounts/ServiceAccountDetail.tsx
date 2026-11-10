@@ -104,15 +104,8 @@ function TrustRow({
             )}
           </Flex>
         ) : (
-          // Breaks after a `:` or `/` where it can, so a long subject wraps
-          // between its parts rather than mid-word.
           <Text size="2" style={{ fontFamily: "var(--code-font-family)", overflowWrap: "anywhere" }}>
-            {trust.subject.split(/(?<=[:/])/).map((part, i) => (
-              <React.Fragment key={i}>
-                {i > 0 && <wbr />}
-                {part}
-              </React.Fragment>
-            ))}
+            {trust.subject}
           </Text>
         )
       }
