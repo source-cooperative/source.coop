@@ -67,6 +67,23 @@ export const InPlace: Story = {
   },
 };
 
+/**
+ * A long name breaks within its own column and the aside stays beside it. The
+ * aside moves beneath only when the row is too narrow to give the name its
+ * 13rem floor.
+ */
+export const LongName: Story = {
+  args: {
+    title: (
+      <Text size="2" style={{ fontFamily: "var(--code-font-family)", wordBreak: "break-all" }}>
+        repo:miskatonic@8123456/climate-data@9456789:environment:production-eu-west-1-nightly
+      </Text>
+    ),
+    meta: "GitHub Actions · added by acoltrane",
+    aside: quiet("Never used"),
+  },
+};
+
 /** The tinted strip is for a value that can be edited without leaving the row. */
 export const WithFooter: Story = {
   args: {
