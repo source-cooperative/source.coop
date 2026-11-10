@@ -73,6 +73,12 @@ export enum AccountFlags {
   CREATE_REPOSITORIES = "create_repositories",
   CREATE_ORGANIZATIONS = "create_organizations",
   CREATE_DATA_CONNECTIONS = "create_data_connections",
+  /**
+   * @deprecated Grants nothing: every account may own service accounts. Kept
+   * so accounts that still store it pass validation when their flags are
+   * written back.
+   */
+  CREATE_SERVICE_ACCOUNTS = "create_service_accounts",
 }
 
 export const DEFAULT_INDIVIDUAL_FLAGS: AccountFlags[] = [];
