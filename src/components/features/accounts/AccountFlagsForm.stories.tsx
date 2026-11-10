@@ -10,11 +10,11 @@ import {
 /**
  * The capabilities an admin grants an account on its Permissions page. Each
  * checkbox turns on one part of the platform for that account: creating
- * products, organizations, data connections or service accounts.
+ * products, organizations or data connections.
  *
- * An organization is offered only the capabilities an organization can use —
- * data connections and service accounts. Only an admin may change the boxes;
- * anyone else who can see the page sees them read-only.
+ * An organization is offered only the capability an organization can use —
+ * data connections. Only an admin may change the boxes; anyone else who can
+ * see the page sees them read-only.
  *
  * `updateAccountFlags` is an `fn()` stub, so saving does nothing.
  */
@@ -52,23 +52,23 @@ const session = (flags: AccountFlags[]) =>
 
 const admin = session([AccountFlags.ADMIN]);
 
-/** An admin editing a person's account, which has been allowed service accounts. */
+/** An admin editing a person's account, which has been allowed data connections. */
 export const Individual: Story = {
   args: {
     session: admin,
     account: account("bilbo", "Bilbo Baggins", AccountType.INDIVIDUAL, [
       AccountFlags.CREATE_REPOSITORIES,
-      AccountFlags.CREATE_SERVICE_ACCOUNTS,
+      AccountFlags.CREATE_DATA_CONNECTIONS,
     ]),
   },
 };
 
-/** An organization is offered only data connections and service accounts. */
+/** An organization is offered only data connections. */
 export const Organization: Story = {
   args: {
     session: admin,
     account: account("miskatonic", "Miskatonic University", AccountType.ORGANIZATION, [
-      AccountFlags.CREATE_SERVICE_ACCOUNTS,
+      AccountFlags.CREATE_DATA_CONNECTIONS,
     ]),
   },
 };
@@ -76,9 +76,9 @@ export const Organization: Story = {
 /** A person viewing their own permissions sees them but can't change them. */
 export const ReadOnly: Story = {
   args: {
-    session: session([AccountFlags.CREATE_SERVICE_ACCOUNTS]),
+    session: session([AccountFlags.CREATE_DATA_CONNECTIONS]),
     account: account("acoltrane", "Alice Coltrane", AccountType.INDIVIDUAL, [
-      AccountFlags.CREATE_SERVICE_ACCOUNTS,
+      AccountFlags.CREATE_DATA_CONNECTIONS,
     ]),
   },
 };
