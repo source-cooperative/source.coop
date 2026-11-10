@@ -11,6 +11,7 @@ import {
   IconButton,
   Text,
   TextField,
+  Tooltip,
 } from "@radix-ui/themes";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import { Field, SectionHeader } from "@/components/core";
@@ -35,10 +36,10 @@ import { GrantProductDialog } from "./GrantProductDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import { ExampleUsage, GITHUB_WORKFLOW_INTRO } from "./ExampleUsage";
 import { githubWorkflow } from "@/lib/services/service-account-usage";
-import { formatRelative } from "@/lib/format";
+import { formatDate, formatRelative } from "@/lib/format";
 import { IssuedApiKeyDialog } from "./IssuedApiKeyDialog";
 import { ApiKeyList } from "./ApiKeyList";
-import type { AccountsById } from "@/components/core/AccountMention";
+import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
 
 const issuerLabel = (issuer: string) =>
   issuer === GITHUB_ACTIONS_ISSUER ? "GitHub Actions" : issuer;
@@ -58,12 +59,14 @@ function TrustRow({
   proxyOrigin,
   onRemove,
   removing,
+  accounts,
 }: {
   accountId: string;
   trust: AccountTrust;
   proxyOrigin?: string;
   onRemove: (trust: AccountTrust) => void;
   removing: boolean;
+  accounts?: AccountsById;
 }) {
   const [showingUsage, setShowingUsage] = useState(false);
   const example = proxyOrigin && trust.issuer === GITHUB_ACTIONS_ISSUER;
@@ -74,9 +77,28 @@ function TrustRow({
           {trust.subject}
         </Text>
       }
-      meta={`${issuerLabel(trust.issuer)} · ${
-        trust.last_used_at ? `Used ${formatRelative(trust.last_used_at)}` : "Never used"
-      }`}
+      // Who added it, here rather than in the tooltip, which can't hold their
+      // card.
+      meta={
+        <>
+          {issuerLabel(trust.issuer)} · added by{" "}
+          <AccountMention id={trust.created_by} accounts={accounts} />
+        </>
+      }
+      aside={
+        <Tooltip
+          content={[
+            `Added ${formatDate(trust.created_at, true)}`,
+            trust.last_used_at && `Last used ${formatDate(trust.last_used_at, true)}`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        >
+          <Text size="1" color="gray" style={{ cursor: "default" }}>
+            {trust.last_used_at ? `Used ${formatRelative(trust.last_used_at)}` : "Never used"}
+          </Text>
+        </Tooltip>
+      }
       actions={
         <>
           <DropdownMenu.Root>
@@ -136,7 +158,10 @@ export function ServiceAccountDetail({
   accounts,
 }: {
   summary: ServiceAccountSummary;
-  /** The owner, and whoever issued or revoked a key, for their cards on hover. */
+  /**
+   * The owner, whoever added a trust, and whoever issued or revoked a key, for
+   * their cards on hover.
+   */
   accounts?: AccountsById;
   /** The owner's products, each of which it may reach. */
   products: Pick<Product, "product_id" | "title">[];
@@ -249,6 +274,7 @@ export function ServiceAccountDetail({
                       proxyOrigin={proxyOrigin}
                       onRemove={removeTrustFrom}
                       removing={removing}
+                      accounts={accounts}
                     />
                   ))}
                 </ItemList.Root>
