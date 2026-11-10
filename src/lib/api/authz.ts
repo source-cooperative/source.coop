@@ -505,9 +505,7 @@ export function canManageAccount(
  * A disabled service account is still managed this way, so it can be
  * re-enabled or deleted; what may not happen to it while disabled (a new
  * trust, a new key) is refused where that thing is attached. A disabled owner
- * takes its service accounts out of reach with it, admins aside, and so does
- * an owner without the CREATE_SERVICE_ACCOUNTS flag (see
- * canManageAccountServiceAccounts).
+ * takes its service accounts out of reach with it, admins aside.
  */
 export function canManageServiceAccount(
   session: UserSession | null,
@@ -523,21 +521,13 @@ export function canManageServiceAccount(
 
 /**
  * Whether `session` may create and manage service accounts *owned by*
- * `account`. On top of managing the account, the account (individual or org)
- * must hold the platform-granted CREATE_SERVICE_ACCOUNTS flag, which limits
- * service accounts to the accounts an admin has opted in. Admins bypass the
- * flag. The owner's flag is read, never the session's: a person with the flag
- * does not carry it into an organization that lacks it.
+ * `account`: whoever manages the account (individual or org) may.
  */
 export function canManageAccountServiceAccounts(
   session: UserSession | null,
   account: Account
 ): boolean {
-  return canManageWithFlag(
-    session,
-    account,
-    AccountFlags.CREATE_SERVICE_ACCOUNTS
-  );
+  return canManageAccount(session, account);
 }
 
 /**
