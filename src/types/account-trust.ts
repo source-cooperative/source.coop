@@ -19,6 +19,8 @@ export const AccountTrustSchema = z
     created_at: z.string().datetime(),
     /** Who added it: the manager's account id. */
     created_by: z.string().min(1),
+    /** When the data proxy last exchanged a token under it; absent if never. */
+    last_used_at: z.string().datetime().optional(),
   })
   .openapi("AccountTrust");
 

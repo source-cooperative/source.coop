@@ -3,6 +3,7 @@ import {
   GetCommand,
   PutCommand,
   QueryCommand,
+  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { AccountTrustSchema, type AccountTrust } from "@/types";
 import { BaseTable } from "./base";
@@ -94,6 +95,22 @@ export class AccountTrustsTable extends BaseTable {
       throw error;
     }
     return row;
+  }
+
+  /**
+   * Records that a token was exchanged under the trust. Only an existing
+   * trust is written: a use racing a removal must not bring the trust back.
+   */
+  async touch(account_id: string, issuer: string, subject: string): Promise<void> {
+    await this.client.send(
+      new UpdateCommand({
+        TableName: this.table,
+        Key: { account_id, identity: identityKey(issuer, subject) },
+        UpdateExpression: "SET last_used_at = :at",
+        ExpressionAttributeValues: { ":at": new Date().toISOString() },
+        ConditionExpression: "attribute_exists(account_id)",
+      })
+    );
   }
 
   async delete(account_id: string, issuer: string, subject: string): Promise<void> {

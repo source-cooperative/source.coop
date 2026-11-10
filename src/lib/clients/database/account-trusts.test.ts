@@ -102,4 +102,13 @@ describe("AccountTrustsTable", () => {
     await tableWith(send).delete("o-bot", trust.issuer, trust.subject);
     expect(send.mock.calls[0][0].input.Key).toEqual(KEY);
   });
+
+  it("records a use on an existing trust only", async () => {
+    const send = jest.fn(async () => ({}));
+    await tableWith(send).touch("o-bot", trust.issuer, trust.subject);
+    const input = send.mock.calls[0][0].input;
+    expect(input.Key).toEqual(KEY);
+    expect(input.UpdateExpression).toBe("SET last_used_at = :at");
+    expect(input.ConditionExpression).toBe("attribute_exists(account_id)");
+  });
 });

@@ -61,12 +61,13 @@ const account = {
   metadata_public: {},
 } as ServiceAccountSummary["account"];
 
-const trust = (subject: string) => ({
+const trust = (subject: string, last_used_at?: string) => ({
   account_id: "miskatonic--nightly-sync",
   issuer: GITHUB_ACTIONS_ISSUER,
   subject,
   created_at: "2026-03-12T00:00:00Z",
   created_by: "acoltrane",
+  last_used_at,
 });
 
 const grant = (product_id: string, role: MembershipRole) => ({
@@ -82,7 +83,7 @@ const grant = (product_id: string, role: MembershipRole) => ({
 const summary: ServiceAccountSummary = {
   account,
   trusts: [
-    trust("repo:miskatonic/climate-data:ref:refs/heads/main"),
+    trust("repo:miskatonic/climate-data:ref:refs/heads/main", "2026-03-20T00:00:00Z"),
     trust("repo:miskatonic@8123456/climate-data@9456789:environment:production"),
   ],
   grants: [

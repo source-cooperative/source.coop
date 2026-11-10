@@ -5,8 +5,15 @@ import { authenticateWithOidcToken } from "@/lib/api/oidc";
 import { isAdmin } from "@/lib/api/authz";
 
 jest.mock("@/lib/clients/database", () => ({
-  accountTrustsTable: { isTrusted: jest.fn() },
+  accountTrustsTable: { isTrusted: jest.fn(), touch: jest.fn() },
 }));
+// No request scope here for `after` to defer into, so the deferred work runs
+// inline.
+jest.mock("next/server", () => ({
+  ...jest.requireActual("next/server"),
+  after: (task: () => unknown) => task(),
+}));
+jest.mock("@/lib/logging", () => ({ LOGGER: { warn: jest.fn() } }));
 jest.mock("@/lib/api/oidc", () => ({ authenticateWithOidcToken: jest.fn() }));
 jest.mock("@/lib/api/authz", () => ({ isAdmin: jest.fn() }));
 
@@ -28,6 +35,7 @@ describe("POST /api/v1/accounts/[account_id]/trusts/exchanges", () => {
     (authenticateWithOidcToken as jest.Mock).mockResolvedValue({ account: { account_id: "nightly-sync" } });
     (isAdmin as jest.Mock).mockReturnValue(false);
     (accountTrustsTable.isTrusted as jest.Mock).mockResolvedValue(true);
+    (accountTrustsTable.touch as jest.Mock).mockResolvedValue(undefined);
   });
 
   test("answers trusted for a subject the account trusts, as the account itself", async () => {
@@ -35,12 +43,19 @@ describe("POST /api/v1/accounts/[account_id]/trusts/exchanges", () => {
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ trusted: true });
     expect(accountTrustsTable.isTrusted).toHaveBeenCalledWith("nightly-sync", ISSUER, SUBJECT);
+    expect(accountTrustsTable.touch).toHaveBeenCalledWith("nightly-sync", ISSUER, SUBJECT);
+  });
+
+  test("still answers trusted when recording the use fails", async () => {
+    (accountTrustsTable.touch as jest.Mock).mockRejectedValue(new Error("throttled"));
+    expect((await POST(post({ issuer: ISSUER, subject: SUBJECT }), params)).status).toBe(200);
   });
 
   test("is 403 for a subject the account does not trust", async () => {
     (accountTrustsTable.isTrusted as jest.Mock).mockResolvedValue(false);
     const res = await POST(post({ issuer: ISSUER, subject: SUBJECT }), params);
     expect(res.status).toBe(403);
+    expect(accountTrustsTable.touch).not.toHaveBeenCalled();
     expect(res.headers.get("content-type")).toBe("application/problem+json");
     await expect(res.json()).resolves.toMatchObject({
       type: "http://localhost/api/problems/forbidden",
@@ -57,6 +72,7 @@ describe("POST /api/v1/accounts/[account_id]/trusts/exchanges", () => {
     (isAdmin as jest.Mock).mockReturnValue(true);
     expect((await POST(post({ issuer: ISSUER, subject: SUBJECT }), params)).status).toBe(200);
     expect(accountTrustsTable.isTrusted).toHaveBeenCalledWith("nightly-sync", ISSUER, SUBJECT);
+    expect(accountTrustsTable.touch).not.toHaveBeenCalled();
   });
 
   test("is 401 for any other account, and 400 without an issuer and subject", async () => {

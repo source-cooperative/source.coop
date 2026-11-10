@@ -35,6 +35,7 @@ import { GrantProductDialog } from "./GrantProductDialog";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
 import { ExampleUsage, GITHUB_WORKFLOW_INTRO } from "./ExampleUsage";
 import { githubWorkflow } from "@/lib/services/service-account-usage";
+import { formatRelative } from "@/lib/format";
 import { IssuedApiKeyDialog } from "./IssuedApiKeyDialog";
 import { ApiKeyList } from "./ApiKeyList";
 import type { AccountsById } from "@/components/core/AccountMention";
@@ -73,7 +74,13 @@ function TrustRow({
           {trust.subject}
         </Text>
       }
-      meta={issuerLabel(trust.issuer)}
+      meta={
+        // No "Never used": a trust added before uses were recorded may have
+        // been used all along.
+        trust.last_used_at
+          ? `${issuerLabel(trust.issuer)} · Used ${formatRelative(trust.last_used_at)}`
+          : issuerLabel(trust.issuer)
+      }
       actions={
         <>
           <DropdownMenu.Root>
