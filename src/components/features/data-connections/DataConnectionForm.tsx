@@ -1037,9 +1037,7 @@ export function DataConnectionForm({
                       />
                       <Select.Content>
                         <Select.Item value={NONE}>None</Select.Item>
-                        {Object.values(AccountFlags)
-                          .filter((flag) => flag !== AccountFlags.CREATE_SERVICE_ACCOUNTS)
-                          .map((flag) => (
+                        {Object.values(AccountFlags).map((flag) => (
                           <Select.Item key={flag} value={flag}>
                             {flag}
                           </Select.Item>
