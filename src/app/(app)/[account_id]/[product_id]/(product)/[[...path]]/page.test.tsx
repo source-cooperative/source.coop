@@ -492,9 +492,11 @@ describe("ProductPathPage store viewer (.zarr / .icechunk)", () => {
       },
       account: { account_id: "test-account", name: "Test Account" },
     });
-    const listObjects = jest
-      .fn()
-      .mockResolvedValue({ objects: [], directories: [], isTruncated: false });
+    const listObjects = jest.fn().mockResolvedValue({
+      objects: [],
+      directories: ["test-product/gfs.icechunk/chunks/"],
+      isTruncated: false,
+    });
     (getStorageClient as jest.Mock).mockResolvedValue({
       // A store is a key prefix, not a single object, so the HEAD resolves null.
       getObjectInfo: jest.fn().mockResolvedValue(null),
