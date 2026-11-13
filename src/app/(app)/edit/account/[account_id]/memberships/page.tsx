@@ -82,7 +82,7 @@ export default async function MembershipsPage({ params }: PageProps) {
             description="Manage organization members and their roles"
           />
         </Box>
-        {canInviteMembership && <InviteMemberForm organization={account} />}
+        {canInviteMembership && <InviteMemberForm organization={publicView(account)} />}
       </Flex>
 
       <MembershipsTable

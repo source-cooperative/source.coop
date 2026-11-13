@@ -8,7 +8,12 @@ import {
 } from "@/lib";
 import { canCreateProductForAccount, isAuthorized } from "@/lib/api/authz";
 import { listUsableDataConnections } from "@/lib/data-connections";
-import { Actions, DataConnectionObjectSchema, MembershipState } from "@/types";
+import {
+  Actions,
+  DataConnectionObjectSchema,
+  MembershipState,
+  publicView,
+} from "@/types";
 import { Heading, Text } from "@radix-ui/themes";
 import { FormTitle } from "@/components/core";
 
@@ -81,7 +86,7 @@ export default async function NewProductPage({
       />
 
       <ProductCreationForm
-        potentialOwnerAccounts={potentialOwnerAccounts}
+        potentialOwnerAccounts={potentialOwnerAccounts.map(publicView)}
         dataConnections={dataConnections}
         {...tagProps(await tagsTable.listAll())}
         defaultOwnerId={

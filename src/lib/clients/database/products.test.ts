@@ -247,6 +247,22 @@ describe("ProductsTable account attachment", () => {
     expect(product.account).toEqual(expected);
   });
 
+  it("gives an individual without an uploaded image its Gravatar, not its email", async () => {
+    const person = {
+      ...account,
+      type: "individual",
+      emails: [{ address: " Ada@Example.com ", is_primary: true, verified: true, added_at: "2024-01-01T00:00:00Z" }],
+      metadata_public: {},
+    } as unknown as Account;
+    (accountsTable.fetchManyByIds as jest.Mock).mockResolvedValueOnce([person]);
+    const [product] = await table.attachAccounts([makeProduct()]);
+    expect(product.account?.profile_image).toBe(
+      // md5("ada@example.com")
+      "https://www.gravatar.com/avatar/3e3417d7ef77d5932a6734b916515ed5?d=identicon&s=200"
+    );
+    expect(JSON.stringify(product.account)).not.toContain("example.com");
+  });
+
   it("keeps a full account from passing as a public one", () => {
     // @ts-expect-error a full account carries emails, flags and its Ory identity
     const leak: PublicAccount = account;

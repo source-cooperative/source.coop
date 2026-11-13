@@ -1,11 +1,10 @@
 "use client";
-import { publicView } from "@/types";
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Box, Button, Flex, Text, AlertDialog } from "@radix-ui/themes";
 import { ImageIcon, UploadIcon, TrashIcon } from "@radix-ui/react-icons";
-import { Account } from "@/types";
+import type { PublicAccount } from "@/types";
 import { ProfileAvatar } from "./ProfileAvatar";
 import {
   getProfileImageUploadUrl,
@@ -15,7 +14,7 @@ import {
 import { CONFIG } from "@/lib/config";
 
 interface ProfileImageUploadProps {
-  account: Account;
+  account: PublicAccount;
   onUploadComplete?: (imageUrl: string) => void;
 }
 
@@ -155,7 +154,7 @@ export function ProfileImageUpload({
 
         {/* Current avatar preview */}
         <Flex>
-          <ProfileAvatar account={publicView(account)} size="9" />
+          <ProfileAvatar account={account} size="9" />
         </Flex>
 
         {/* Upload and Delete buttons */}

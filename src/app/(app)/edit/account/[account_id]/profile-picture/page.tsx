@@ -4,6 +4,7 @@ import { Box } from "@radix-ui/themes";
 import { FormTitle } from "@/components/core/FormTitle";
 import { ProfileImageUpload } from "@/components/features/profiles/ProfileImageUpload";
 import { accountsTable } from "@/lib/clients/database";
+import { publicView } from "@/types";
 
 export async function generateMetadata({
   params,
@@ -33,7 +34,7 @@ export default async function ProfilePicturePage({ params }: PageProps) {
           account.type === "individual" ? "account" : "organization"
         }'s profile picture`}
       />
-      <ProfileImageUpload account={account} />
+      <ProfileImageUpload account={publicView(account)} />
     </Box>
   );
 }

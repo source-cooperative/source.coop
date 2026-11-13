@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { InviteMemberForm } from "./InviteMemberForm";
-import type { Account } from "@/types";
+import type { PublicAccount } from "@/types";
 
 /**
  * Invite someone to an organization.
@@ -37,7 +37,7 @@ const organization = {
   account_id: "miskatonic",
   name: "Miskatonic University",
   type: "organization",
-} as unknown as Account;
+} as unknown as PublicAccount;
 
 export const Default: Story = {
   args: { organization },
