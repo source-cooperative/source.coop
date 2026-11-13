@@ -3181,38 +3181,17 @@ describe("canManageAccountDataConnections", () => {
 describe("canManageAccountServiceAccounts", () => {
   const org = accounts.find((a) => a.account_id === "organization")!;
   const regularUser = accounts.find((a) => a.account_id === "regular-user")!;
-  const withFlag = (account: Account): Account => ({
-    ...account,
-    flags: [AccountFlags.CREATE_SERVICE_ACCOUNTS],
-  });
-  const noFlag = (account: Account): Account => ({ ...account, flags: [] });
 
-  test("org owners and maintainers may manage only when the org holds the flag", () => {
-    expect(canManageAccountServiceAccounts(sessions["organization-owner-user"], withFlag(org))).toBe(true);
-    expect(canManageAccountServiceAccounts(sessions["organization-maintainer-user"], withFlag(org))).toBe(true);
-    expect(canManageAccountServiceAccounts(sessions["organization-read-data-user"], withFlag(org))).toBe(false);
-    expect(canManageAccountServiceAccounts(sessions["regular-user"], withFlag(org))).toBe(false);
-    expect(canManageAccountServiceAccounts(sessions["organization-owner-user"], noFlag(org))).toBe(false);
-  });
-
-  test("reads the owner's flag, not the person's", () => {
-    const flaggedOwner = {
-      ...sessions["organization-owner-user"]!,
-      account: withFlag(sessions["organization-owner-user"]!.account!),
-    };
-    expect(canManageAccountServiceAccounts(flaggedOwner, noFlag(org))).toBe(false);
-  });
-
-  test("individuals manage their own only with the flag", () => {
-    expect(canManageAccountServiceAccounts(sessions["regular-user"], withFlag(regularUser))).toBe(true);
-    expect(canManageAccountServiceAccounts(sessions["regular-user"], noFlag(regularUser))).toBe(false);
-    expect(canManageAccountServiceAccounts(sessions["organization-owner-user"], withFlag(regularUser))).toBe(false);
-  });
-
-  test("admins bypass the flag; disabled and anonymous sessions are denied", () => {
-    expect(canManageAccountServiceAccounts(sessions["admin"], noFlag(org))).toBe(true);
-    expect(canManageAccountServiceAccounts(sessions["disabled"], withFlag(org))).toBe(false);
-    expect(canManageAccountServiceAccounts(sessions["anonymous"], withFlag(org))).toBe(false);
+  test("whoever manages the account may, with no flag needed", () => {
+    expect(canManageAccountServiceAccounts(sessions["organization-owner-user"], org)).toBe(true);
+    expect(canManageAccountServiceAccounts(sessions["organization-maintainer-user"], org)).toBe(true);
+    expect(canManageAccountServiceAccounts(sessions["organization-read-data-user"], org)).toBe(false);
+    expect(canManageAccountServiceAccounts(sessions["regular-user"], org)).toBe(false);
+    expect(canManageAccountServiceAccounts(sessions["regular-user"], { ...regularUser, flags: [] })).toBe(true);
+    expect(canManageAccountServiceAccounts(sessions["organization-owner-user"], regularUser)).toBe(false);
+    expect(canManageAccountServiceAccounts(sessions["admin"], org)).toBe(true);
+    expect(canManageAccountServiceAccounts(sessions["disabled"], org)).toBe(false);
+    expect(canManageAccountServiceAccounts(sessions["anonymous"], org)).toBe(false);
   });
 });
 
@@ -3349,7 +3328,7 @@ describe("service accounts", () => {
   });
 
   test("are managed by whoever manages their owner, and by no one else", () => {
-    const owner = { ...org, flags: [AccountFlags.CREATE_SERVICE_ACCOUNTS] };
+    const owner = org;
     expect(canManageServiceAccount(sessions["organization-owner-user"], bot, owner)).toBe(true);
     expect(canManageServiceAccount(sessions["organization-maintainer-user"], bot, owner)).toBe(true);
     expect(canManageServiceAccount(sessions["admin"], bot, owner)).toBe(true);
@@ -3367,10 +3346,6 @@ describe("service accounts", () => {
     const frozen = { ...owner, disabled: true };
     expect(canManageServiceAccount(sessions["organization-owner-user"], bot, frozen)).toBe(false);
     expect(canManageServiceAccount(sessions["admin"], bot, frozen)).toBe(true);
-    // So does an owner without the flag, admins aside.
-    const unflagged = { ...org, flags: [] };
-    expect(canManageServiceAccount(sessions["organization-owner-user"], bot, unflagged)).toBe(false);
-    expect(canManageServiceAccount(sessions["admin"], bot, unflagged)).toBe(true);
   });
 
   test("hold no rights over themselves", () => {
