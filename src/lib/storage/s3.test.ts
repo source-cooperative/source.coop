@@ -10,7 +10,10 @@ jest.mock("@aws-sdk/client-s3", () => {
   const actual = jest.requireActual("@aws-sdk/client-s3");
   return {
     ...actual,
-    S3Client: jest.fn().mockImplementation(() => ({ send: mockSend })),
+    S3Client: jest.fn().mockImplementation(() => ({
+      send: mockSend,
+      middlewareStack: { addRelativeTo: jest.fn() },
+    })),
   };
 });
 

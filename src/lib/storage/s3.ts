@@ -6,8 +6,12 @@ import {
   GetObjectCommand,
   S3ServiceException,
   type ListObjectsV2CommandInput,
+  type ServiceInputTypes,
+  type ServiceOutputTypes,
 } from "@aws-sdk/client-s3";
 import { NoAuthSigner } from "@smithy/core";
+import type { FinalizeRequestMiddleware } from "@smithy/types";
+import { context, propagation } from "@opentelemetry/api";
 import type { Readable } from "stream";
 import { LOGGER } from "@/lib/logging";
 import type { ProductObject } from "@/types/product";
@@ -95,6 +99,23 @@ export class S3StorageClient {
       ];
     }
     this.client = new S3Client(clientConfig);
+    // Send the active trace's `traceparent` to the proxy, as instrumentation.ts
+    // does for fetch: the SDK sends through node:http, which @vercel/otel
+    // doesn't instrument. Added after signing, so the header stays out of the
+    // SigV4 signature and nothing done to it in transit can fail a request.
+    const injectTraceContext: FinalizeRequestMiddleware<
+      ServiceInputTypes,
+      ServiceOutputTypes
+    > = (next) => async (args) => {
+      const { headers } = args.request as { headers?: Record<string, string> };
+      if (headers) propagation.inject(context.active(), headers);
+      return next(args);
+    };
+    this.client.middlewareStack.addRelativeTo(injectTraceContext, {
+      relation: "after",
+      toMiddleware: "httpSigningMiddleware",
+      name: "traceContextMiddleware",
+    });
   }
 
   async listObjects(params: ListObjectsParams): Promise<ListObjectsResult> {
