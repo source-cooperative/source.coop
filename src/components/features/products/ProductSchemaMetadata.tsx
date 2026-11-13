@@ -32,8 +32,13 @@ export async function ProductSchemaMetadata({ product }: { product: Product }) {
     dateModified: product.updated_at,
     dateCreated: product.created_at,
     isAccessibleForFree: product.visibility === "public",
+    // DoiSchema stores DOIs bare, but records written straight to DynamoDB
+    // can carry the resolver prefix, and the URL must hold exactly one.
     ...(product.metadata?.doi && {
-      identifier: `https://doi.org/${product.metadata.doi}`,
+      identifier: `https://doi.org/${product.metadata.doi.replace(
+        /^https?:\/\/(dx\.)?doi\.org\//i,
+        ""
+      )}`,
     }),
     ...(creator && { creator }),
   };
