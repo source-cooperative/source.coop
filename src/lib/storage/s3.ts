@@ -94,9 +94,6 @@ export class S3StorageClient {
         },
       ];
     }
-    // No trace middleware needed: @vercel/otel (instrumentation.ts) wraps
-    // https.request, which the SDK sends through, so requests to the proxy get
-    // `traceparent` after SigV4 signing and the header stays out of the signature.
     this.client = new S3Client(clientConfig);
   }
 
