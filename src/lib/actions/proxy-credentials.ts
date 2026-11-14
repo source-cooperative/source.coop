@@ -68,16 +68,22 @@ export async function getProxyCredentials(
 
   const idToken = await getOryIdToken(identityId);
 
-  const stsUrl = new URL(`${CONFIG.storage.endpoint}/.sts`);
-  stsUrl.searchParams.set("Action", "AssumeRoleWithWebIdentity");
-  stsUrl.searchParams.set("RoleArn", "_default");
-  stsUrl.searchParams.set("WebIdentityToken", idToken);
+  // The token goes in a form-encoded POST body, not the query string: fetch
+  // spans (instrumentation.ts) record the full URL, and a token there would be
+  // exported with every trace.
+  const stsBody = new URLSearchParams({
+    Action: "AssumeRoleWithWebIdentity",
+    RoleArn: "_default",
+    WebIdentityToken: idToken,
+  });
 
   const stsController = new AbortController();
   const stsTimer = setTimeout(() => stsController.abort(), 15_000);
-  const resp = await fetch(stsUrl.toString(), { signal: stsController.signal }).finally(
-    () => clearTimeout(stsTimer),
-  );
+  const resp = await fetch(`${CONFIG.storage.endpoint}/.sts`, {
+    method: "POST",
+    body: stsBody,
+    signal: stsController.signal,
+  }).finally(() => clearTimeout(stsTimer));
   await assertOk(resp, "STS exchange", "getProxyCredentials");
 
   const xml = await resp.text();
