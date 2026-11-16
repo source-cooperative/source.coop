@@ -5,7 +5,7 @@ import { Box, Card, Text } from "@radix-ui/themes";
 import { SectionHeader } from "@/components/core/SectionHeader";
 import { MonoLabel, Stat, StatRow } from "@/components/features/analytics/panels";
 import { useCatalog } from "@/hooks/useCatalog";
-import { formatBytes } from "@/lib/format";
+import { formatBytes, formatDate, formatRelative } from "@/lib/format";
 import type { CatalogEntry } from "@/types/catalog";
 import {
   defaultMeasure,
@@ -22,6 +22,7 @@ import styles from "./ProductCatalogStats.module.css";
 const HELP = {
   bytes: "Total byte volume of every object in the product.",
   objects: "Number of objects in the product, in every folder.",
+  updated: "When any object in the product was last written, per the storage inventory.",
 };
 
 const count = (value?: number) => (value === undefined ? "—" : formatCount(value));
@@ -55,6 +56,14 @@ export function ProductObjectTypesCard({ entry }: { entry?: CatalogEntry }) {
             help={exact(entry.object_count) ? `${HELP.objects} Exactly ${exact(entry.object_count)}.` : HELP.objects}
             value={count(entry.object_count)}
           />
+          {entry.objects_updated_at && (
+            <Stat
+              label="Updated"
+              help={HELP.updated}
+              value={formatRelative(entry.objects_updated_at)}
+              title={formatDate(entry.objects_updated_at, true)}
+            />
+          )}
         </StatRow>
 
         {segments.length > 0 && (

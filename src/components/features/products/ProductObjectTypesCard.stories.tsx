@@ -16,7 +16,9 @@ import { ProductObjectTypesCard } from "./ProductCatalogSummary";
  * highlights both in green.
  *
  * The numbers come from the metadata catalog and cover the whole product,
- * whichever folder is open. A product the catalog has no statistics for shows
+ * whichever folder is open. "Updated" is when any object in the product was
+ * last written, with the exact time on hover; it is left out when the catalog
+ * has no date for the product. A product the catalog has no statistics for shows
  * no card.
  */
 const meta = {
@@ -39,12 +41,14 @@ export const Default: Story = {
       product_id: "land-cover",
       total_bytes: 12_345_678_900,
       object_count: 12_500,
+      objects_updated_at: new Date(Date.now() - 3 * 86_400_000).toISOString(),
       exts: { tif: 2_000, parquet: 400, json: 10_000, csv: 100 },
       ext_bytes: { tif: 10_000_000_000, parquet: 2_000_000_000, json: 300_000_000, csv: 45_678_900 },
     },
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await expect(canvas.getByText("3 days ago")).toBeInTheDocument();
     await expect(canvas.getByRole("img")).toHaveAccessibleName(
       expect.stringMatching(/^Object types by byte volume: tif/),
     );
