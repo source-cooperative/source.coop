@@ -64,7 +64,8 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
 };
 
 // Top-level routes that share the /{segment}/{segment} shape but are not
-// account/product pages — the analytics rewrite must leave them alone.
+// account/product pages — the analytics rewrite and the case redirect must
+// leave their second segment alone.
 const NON_ACCOUNT_SEGMENTS = new Set([
   "admin",
   "edit",
@@ -201,7 +202,11 @@ export const config = {
   // (e.g. `api`) would also skip middleware for any account whose id merely
   // starts with it (apiuser, logophile, …), silently disabling rewrites
   // and Ory handling on their pages.
+  //
+  // `img/` is excluded for the same reason as `favicon/` and `logo/`: public
+  // files keep their mixed-case names (`/img/ringsIcon.svg`), and the case
+  // redirect would lowercase them into a 404.
   matcher: [
-    "/((?!api/|_next/static|_next/image|favicon\\.ico|favicon/|logo/).*)",
+    "/((?!api/|_next/static|_next/image|favicon\\.ico|favicon/|logo/|img/).*)",
   ],
 };

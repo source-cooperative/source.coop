@@ -5,6 +5,7 @@
 import { NextRequest } from "next/server";
 import {
   handleCaseRedirect,
+  config,
   handleProductAnalyticsTab,
   restoreOryCookies,
 } from "./middleware";
@@ -91,5 +92,19 @@ describe("handleCaseRedirect", () => {
 
   it("only redirects GET and HEAD", () => {
     expect(redirectTo("https://source.coop/ALukach", "POST")).toBeNull();
+  });
+});
+
+describe("middleware matcher", () => {
+  const matches = (path: string) =>
+    new RegExp(`^${config.matcher[0]}$`).test(path);
+
+  it("skips public assets with mixed-case names", () => {
+    expect(matches("/img/ringsIcon.svg")).toBe(false);
+    expect(matches("/logo/logolockup-light.svg")).toBe(false);
+  });
+
+  it("still runs for accounts whose id starts with an excluded prefix", () => {
+    expect(matches("/imgur/Data")).toBe(true);
   });
 });
