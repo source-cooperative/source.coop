@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Text } from "@radix-ui/themes";
-import { ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { useRef, useState, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MonoText } from "@/components/core/MonoText";
@@ -19,12 +19,10 @@ interface DirectoryListProps {
   setFocusedIndex?: (index: number) => void;
 }
 
-type SortKey = "name" | "size" | "updated_at";
-
-const COLUMNS: { key: SortKey; label: string; numeric?: boolean }[] = [
-  { key: "name", label: "Name" },
-  { key: "size", label: "Size", numeric: true },
-  { key: "updated_at", label: "Modified", numeric: true },
+const COLUMNS = [
+  { label: "Name" },
+  { label: "Size", numeric: true },
+  { label: "Modified", numeric: true },
 ];
 
 const MAX_VISIBLE_ITEMS = 20;
@@ -39,10 +37,6 @@ export function DirectoryList({
   setFocusedIndex,
 }: DirectoryListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({
-    key: "name",
-    desc: false,
-  });
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
@@ -88,19 +82,13 @@ export function DirectoryList({
     prefix,
   ).filter((item) => !deletedPaths.has(item.path));
 
-  // Directories stay first whichever column is sorted. They have no size or
-  // mtime, so only the Name column reorders them.
-  const dir = sort.desc ? -1 : 1;
+  // Sort items: directories first, then files alphabetically
   items.sort((a, b) => {
-    if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
-    const byName = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-    if (sort.key === "name") return dir * byName;
-    if (a.isDirectory) return byName;
-    const diff =
-      sort.key === "size"
-        ? a.size - b.size
-        : Date.parse(a.updated_at) - Date.parse(b.updated_at);
-    return dir * (diff || 0) || byName;
+    // Directories first
+    if (a.isDirectory && !b.isDirectory) return -1;
+    if (!a.isDirectory && b.isDirectory) return 1;
+    // Then alphabetically
+    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
   });
 
   // Helper to get item height based on upload status
@@ -161,36 +149,18 @@ export function DirectoryList({
             marginBottom: "var(--space-1)",
           }}
         >
-          {COLUMNS.map(({ key, label, numeric }) => {
-            const active = sort.key === key;
-            return (
-              <div
-                key={key}
-                role="columnheader"
-                aria-sort={
-                  active ? (sort.desc ? "descending" : "ascending") : "none"
-                }
-                className={numeric ? styles.headerHidden : undefined}
-                style={numeric ? { justifySelf: "end" } : undefined}
-              >
-                <button
-                  type="button"
-                  className={styles.headerCell}
-                  onClick={() =>
-                    setSort({ key, desc: active ? !sort.desc : false })
-                  }
-                >
-                  {label}
-                  {active &&
-                    (sort.desc ? (
-                      <ChevronDownIcon width={12} height={12} />
-                    ) : (
-                      <ChevronUpIcon width={12} height={12} />
-                    ))}
-                </button>
-              </div>
-            );
-          })}
+          {COLUMNS.map(({ label, numeric }) => (
+            <div
+              key={label}
+              role="columnheader"
+              className={numeric ? styles.headerHidden : undefined}
+              style={numeric ? { justifySelf: "end" } : undefined}
+            >
+              <Text size="1" color="gray">
+                {label}
+              </Text>
+            </div>
+          ))}
           <div />
         </div>
       )}

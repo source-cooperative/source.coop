@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Flex } from "@radix-ui/themes";
-import { expect, userEvent, within } from "storybook/test";
+import { userEvent, within } from "storybook/test";
 import { DirectoryList } from "./DirectoryList";
 import { BreadcrumbNav } from "@/components/display/BreadcrumbNav";
 import {
@@ -212,25 +212,6 @@ export const Virtualized: Story = {
         60_000_000 + i * 1_024,
       ),
     ),
-  },
-};
-
-/**
- * Click a column header to sort by it; click it again to reverse. Folders stay
- * on top whichever column is sorted, since they have no size or date. This
- * story clicks Modified twice, so the listing opens newest first.
- */
-export const SortedByModified: Story = {
-  args: Default.args,
-  render: Default.render,
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const modified = canvas.getByRole("button", { name: "Modified" });
-    await userEvent.click(modified);
-    await userEvent.click(modified);
-    await expect(
-      canvas.getByRole("columnheader", { name: "Modified" }),
-    ).toHaveAttribute("aria-sort", "descending");
   },
 };
 
