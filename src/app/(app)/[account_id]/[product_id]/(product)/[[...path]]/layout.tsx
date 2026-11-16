@@ -147,16 +147,18 @@ export default async function ProductLayout({
               entry. */}
           <ProductCatalogSummary accountId={account_id} productId={product_id} />
 
-          {/* Public requests summary, the same for every viewer (managers
+          {/* Public requests summary, only at the product root, the same for every viewer (managers
               reach /-/analytics via the ANALYTICS tab). Streams in after
               the page shell; hidden when analytics is off. The skeleton
               reserves the card's space so warm-cache data fills in instead
               of reflowing the column. */}
-          <Suspense
-            fallback={isAnalyticsConfigured() ? <UsageCardSkeleton /> : null}
-          >
-            <UsageCard accountId={account_id} productId={product_id} />
-          </Suspense>
+          {!prefix && (
+            <Suspense
+              fallback={isAnalyticsConfigured() ? <UsageCardSkeleton /> : null}
+            >
+              <UsageCard accountId={account_id} productId={product_id} />
+            </Suspense>
+          )}
         </Flex>
       </Grid>
 
