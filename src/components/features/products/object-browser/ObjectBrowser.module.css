@@ -74,3 +74,41 @@
   animation: bounce 1s infinite;
   transform: translateX(-50%);
 } 
+/* Shared by the header and every row so the columns line up. */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem 8rem 4.5rem;
+  align-items: center;
+  column-gap: var(--space-2);
+  width: 100%;
+}
+
+.numeric {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.headerCell {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-1);
+  color: var(--gray-11);
+}
+
+.headerCell:focus-visible {
+  outline: 2px solid var(--accent-8);
+}
+
+/* Below this width size and date give way to the name and actions. */
+@media (max-width: 640px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr) 4.5rem;
+  }
+  .columns > .numeric,
+  .headerHidden {
+    display: none;
+  }
+}

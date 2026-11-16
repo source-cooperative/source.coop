@@ -8,13 +8,14 @@ import {
   AlertDialog,
   Button,
   Text,
+  DropdownMenu,
 } from "@radix-ui/themes";
 import {
   ChevronRightIcon,
   FileIcon,
   DownloadIcon,
   CopyIcon,
-  CheckIcon,
+  DotsHorizontalIcon,
   Cross2Icon,
   ReloadIcon,
   TrashIcon,
@@ -60,7 +61,6 @@ export function DirectoryRow({
   virtualRow,
   onDeleted,
 }: DirectoryRowProps) {
-  const [copiedField, setCopiedField] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -108,7 +108,7 @@ export function DirectoryRow({
       setDeleteError(
         item.isDirectory
           ? `Delete may be partial — ${reason}. Retry to remove remaining items.`
-          : `Delete failed — ${reason}. Please retry.`
+          : `Delete failed — ${reason}. Please retry.`,
       );
     } finally {
       setDeleting(false);
@@ -122,14 +122,7 @@ export function DirectoryRow({
     ? objectUrl(product.account_id, product.product_id, item.path)
     : objectUrl(product.account_id, product.product_id, item.path);
 
-  const copyToClipboard = (text: string, field: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedField(field);
-      setTimeout(() => {
-        setCopiedField(null);
-      }, 1500);
-    });
-  };
+  const fileUrl = `https://data.source.coop/${product.account_id}/${product.product_id}/${item.path}`;
 
   const wrapperStyle = virtualRow
     ? {
@@ -161,8 +154,8 @@ export function DirectoryRow({
           position: "relative",
         }}
       >
-        <Flex justify="between" align="center" style={{ width: "100%" }}>
-          <Box style={{ minWidth: 0, flex: 1 }}>
+        <div className={styles.columns}>
+          <Box style={{ minWidth: 0 }}>
             <Link
               title={item.name}
               href={isUploading ? "#" : href}
@@ -204,32 +197,38 @@ export function DirectoryRow({
             </Link>
           </Box>
 
+          {/* Folders show an em dash: an empty cell reads as missing data. */}
+          <MonoText color="gray" size="1" className={styles.numeric}>
+            {item.isDirectory
+              ? "—"
+              : item.size > 0
+                ? formatBytes(item.size)
+                : ""}
+          </MonoText>
+
+          {/* Directories have no real mtime. suppressHydrationWarning: "now"
+              differs between server and client render, so a just-uploaded file
+              can disagree by seconds. */}
+          {!item.isDirectory && item.updated_at ? (
+            <Tooltip content={formatDate(item.updated_at, true)}>
+              <MonoText
+                color="gray"
+                size="1"
+                title={formatDate(item.updated_at, true)}
+                suppressHydrationWarning
+                className={styles.numeric}
+              >
+                {formatRelativeTime(item.updated_at)}
+              </MonoText>
+            </Tooltip>
+          ) : (
+            <MonoText color="gray" size="1" className={styles.numeric}>
+              {item.isDirectory ? "—" : ""}
+            </MonoText>
+          )}
+
           <Box>
-            <Flex align="center" gap="2">
-              {/* File size */}
-              {!item.isDirectory && item.size > 0 && (
-                <MonoText color="gray" size="1" style={{ flexShrink: 0 }}>
-                  {formatBytes(item.size)}
-                </MonoText>
-              )}
-
-              {/* Last modified — directories have no real mtime, so files only.
-                  suppressHydrationWarning: "now" differs between server and
-                  client render, so a just-uploaded file can disagree by seconds. */}
-              {!item.isDirectory && item.updated_at && (
-                <Tooltip content={formatDate(item.updated_at, true)}>
-                  <MonoText
-                    color="gray"
-                    size="1"
-                    title={formatDate(item.updated_at, true)}
-                    suppressHydrationWarning
-                    style={{ flexShrink: 0, whiteSpace: "nowrap" }}
-                  >
-                    {formatRelativeTime(item.updated_at)}
-                  </MonoText>
-                </Tooltip>
-              )}
-
+            <Flex align="center" justify="end" gap="1">
               {/* Upload control buttons */}
               {!item.isDirectory && isUploading && uploadItem && (
                 <Flex gap="1">
@@ -272,55 +271,63 @@ export function DirectoryRow({
                 </Flex>
               )}
 
-              {/* Download/Copy buttons for completed files */}
+              {/* One visible action per file; copy and delete sit in the menu. */}
               {!item.isDirectory && !isUploading && (
-                <Flex gap="1">
-                  {/* Primary Download Button */}
-                  <Tooltip content={`Download ${item.name}`}>
-                    <IconButton
-                      variant="solid"
-                      size="1"
-                      asChild
-                      style={{ minWidth: "auto" }}
+                <Tooltip content={`Download ${item.name}`}>
+                  <IconButton
+                    variant="solid"
+                    size="1"
+                    asChild
+                    style={{ minWidth: "auto" }}
+                  >
+                    <a
+                      href={fileUrl}
+                      download={item.name}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <a
-                        href={`https://data.source.coop/${product.account_id}/${product.product_id}/${item.path}`}
-                        download={item.name}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <DownloadIcon width={14} height={14} />
-                      </a>
-                    </IconButton>
-                  </Tooltip>
-
-                  {/* Secondary Copy URL Button */}
-                  <Tooltip content={`Copy URL to clipboard`}>
-                    <IconButton
-                      variant="surface"
-                      size="1"
-                      color={copiedField === `url-${index}` ? "green" : "gray"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        copyToClipboard(
-                          `https://data.source.coop/${product.account_id}/${product.product_id}/${item.path}`,
-                          `url-${index}`
-                        );
-                      }}
-                      style={{ minWidth: "auto", cursor: "pointer" }}
-                    >
-                      {copiedField === `url-${index}` ? (
-                        <CheckIcon />
-                      ) : (
-                        <CopyIcon />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                </Flex>
+                      <DownloadIcon width={14} height={14} />
+                    </a>
+                  </IconButton>
+                </Tooltip>
               )}
 
-              {/* Delete button — only in edit mode, for files and folders */}
+              {!isUploading && (!item.isDirectory || canEdit) && (
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger>
+                    <IconButton
+                      variant="soft"
+                      color="gray"
+                      size="1"
+                      aria-label={`More actions for ${item.name}`}
+                      style={{ minWidth: "auto", cursor: "pointer" }}
+                    >
+                      <DotsHorizontalIcon width={14} height={14} />
+                    </IconButton>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Content size="1">
+                    {!item.isDirectory && (
+                      <DropdownMenu.Item
+                        onSelect={() => navigator.clipboard.writeText(fileUrl)}
+                      >
+                        <CopyIcon /> Copy URL
+                      </DropdownMenu.Item>
+                    )}
+                    {canEdit && (
+                      <DropdownMenu.Item
+                        color="red"
+                        onSelect={() => setConfirmOpen(true)}
+                      >
+                        <TrashIcon /> Delete
+                      </DropdownMenu.Item>
+                    )}
+                  </DropdownMenu.Content>
+                </DropdownMenu.Root>
+              )}
+
+              {/* Opened by the menu item. It is not nested in the menu, whose
+                  content unmounts as it closes. */}
               {canEdit && !isUploading && (
                 <AlertDialog.Root
                   open={confirmOpen}
@@ -329,18 +336,6 @@ export function DirectoryRow({
                     if (!o) setDeleteError(null);
                   }}
                 >
-                  <AlertDialog.Trigger>
-                    <IconButton
-                      variant="soft"
-                      size="1"
-                      color="red"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ minWidth: "auto", cursor: "pointer" }}
-                      aria-label={`Delete ${item.name}`}
-                    >
-                      <TrashIcon width={14} height={14} />
-                    </IconButton>
-                  </AlertDialog.Trigger>
                   <AlertDialog.Content maxWidth="450px">
                     <AlertDialog.Title>
                       Delete {item.isDirectory ? "folder" : "file"}
@@ -348,8 +343,8 @@ export function DirectoryRow({
                     <AlertDialog.Description size="2">
                       Are you sure you want to delete{" "}
                       <strong>{item.name}</strong>
-                      {item.isDirectory ? " and everything inside it" : ""}? This
-                      action cannot be undone.
+                      {item.isDirectory ? " and everything inside it" : ""}?
+                      This action cannot be undone.
                     </AlertDialog.Description>
                     <Flex gap="3" mt="4" justify="end">
                       <AlertDialog.Cancel>
@@ -379,7 +374,7 @@ export function DirectoryRow({
               )}
             </Flex>
           </Box>
-        </Flex>
+        </div>
 
         {isUploading && (
           <>
@@ -401,8 +396,8 @@ export function DirectoryRow({
                     item.uploadProgress?.status === "error"
                       ? "var(--red-9)"
                       : item.uploadProgress?.status === "uploading"
-                      ? "var(--accent-9)"
-                      : "var(--gray-7)",
+                        ? "var(--accent-9)"
+                        : "var(--gray-7)",
                   transition: "width 0.2s ease",
                 }}
               />

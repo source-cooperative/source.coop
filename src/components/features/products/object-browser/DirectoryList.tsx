@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Text } from "@radix-ui/themes";
-import { ChevronDownIcon } from "@radix-ui/react-icons";
+import { ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons";
 import { useRef, useState, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MonoText } from "@/components/core/MonoText";
@@ -19,6 +19,14 @@ interface DirectoryListProps {
   setFocusedIndex?: (index: number) => void;
 }
 
+type SortKey = "name" | "size" | "updated_at";
+
+const COLUMNS: { key: SortKey; label: string; numeric?: boolean }[] = [
+  { key: "name", label: "Name" },
+  { key: "size", label: "Size", numeric: true },
+  { key: "updated_at", label: "Modified", numeric: true },
+];
+
 const MAX_VISIBLE_ITEMS = 20;
 const ITEM_HEIGHT = 40;
 const UPLOADING_ITEM_HEIGHT = ITEM_HEIGHT * 1.5; // Extra height for progress bar and status
@@ -31,6 +39,10 @@ export function DirectoryList({
   setFocusedIndex,
 }: DirectoryListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({
+    key: "name",
+    desc: false,
+  });
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
@@ -73,16 +85,21 @@ export function DirectoryList({
   const items = mergeUploadsWithFiles(
     asFileNodes(objects),
     scopedUploads,
-    prefix
+    prefix,
   ).filter((item) => !deletedPaths.has(item.path));
 
-  // Sort items: directories first, then files alphabetically
+  // Directories stay first whichever column is sorted: they have no size or
+  // mtime to order by.
+  const dir = sort.desc ? -1 : 1;
   items.sort((a, b) => {
-    // Directories first
-    if (a.isDirectory && !b.isDirectory) return -1;
-    if (!a.isDirectory && b.isDirectory) return 1;
-    // Then alphabetically
-    return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+    if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
+    const byName = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+    if (a.isDirectory || sort.key === "name") return dir * byName || 0;
+    const diff =
+      sort.key === "size"
+        ? a.size - b.size
+        : Date.parse(a.updated_at) - Date.parse(b.updated_at);
+    return dir * (diff || 0) || byName;
   });
 
   // Helper to get item height based on upload status
@@ -132,87 +149,132 @@ export function DirectoryList({
   });
 
   return (
-    <Box
-      ref={parentRef}
-      style={
-        isVirtualized
-          ? {
-              maxHeight: `${Math.min(
-                items.length * ITEM_HEIGHT,
-                MAX_VISIBLE_ITEMS * ITEM_HEIGHT
-              )}px`,
-              overflow: "auto",
-              willChange: "transform",
-              position: "relative",
-            }
-          : { position: "relative" }
-      }
-    >
-      {items.length === 0 && (
-        <Box p="4">
-          <MonoText color="gray">This directory is empty.</MonoText>
-        </Box>
-      )}
-
-      {showScrollIndicator && (
-        <Box
-          className={styles.scrollIndicator}
+    <>
+      {items.length > 0 && (
+        <div
+          className={styles.columns}
+          role="row"
           style={{
-            position: "fixed",
-            bottom: "8px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 10,
-            background: "var(--gray-3)",
-            borderRadius: "var(--radius-2)",
-            padding: "4px 8px",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-            pointerEvents: "none",
+            borderBottom: "1px solid var(--gray-5)",
+            paddingBottom: "var(--space-1)",
+            marginBottom: "var(--space-1)",
           }}
         >
-          <Text size="1" color="gray">
-            Scroll for more
-          </Text>
-          <ChevronDownIcon width={12} height={12} />
-        </Box>
+          {COLUMNS.map(({ key, label, numeric }) => {
+            const active = sort.key === key;
+            return (
+              <div
+                key={key}
+                role="columnheader"
+                aria-sort={
+                  active ? (sort.desc ? "descending" : "ascending") : "none"
+                }
+                className={numeric ? styles.headerHidden : undefined}
+                style={numeric ? { justifySelf: "end" } : undefined}
+              >
+                <button
+                  type="button"
+                  className={styles.headerCell}
+                  onClick={() =>
+                    setSort({ key, desc: active ? !sort.desc : false })
+                  }
+                >
+                  {label}
+                  {active &&
+                    (sort.desc ? (
+                      <ChevronDownIcon width={12} height={12} />
+                    ) : (
+                      <ChevronUpIcon width={12} height={12} />
+                    ))}
+                </button>
+              </div>
+            );
+          })}
+          <div />
+        </div>
       )}
-
       <Box
-        style={{
-          width: "100%",
-          ...(isVirtualized
+        ref={parentRef}
+        style={
+          isVirtualized
             ? {
-                height: `${rowVirtualizer.getTotalSize()}px`,
+                maxHeight: `${Math.min(
+                  items.length * ITEM_HEIGHT,
+                  MAX_VISIBLE_ITEMS * ITEM_HEIGHT,
+                )}px`,
+                overflow: "auto",
+                willChange: "transform",
                 position: "relative",
               }
-            : {}),
-        }}
+            : { position: "relative" }
+        }
       >
-        {isVirtualized
-          ? rowVirtualizer
-              .getVirtualItems()
-              .map((virtualRow) => (
+        {items.length === 0 && (
+          <Box p="4">
+            <MonoText color="gray">This directory is empty.</MonoText>
+          </Box>
+        )}
+
+        {showScrollIndicator && (
+          <Box
+            className={styles.scrollIndicator}
+            style={{
+              position: "fixed",
+              bottom: "8px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 10,
+              background: "var(--gray-3)",
+              borderRadius: "var(--radius-2)",
+              padding: "4px 8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              pointerEvents: "none",
+            }}
+          >
+            <Text size="1" color="gray">
+              Scroll for more
+            </Text>
+            <ChevronDownIcon width={12} height={12} />
+          </Box>
+        )}
+
+        <Box
+          style={{
+            width: "100%",
+            ...(isVirtualized
+              ? {
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  position: "relative",
+                }
+              : {}),
+          }}
+        >
+          {isVirtualized
+            ? rowVirtualizer
+                .getVirtualItems()
+                .map((virtualRow) => (
+                  <DirectoryRow
+                    key={items[virtualRow.index].path}
+                    item={items[virtualRow.index]}
+                    index={virtualRow.index}
+                    itemHeight={virtualRow.size}
+                    virtualRow={{ start: virtualRow.start }}
+                    {...rowProps}
+                  />
+                ))
+            : items.map((item, index) => (
                 <DirectoryRow
-                  key={items[virtualRow.index].path}
-                  item={items[virtualRow.index]}
-                  index={virtualRow.index}
-                  itemHeight={virtualRow.size}
-                  virtualRow={{ start: virtualRow.start }}
+                  key={item.path}
+                  item={item}
+                  index={index}
+                  itemHeight={getItemHeight(index)}
                   {...rowProps}
                 />
-              ))
-          : items.map((item, index) => (
-              <DirectoryRow
-                key={item.path}
-                item={item}
-                index={index}
-                itemHeight={getItemHeight(index)}
-                {...rowProps}
-              />
-            ))}
+              ))}
+        </Box>
       </Box>
-    </Box>
+    </>
   );
 }

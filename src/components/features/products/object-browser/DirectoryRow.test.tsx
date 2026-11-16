@@ -60,4 +60,16 @@ describe("DirectoryRow last modified", () => {
     });
     expect(screen.queryByText(/ago$/)).toBeNull();
   });
+
+  it("puts copy behind a menu, leaving download as the one row action", () => {
+    renderRow({
+      name: "catalog.json",
+      path: "catalog.json",
+      size: 1234,
+      updated_at: new Date().toISOString(),
+      isDirectory: false,
+    });
+    expect(screen.getByRole("button", { name: /more actions/i })).toBeTruthy();
+    expect(screen.queryByText("Copy URL")).toBeNull();
+  });
 });
