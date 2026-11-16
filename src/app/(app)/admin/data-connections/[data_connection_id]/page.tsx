@@ -1,0 +1,81 @@
+import { Metadata } from "next";
+import { CONFIG } from "@/lib/config";
+import { Suspense } from "react";
+import Link from "next/link";
+import { Box, Button, Flex, Text } from "@radix-ui/themes";
+import { ArrowLeftIcon } from "@radix-ui/react-icons";
+import { notFound } from "next/navigation";
+import { dataConnectionsTable } from "@/lib/clients";
+import {
+  DataConnectionForm,
+  DeleteConnectionControl,
+  DeleteConnectionNote,
+} from "@/components/features/data-connections";
+import { ConnectionUsage } from "@/components/features/data-connections/ConnectionUsage";
+import { toEditableDataConnection } from "@/components/features/data-connections/redact";
+import { DangerZone } from "@/components/core";
+import { adminDataConnectionsUrl } from "@/lib/urls";
+
+export const metadata: Metadata = {
+  title: "Admin — Edit data connection",
+};
+
+interface EditDataConnectionPageProps {
+  params: Promise<{ data_connection_id: string }>;
+}
+
+export default async function EditDataConnectionPage({
+  params,
+}: EditDataConnectionPageProps) {
+  const { data_connection_id } = await params;
+  const dataConnection = await dataConnectionsTable.fetchById(
+    data_connection_id
+  );
+
+  if (!dataConnection) {
+    notFound();
+  }
+
+  return (
+    <Flex direction="column" gap="4">
+      <Box>
+        <Button asChild variant="ghost" size="1">
+          <Link href={adminDataConnectionsUrl()}>
+            <ArrowLeftIcon /> Data connections
+          </Link>
+        </Button>
+      </Box>
+      <DataConnectionForm
+        mode="edit"
+        proxyOrigin={CONFIG.storage.endpoint}
+        dataConnection={toEditableDataConnection(dataConnection)}
+      />
+
+      <Suspense
+        fallback={
+          <Text size="2" color="gray">
+            Loading product usage…
+          </Text>
+        }
+      >
+        <ConnectionUsage connectionId={dataConnection.data_connection_id} />
+      </Suspense>
+
+      {/* Below the usage list, which is what answers "can I delete this?" */}
+      <DangerZone
+        title="Delete this connection"
+        description="Removes the connection record and its stored credentials. The bucket and its objects are not touched."
+        action={
+          <DeleteConnectionControl
+            connectionId={dataConnection.data_connection_id}
+          />
+        }
+        note={
+          <DeleteConnectionNote
+            connectionId={dataConnection.data_connection_id}
+          />
+        }
+      />
+    </Flex>
+  );
+}

@@ -1,6 +1,15 @@
 "use client";
 
-import { Box, Flex, Tooltip, IconButton } from "@radix-ui/themes";
+import {
+  Box,
+  Flex,
+  Tooltip,
+  IconButton,
+  AlertDialog,
+  Button,
+  Text,
+  Spinner,
+} from "@radix-ui/themes";
 import {
   ChevronRightIcon,
   FileIcon,
@@ -9,16 +18,22 @@ import {
   CheckIcon,
   Cross2Icon,
   ReloadIcon,
+  TrashIcon,
 } from "@radix-ui/react-icons";
 import Link from "next/link";
-import { MonoText } from "@/components/core";
+import { useRouter } from "next/navigation";
+import { MonoText } from "@/components/core/MonoText";
 import type { FileNode } from "./utils";
 import type { Product } from "@/types";
-import { formatFileSize } from "./utils";
+import { formatBytes } from "@/lib/format";
 import { objectUrl } from "@/lib/urls";
 import styles from "./ObjectBrowser.module.css";
 import { useState } from "react";
-import { useUploadManager } from "@/components/features/uploader";
+import {
+  useUploadManager,
+  useS3Credentials,
+  deleteStatusText,
+} from "@/components/features/uploader";
 
 interface DirectoryRowProps {
   item: FileNode;
@@ -30,6 +45,9 @@ interface DirectoryRowProps {
   setFocusedIndex?: (index: number) => void;
   itemRefs?: React.MutableRefObject<(HTMLAnchorElement | null)[]>;
   virtualRow?: { start: number };
+  /** Called with the item's path after a successful delete, so the list can
+      hide it immediately without waiting for the (eventually-consistent) refetch. */
+  onDeleted?: (path: string) => void;
 }
 
 export function DirectoryRow({
@@ -42,9 +60,19 @@ export function DirectoryRow({
   setFocusedIndex,
   itemRefs,
   virtualRow,
+  onDeleted,
 }: DirectoryRowProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const { cancelUpload, retryUpload, getUploadsForScope } = useUploadManager();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const router = useRouter();
+  const {
+    cancelUpload,
+    retryUpload,
+    getUploadsForScope,
+    deletions,
+    deletePath,
+  } = useUploadManager();
+  const { getCredentials } = useS3Credentials();
 
   // Get uploads for this specific product scope
   const scope = {
@@ -52,6 +80,31 @@ export function DirectoryRow({
     productId: product.product_id,
   };
   const scopedUploads = getUploadsForScope(scope);
+
+  // Edit mode is "user has fetched write credentials for this product" — the
+  // same signal the upload controls use. Delete is gated on it.
+  const canEdit = !!getCredentials(scope);
+
+  const deletion = deletions.find(
+    (d) =>
+      d.path === item.path &&
+      d.scope.accountId === scope.accountId &&
+      d.scope.productId === scope.productId
+  );
+  const deleting = deletion?.status === "deleting";
+
+  // The delete runs in the background (progress in the account menu), so the
+  // dialog closes at once and the user can keep browsing. A failure is
+  // reported there and on this row, whose delete button stays for a retry.
+  const handleDelete = () => {
+    deletePath(item.path, item.isDirectory, scope)
+      .then(() => {
+        // Hide it now (the refetch below can be stale), then reconcile.
+        onDeleted?.(item.path);
+        router.refresh(); // re-fetch the server-rendered listing
+      })
+      .catch((error) => console.error("Delete failed", error));
+  };
 
   // Find the upload ID for this item if it's uploading
   const uploadItem = scopedUploads.find((upload) => upload.key === item.path);
@@ -147,7 +200,7 @@ export function DirectoryRow({
               {/* File size */}
               {!item.isDirectory && item.size > 0 && (
                 <MonoText color="gray" size="1" style={{ flexShrink: 0 }}>
-                  {formatFileSize(item.size)}
+                  {formatBytes(item.size)}
                 </MonoText>
               )}
 
@@ -240,6 +293,67 @@ export function DirectoryRow({
                   </Tooltip>
                 </Flex>
               )}
+
+              {deleting && (
+                <Flex align="center" gap="2">
+                  <Spinner size="1" />
+                  <Text size="1" color="gray">
+                    {deleteStatusText(deletion)}
+                  </Text>
+                </Flex>
+              )}
+
+              {deletion?.status === "error" && (
+                <Tooltip content={deletion.error}>
+                  <Text size="1" color="red">
+                    Delete failed
+                  </Text>
+                </Tooltip>
+              )}
+
+              {/* Delete button — only in edit mode, for files and folders */}
+              {canEdit && !isUploading && !deleting && (
+                <AlertDialog.Root
+                  open={confirmOpen}
+                  onOpenChange={setConfirmOpen}
+                >
+                  <AlertDialog.Trigger>
+                    <IconButton
+                      variant="soft"
+                      size="1"
+                      color="red"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ minWidth: "auto", cursor: "pointer" }}
+                      aria-label={`Delete ${item.name}`}
+                    >
+                      <TrashIcon width={14} height={14} />
+                    </IconButton>
+                  </AlertDialog.Trigger>
+                  <AlertDialog.Content maxWidth="450px">
+                    <AlertDialog.Title>
+                      Delete {item.isDirectory ? "folder" : "file"}
+                    </AlertDialog.Title>
+                    <AlertDialog.Description size="2">
+                      Are you sure you want to delete{" "}
+                      <strong>{item.name}</strong>
+                      {item.isDirectory ? " and everything inside it" : ""}?
+                      This action cannot be undone.
+                    </AlertDialog.Description>
+                    <Flex gap="3" mt="4" justify="end">
+                      <AlertDialog.Cancel>
+                        <Button variant="soft" color="gray">
+                          Cancel
+                        </Button>
+                      </AlertDialog.Cancel>
+                      <AlertDialog.Action>
+                        <Button color="red" onClick={handleDelete}>
+                          Delete
+                        </Button>
+                      </AlertDialog.Action>
+                    </Flex>
+                  </AlertDialog.Content>
+                </AlertDialog.Root>
+              )}
             </Flex>
           </Box>
         </Flex>
@@ -264,8 +378,8 @@ export function DirectoryRow({
                     item.uploadProgress?.status === "error"
                       ? "var(--red-9)"
                       : item.uploadProgress?.status === "uploading"
-                      ? "var(--accent-9)"
-                      : "var(--gray-7)",
+                        ? "var(--accent-9)"
+                        : "var(--gray-7)",
                   transition: "width 0.2s ease",
                 }}
               />

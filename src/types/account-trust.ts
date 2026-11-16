@@ -1,0 +1,78 @@
+import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
+import { z } from "zod";
+
+extendZodWithOpenApi(z);
+
+/**
+ * A subject an account trusts to act as it: an issuer, and the exact subject
+ * that issuer's tokens carry. The same shape as a statement in an AWS role's
+ * trust policy, and used the same way — a workload names the account it wants
+ * when it exchanges its token, and the exchange succeeds only if that account
+ * trusts the token's subject. A subject may be trusted by any number of
+ * accounts; nothing about the subject alone chooses one.
+ */
+export const AccountTrustSchema = z
+  .object({
+    account_id: z.string().min(1).openapi({ example: "acme--nightly-sync" }),
+    issuer: z.string().min(1).openapi({ example: "https://token.actions.githubusercontent.com" }),
+    subject: z.string().min(1).openapi({ example: "repo:acme/data:ref:refs/heads/main" }),
+    created_at: z.string().datetime(),
+    /** Who added it: the manager's account id. */
+    created_by: z.string().min(1),
+    /** When the data proxy last exchanged a token under it; absent if never. */
+    last_used_at: z.string().datetime().optional(),
+  })
+  .openapi("AccountTrust");
+
+export type AccountTrust = z.infer<typeof AccountTrustSchema>;
+
+
+/** The issuer of GitHub Actions' ambient OIDC tokens. */
+export const GITHUB_ACTIONS_ISSUER = "https://token.actions.githubusercontent.com";
+
+/**
+ * A GitHub Actions subject pinned to one repository and one ref or one
+ * environment: `repo:{owner}/{repo}:ref:{ref}` or
+ * `repo:{owner}/{repo}:environment:{name}`. Nothing organization-wide. A ref
+ * has no whitespace and doesn't end in `/`, by git's rules, so `refs/heads/`
+ * with no branch is refused; an environment name may have whitespace.
+ *
+ * The repository is named either the mutable way, `octocat/my-repo`, or the
+ * immutable way GitHub mints for repositories created after July 2026 and
+ * for any that opted in, `octocat@123456/my-repo@456789` — each name followed
+ * by its permanent id, so a recycled name cannot inherit a trust. A token
+ * carries one form or the other, never a mix, and a trust must match the form
+ * the repository's tokens carry.
+ */
+export const GITHUB_ACTIONS_SUBJECT_REGEX =
+  /^repo:(?:[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+|[A-Za-z0-9_.-]+@\d+\/[A-Za-z0-9_.-]+@\d+):(?:ref:refs\/[^\s:]*[^\s:/]|environment:[^:]+)$/;
+
+/** What a GitHub Actions subject names, in the parts a person reads. */
+export type GithubSubject = {
+  /** `owner/repo`, without ids. */
+  repo: string;
+  /** Named by permanent ids as well, so a recycled name cannot inherit it. */
+  pinned: boolean;
+  kind: "branch" | "tag" | "ref" | "environment";
+  /** The branch, tag or environment name; for any other ref, the whole ref. */
+  name: string;
+};
+
+const GITHUB_SUBJECT_PARTS =
+  /^repo:([A-Za-z0-9_.-]+)(@\d+)?\/([A-Za-z0-9_.-]+)(@\d+)?:(?:ref:refs\/(heads|tags)\/([^\s:]+)|ref:(refs\/[^\s:]+)|environment:([^:]+))$/;
+
+/** Splits a GitHub Actions subject into its parts, or null for any other shape. */
+export function parseGithubSubject(subject: string): GithubSubject | null {
+  const m = GITHUB_SUBJECT_PARTS.exec(subject);
+  if (!m) return null;
+  const [, owner, ownerId, repo, repoId, refKind, refName, otherRef, environment] = m;
+  return {
+    repo: `${owner}/${repo}`,
+    pinned: Boolean(ownerId && repoId),
+    ...(environment !== undefined
+      ? { kind: "environment", name: environment }
+      : refKind
+        ? { kind: refKind === "heads" ? "branch" : "tag", name: refName }
+        : { kind: "ref", name: otherRef }),
+  };
+}

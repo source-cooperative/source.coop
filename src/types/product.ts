@@ -1,14 +1,15 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import { AccountSchema } from "@/types/account";
+import { PublicAccountSchema, type PublicAccount } from "@/types/account";
+import { MIN_ID_LENGTH, MAX_ID_LENGTH, ID_REGEX } from "@/types/shared";
 
 extendZodWithOpenApi(z);
 
-// Mirror configuration and status tracking
-// ProductMirror describes a storage mirror for a product, including config, sync status, and stats.
+// ProductMirror describes a storage mirror for a product: which data connection
+// backs it, the key prefix under which the product's objects live, and whether
+// it is the primary mirror.
 export const ProductMirrorSchema = z
   .object({
-    storage_type: z.enum(["s3", "azure", "gcs", "minio", "ceph"]),
     connection_id: z.string(), // Reference to storage connection config
     prefix: z.string(), // Format: "{account_id}/{product_id}/"
     // Mirror-specific settings
@@ -53,7 +54,15 @@ export const ProductVisibilitySchema = z.nativeEnum(ProductVisibility).openapi("
 // Product is the main product entity, including metadata and optional account
 export const ProductSchema = z
   .object({
-    product_id: z.string(), // Partition Key
+    product_id: z
+      .string()
+      .min(MIN_ID_LENGTH, `Product ID must be at least ${MIN_ID_LENGTH} characters`)
+      .max(MAX_ID_LENGTH, `Product ID must not exceed ${MAX_ID_LENGTH} characters`)
+      .toLowerCase()
+      .regex(
+        ID_REGEX,
+        "Product ID may not begin or end with a hyphen OR contain consecutive hyphens"
+      ), // Partition Key
     account_id: z.string(), // Sort Key
     title: z.string(),
     description: z.string(),
@@ -61,14 +70,22 @@ export const ProductSchema = z
     updated_at: z.string(),
     visibility: ProductVisibilitySchema,
     metadata: ProductMetadataSchema,
-    account: AccountSchema.optional(),
+    account: PublicAccountSchema.optional(),
     disabled: z.boolean(),
     featured: z.number(),
     search_text: z.string().optional(),
-  })
-  .openapi("Product");
+  });
 
-export type Product = z.infer<typeof ProductSchema>;
+// `account` is the narrowed `PublicAccount`, not the schema's inferred shape,
+// so attaching a full `Account` to a product is a compile error.
+export type Product = Omit<z.infer<typeof ProductSchema>, "account"> & {
+  account?: PublicAccount;
+};
+
+/** A product as the API answers it, with the public view of its account. */
+export const ProductResponseSchema = ProductSchema.openapi("Product");
+
+export type ProductResponse = Product;
 
 export const ProductCreationRequestSchema = ProductSchema.omit({
   created_at: true,

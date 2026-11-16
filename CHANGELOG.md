@@ -1,5 +1,249 @@
 # Changelog
 
+## [1.7.0](https://github.com/source-cooperative/source.coop/compare/v1.6.0...v1.7.0) (2026-10-05)
+
+
+### Features
+
+* **accounts:** add sign-ins and grant products from the section's corner ([#611](https://github.com/source-cooperative/source.coop/issues/611)) ([5155a90](https://github.com/source-cooperative/source.coop/commit/5155a907003458eddf75a00cb838e03851aa9221))
+* **accounts:** add the Service Account type ([#563](https://github.com/source-cooperative/source.coop/issues/563)) ([274a80c](https://github.com/source-cooperative/source.coop/commit/274a80ced7aadfbcf35c7c9917532872e7117f19))
+* **accounts:** confirm disabling and deleting a service account, delete by typing its id ([#609](https://github.com/source-cooperative/source.coop/issues/609)) ([bd15356](https://github.com/source-cooperative/source.coop/commit/bd15356565b87775d13019b26371cf182234ddf6))
+* **accounts:** end API keys in a CRC-32 checksum ([#596](https://github.com/source-cooperative/source.coop/issues/596)) ([cdada60](https://github.com/source-cooperative/source.coop/commit/cdada6029ced7d463426a41969324e1fc8e2b5d8))
+* **accounts:** example usage in each sign-in row's menu, not at creation ([#608](https://github.com/source-cooperative/source.coop/issues/608)) ([ccd3cb5](https://github.com/source-cooperative/source.coop/commit/ccd3cb5c191b9d58dfd2e2da2b40644facff1aae))
+* **accounts:** explain the Ref field and link GitHub's subject examples ([#612](https://github.com/source-cooperative/source.coop/issues/612)) ([99ed3fa](https://github.com/source-cooperative/source.coop/commit/99ed3fadfeda90765421b2fd1e7cc8a1519eb13c))
+* **accounts:** fill in a trusted repository and show the trust as JSON ([#627](https://github.com/source-cooperative/source.coop/issues/627)) ([be061f1](https://github.com/source-cooperative/source.coop/commit/be061f13373caf015ef1058653f1f7c3d7348ce3))
+* **accounts:** highlight example usage, with its copy button in the block ([#610](https://github.com/source-cooperative/source.coop/issues/610)) ([8320443](https://github.com/source-cooperative/source.coop/commit/83204433649e7e62b6b281adac80a9d08307869b))
+* **accounts:** issue an API key when creating a service account ([#607](https://github.com/source-cooperative/source.coop/issues/607)) ([cd2339d](https://github.com/source-cooperative/source.coop/commit/cd2339d22d0b539a30da4eb68c750265c7442f9e))
+* **accounts:** issue, revoke and expire opaque API keys for service accounts ([#570](https://github.com/source-cooperative/source.coop/issues/570)) ([2bc0480](https://github.com/source-cooperative/source.coop/commit/2bc0480bd86aed35b31e1c61417aa1726feb1e88))
+* **accounts:** label the create_repositories flag "Create Products" ([#637](https://github.com/source-cooperative/source.coop/issues/637)) ([bbe9b14](https://github.com/source-cooperative/source.coop/commit/bbe9b14f674e47b2a8eac63c0f5d4b5269d9e1e0))
+* **accounts:** manage service accounts from account settings ([#567](https://github.com/source-cooperative/source.coop/issues/567)) ([e164f24](https://github.com/source-cooperative/source.coop/commit/e164f243d3d378b5d34b5146e9e2fc68a53a2527))
+* **accounts:** offer a repository's immutable name in the trust form ([#614](https://github.com/source-cooperative/source.coop/issues/614)) ([06a832f](https://github.com/source-cooperative/source.coop/commit/06a832f6db6df71873f9d785f62f6d8e86a287a7))
+* **accounts:** one "Add sign-in" menu for creating and editing a service account ([#626](https://github.com/source-cooperative/source.coop/issues/626)) ([644d6a2](https://github.com/source-cooperative/source.coop/commit/644d6a2e8d349809c166be883e06c5a42de62253))
+* **accounts:** one "Signs in with" section for workflows and API keys ([#606](https://github.com/source-cooperative/source.coop/issues/606)) ([2c6d8fc](https://github.com/source-cooperative/source.coop/commit/2c6d8fc186cf9a2c9a2db14f7de8b0f350386723))
+* **accounts:** rename service accounts; back link on data connection edit ([#623](https://github.com/source-cooperative/source.coop/issues/623)) ([9af1ffa](https://github.com/source-cooperative/source.coop/commit/9af1ffa2ecab8a5c7cc9f863d6f9977e2bc026b5))
+* **accounts:** resolve accounts by (issuer, subject) ([#565](https://github.com/source-cooperative/source.coop/issues/565)) ([6ed15cf](https://github.com/source-cooperative/source.coop/commit/6ed15cf04c16826fe222c96b76d82c0b6eb44cc0))
+* **accounts:** revoke leaked API keys via self-revoke and GitHub secret scanning ([#581](https://github.com/source-cooperative/source.coop/issues/581)) ([2413d96](https://github.com/source-cooperative/source.coop/commit/2413d96f4efe334d330234e965a7f4d95e478618))
+* **accounts:** show one workflow with the sign-in step highlighted ([#628](https://github.com/source-cooperative/source.coop/issues/628)) ([8c3bb60](https://github.com/source-cooperative/source.coop/commit/8c3bb60065ac02e026171d5dfcb5de24e7622906))
+* **accounts:** show who revoked an API key ([#629](https://github.com/source-cooperative/source.coop/issues/629)) ([889f328](https://github.com/source-cooperative/source.coop/commit/889f328beca879ecb1929db338fce92504db4d9b))
+* **accounts:** trust a branch, tag or environment by name, verified with GitHub ([#632](https://github.com/source-cooperative/source.coop/issues/632)) ([1fccbec](https://github.com/source-cooperative/source.coop/commit/1fccbec5fabbc8af7a450a66081000541e167daa))
+* **accounts:** trust subjects per account, the way a role's trust policy does ([#566](https://github.com/source-cooperative/source.coop/issues/566)) ([113ecae](https://github.com/source-cooperative/source.coop/commit/113ecae87f328e063af64a080fafe29b2d707e06))
+* gate service accounts behind a CREATE_SERVICE_ACCOUNTS flag ([#635](https://github.com/source-cooperative/source.coop/issues/635)) ([ac31d24](https://github.com/source-cooperative/source.coop/commit/ac31d24e29f2d5bb7f6deb0c62190da9d030d7a1))
+* **memberships:** show and grant service accounts on the membership pages ([#564](https://github.com/source-cooperative/source.coop/issues/564)) ([78d110b](https://github.com/source-cooperative/source.coop/commit/78d110bf768b19f2e06a173835d1b35e7647da30))
+* **object-browser:** delete in the background with progress, in batches ([#583](https://github.com/source-cooperative/source.coop/issues/583)) ([b00c17e](https://github.com/source-cooperative/source.coop/commit/b00c17e3da8959c71f61d4bd09ccda8d9d9b2cbd))
+* **products:** refresh button for the object listing ([#625](https://github.com/source-cooperative/source.coop/issues/625)) ([bf47211](https://github.com/source-cooperative/source.coop/commit/bf472110c13d583b0564c413495c92b58bb23adf))
+* **ui:** a shared ItemList whose rows link edge to edge ([#621](https://github.com/source-cooperative/source.coop/issues/621)) ([09d707f](https://github.com/source-cooperative/source.coop/commit/09d707fb7d10d65dc3f93e7358d4de25a4c4fe62))
+
+
+### Bug Fixes
+
+* **accounts:** always put the ref or environment on a line of its own ([#618](https://github.com/source-cooperative/source.coop/issues/618)) ([8699c19](https://github.com/source-cooperative/source.coop/commit/8699c198d3437f5e6d1f68ec0daab34ae33cacbb))
+* **accounts:** drop the hash-storage note from the issued-key dialog ([#587](https://github.com/source-cooperative/source.coop/issues/587)) ([71b6628](https://github.com/source-cooperative/source.coop/commit/71b6628ffb13162f5b624a2eb4e3123491db44a7))
+* **accounts:** keep "Use it" inline after the immutable repository name ([#617](https://github.com/source-cooperative/source.coop/issues/617)) ([717b877](https://github.com/source-cooperative/source.coop/commit/717b877492b6e668a0346aa2ef79263a55bbbf29))
+* **accounts:** mask a just-issued API key until asked to show it ([#622](https://github.com/source-cooperative/source.coop/issues/622)) ([5a0d864](https://github.com/source-cooperative/source.coop/commit/5a0d8648c197490cf0529bde4a6081c6407a5afa))
+* **accounts:** offer a whole workflow or the step alone as a trusted workflow's example ([#616](https://github.com/source-cooperative/source.coop/issues/616)) ([eef4fbd](https://github.com/source-cooperative/source.coop/commit/eef4fbd2339b6987d94058d5aaf4382bd12ebf20))
+* **accounts:** order an API key's variables from where to how ([#619](https://github.com/source-cooperative/source.coop/issues/619)) ([93c800c](https://github.com/source-cooperative/source.coop/commit/93c800cef1c2c4e1e6f6afb93baed269af5413e0))
+* **accounts:** say what a GitHub run's subject claim names ([6e15647](https://github.com/source-cooperative/source.coop/commit/6e156479e6c1b9c636fc599957ff87552566f8d2))
+* **accounts:** show the API key count on every service account row ([#605](https://github.com/source-cooperative/source.coop/issues/605)) ([faa821d](https://github.com/source-cooperative/source.coop/commit/faa821dfd39299e77d0237ca8f4290ffd0976148))
+* **admin:** search users as you type and list every match ([#568](https://github.com/source-cooperative/source.coop/issues/568)) ([73e3be9](https://github.com/source-cooperative/source.coop/commit/73e3be9322c781f4b18112e126e4e97808343521))
+* **api:** answer unmatched /api paths with a JSON 404 ([#630](https://github.com/source-cooperative/source.coop/issues/630)) ([e79eb4a](https://github.com/source-cooperative/source.coop/commit/e79eb4ab0e1518c9825546ac92a34bd9e372f0d2))
+* **api:** remove legacy API keys and the api-keys table ([#374](https://github.com/source-cooperative/source.coop/issues/374)) ([f845857](https://github.com/source-cooperative/source.coop/commit/f8458574a5882b3ee4bc4ffeae520c4a7d4cf0ad))
+* **auth:** keep the session across a server action redirect ([#604](https://github.com/source-cooperative/source.coop/issues/604)) ([2572d85](https://github.com/source-cooperative/source.coop/commit/2572d85b4a2afe410b2c002518b97352a82f91e9))
+* **authz:** allow org owners to create products without CREATE_REPOSITORIES flag ([#508](https://github.com/source-cooperative/source.coop/issues/508)) ([b77a514](https://github.com/source-cooperative/source.coop/commit/b77a514b1a68cc4c642e33b50d84379b16c88014))
+* **authz:** limit the self-authorization shortcut to individual accounts ([#562](https://github.com/source-cooperative/source.coop/issues/562)) ([4482c04](https://github.com/source-cooperative/source.coop/commit/4482c04bdf5c0579807f3e38dcf2afabadeec7ea))
+* **data-connections:** let a connection row wrap instead of collapsing on mobile ([#532](https://github.com/source-cooperative/source.coop/issues/532)) ([03b8747](https://github.com/source-cooperative/source.coop/commit/03b8747e21ba64fa60e12c5a5c77ca5e37f2dd1d))
+* keep unlisted products out of search engines and profile listings ([#574](https://github.com/source-cooperative/source.coop/issues/574)) ([37323b7](https://github.com/source-cooperative/source.coop/commit/37323b755427381aeee88034f1cbab2a5f4c79d6))
+* make organization contact email editable ([#293](https://github.com/source-cooperative/source.coop/issues/293)) ([a14311e](https://github.com/source-cooperative/source.coop/commit/a14311eab6f8e2e9e953bbfb712f4b246bec74d3))
+* **products:** truncate a product's DOI instead of overflowing the row ([#533](https://github.com/source-cooperative/source.coop/issues/533)) ([4f1fab8](https://github.com/source-cooperative/source.coop/commit/4f1fab87630eba0c673fc0fa0853d7e4fcc0b028))
+* **profiles:** keep deactivated products listed for their owners ([#579](https://github.com/source-cooperative/source.coop/issues/579)) ([1f06414](https://github.com/source-cooperative/source.coop/commit/1f064140c2e4e0a96e5358d5752376b66be0857c))
+* **profiles:** truncate long website links instead of wrapping them ([#531](https://github.com/source-cooperative/source.coop/issues/531)) ([5df79d5](https://github.com/source-cooperative/source.coop/commit/5df79d54e9bfff7411d9c42e22542b515e86db07))
+* render inline markdown in product list descriptions ([#603](https://github.com/source-cooperative/source.coop/issues/603)) ([7e9a94a](https://github.com/source-cooperative/source.coop/commit/7e9a94a8ac6fbe9364009dca4355b56d2cba746d))
+* **seo:** disallow crawling on non-production deployments ([#585](https://github.com/source-cooperative/source.coop/issues/585)) ([5e05878](https://github.com/source-cooperative/source.coop/commit/5e058786bb153ea3453e8bc3567023b6e27397af))
+* **seo:** keep crawlers on product pages, out of the file browser ([#586](https://github.com/source-cooperative/source.coop/issues/586)) ([0ffe1e6](https://github.com/source-cooperative/source.coop/commit/0ffe1e6e392c4b55d227c07cab0b7eceebefb061))
+* **service-accounts:** high-contrast primary buttons ([#620](https://github.com/source-cooperative/source.coop/issues/620)) ([d517679](https://github.com/source-cooperative/source.coop/commit/d51767933ee591b68ef941c4d7aa3d4799dac439))
+
+
+### Performance Improvements
+
+* **api:** record API key use after the exchange response ([#631](https://github.com/source-cooperative/source.coop/issues/631)) ([a096968](https://github.com/source-cooperative/source.coop/commit/a0969682588f80df7aef48141e4bfd78f1c39100))
+
+## [1.6.0](https://github.com/source-cooperative/source.coop/compare/v1.5.1...v1.6.0) (2026-08-30)
+
+
+### Features
+
+* **accounts:** type-ahead user search in invite and admin lookup ([#503](https://github.com/source-cooperative/source.coop/issues/503)) ([1507551](https://github.com/source-cooperative/source.coop/commit/15075516fc2a4ededfa6d7368b5d4736955057f5))
+* **data-connections:** rework the cards, the list, and where delete lives ([#499](https://github.com/source-cooperative/source.coop/issues/499)) ([787ba58](https://github.com/source-cooperative/source.coop/commit/787ba5881edc74d1366bf7d0ea946bb1e88706ae))
+* **products:** show a deactivated product's switch in red ([#502](https://github.com/source-cooperative/source.coop/issues/502)) ([e28ce06](https://github.com/source-cooperative/source.coop/commit/e28ce066adc126b75d095dce42aa553d9bdb81f5))
+
+
+### Bug Fixes
+
+* **analytics:** let the metrics row reflow instead of running off a phone ([#538](https://github.com/source-cooperative/source.coop/issues/538)) ([0557e10](https://github.com/source-cooperative/source.coop/commit/0557e10722ccf7082b8262adbcc6cc308b4832ce))
+* **analytics:** stop unique IPs shrinking as the window widens ([#493](https://github.com/source-cooperative/source.coop/issues/493)) ([fa61dcb](https://github.com/source-cooperative/source.coop/commit/fa61dcbe9403162d93274d1ec5188c298fe803e0))
+* **breadcrumbs:** keep segments on one baseline when they wrap ([#529](https://github.com/source-cooperative/source.coop/issues/529)) ([92e4c31](https://github.com/source-cooperative/source.coop/commit/92e4c31dd50a61a3a56b3b4644498dc67fe1f928))
+* **data-connections:** give the prefix preview a label of its own ([#519](https://github.com/source-cooperative/source.coop/issues/519)) ([291caa0](https://github.com/source-cooperative/source.coop/commit/291caa0d85081c93b20aa85d64919dbf65e88e8c))
+* **data-connections:** put the ID note between the label and the value ([#518](https://github.com/source-cooperative/source.coop/issues/518)) ([12e23c8](https://github.com/source-cooperative/source.coop/commit/12e23c86f6a591c168fe67e1f0d230fff9860776))
+* **profiles:** keep website link icons from collapsing on narrow screens ([#528](https://github.com/source-cooperative/source.coop/issues/528)) ([1cf35fe](https://github.com/source-cooperative/source.coop/commit/1cf35fede56cc86629338f999e562e79d1067e7e))
+* **profiles:** let the organization list reflow on mobile ([#530](https://github.com/source-cooperative/source.coop/issues/530)) ([9a821f6](https://github.com/source-cooperative/source.coop/commit/9a821f6f113896c78ed858ab6a2ccbd6519c858a))
+
+
+### Performance Improvements
+
+* **a11y:** add main landmarks, drop bogus listbox roles, size footer tap targets ([#478](https://github.com/source-cooperative/source.coop/issues/478)) ([5b920f0](https://github.com/source-cooperative/source.coop/commit/5b920f0579e5d03b7ab7edb287da2c76c61aa11a))
+* drop globe texture preload hints from landing page ([#472](https://github.com/source-cooperative/source.coop/issues/472)) ([83c8c79](https://github.com/source-cooperative/source.coop/commit/83c8c79621c5266c30bccf854402e5b28fbf8543))
+* **globe:** load the clouds texture in parallel with the globe texture ([#537](https://github.com/source-cooperative/source.coop/issues/537)) ([6de7693](https://github.com/source-cooperative/source.coop/commit/6de76937fbbe325a809adb2a444c1f47a3c25483))
+* keep globe textures at full resolution, switch to WebP ([#473](https://github.com/source-cooperative/source.coop/issues/473)) ([e9676f2](https://github.com/source-cooperative/source.coop/commit/e9676f27e9a9b53fdece284f9fcda5b2cc93ac25))
+* preconnect to cross-origin hosts on the critical path ([#474](https://github.com/source-cooperative/source.coop/issues/474)) ([6cdd9d2](https://github.com/source-cooperative/source.coop/commit/6cdd9d218b4f0469bd645e2a074d987e27933d6c))
+
+## [1.5.1](https://github.com/source-cooperative/source.coop/compare/v1.5.0...v1.5.1) (2026-08-21)
+
+
+### Bug Fixes
+
+* **accounts:** make account creation a conditional write ([#492](https://github.com/source-cooperative/source.coop/issues/492)) ([0043ada](https://github.com/source-cooperative/source.coop/commit/0043ada5b2c100a8d4c94e7a835bf3378c04466a))
+* **products:** enforce lowercase-only product IDs ([#489](https://github.com/source-cooperative/source.coop/issues/489)) ([c1df4a8](https://github.com/source-cooperative/source.coop/commit/c1df4a8018548c54f9550e066d0abc0c84bc49b3))
+
+## [1.5.0](https://github.com/source-cooperative/source.coop/compare/v1.4.3...v1.5.0) (2026-08-04)
+
+
+### Features
+
+* analytics suite — product/object usage cards + admin traffic explorer ([#421](https://github.com/source-cooperative/source.coop/issues/421)) ([73cc607](https://github.com/source-cooperative/source.coop/commit/73cc607c71f7a6cabb9a93f72fee5e69bffe0ddf))
+* **analytics:** flag product analytics as a preview ([#466](https://github.com/source-cooperative/source.coop/issues/466)) ([255ec32](https://github.com/source-cooperative/source.coop/commit/255ec322a2aa7170b7c6c73c3943778db1e17537))
+* **analytics:** rename product analytics card to "Analytics" ([#464](https://github.com/source-cooperative/source.coop/issues/464)) ([a5a6563](https://github.com/source-cooperative/source.coop/commit/a5a65633b2a23bb64c97ec4698c2270523287abb))
+* **profiles:** add "New product" link to profile products list ([#479](https://github.com/source-cooperative/source.coop/issues/479)) ([4d4de77](https://github.com/source-cooperative/source.coop/commit/4d4de77f58ae91e6d9fa7a6a7b96a0870e572b2b))
+* zarr/icechunk viewer ([#415](https://github.com/source-cooperative/source.coop/issues/415)) ([4cbc853](https://github.com/source-cooperative/source.coop/commit/4cbc853ae7dfcb2f9d77cf80a05daa9bb6c9ad60))
+
+
+### Bug Fixes
+
+* **data-connections:** stop blocking non-admins from read-only connections ([#482](https://github.com/source-cooperative/source.coop/issues/482)) ([ac35821](https://github.com/source-cooperative/source.coop/commit/ac358216f9f1299375441298e1dd3e0b69a3b99b))
+* don't disable product search/tags inputs during navigation ([adfce8b](https://github.com/source-cooperative/source.coop/commit/adfce8b07e29c1ac0eb010b8de69f5b2f017a6ea)), closes [#467](https://github.com/source-cooperative/source.coop/issues/467)
+* don't disable product search/tags inputs during navigation ([#468](https://github.com/source-cooperative/source.coop/issues/468)) ([203c0ec](https://github.com/source-cooperative/source.coop/commit/203c0ec09135784e6797dd79c10bdc5279faae04))
+* let org owners/maintainers associate data connections with products ([#462](https://github.com/source-cooperative/source.coop/issues/462)) ([e9b7c54](https://github.com/source-cooperative/source.coop/commit/e9b7c54a1517b5eb7ba3e87d23939da6672e9375))
+
+## [1.4.3](https://github.com/source-cooperative/source.coop/compare/v1.4.2...v1.4.3) (2026-07-27)
+
+
+### Bug Fixes
+
+* **data-connections:** align provider values to the backend vocabulary ([#455](https://github.com/source-cooperative/source.coop/issues/455)) ([06adc4c](https://github.com/source-cooperative/source.coop/commit/06adc4cc8747038e61d4244ba1961998d27b7b5d))
+
+## [1.4.2](https://github.com/source-cooperative/source.coop/compare/v1.4.1...v1.4.2) (2026-07-21)
+
+
+### Features
+
+* add external link icon to open data viewers in a new tab ([#418](https://github.com/source-cooperative/source.coop/issues/418)) ([a646bfb](https://github.com/source-cooperative/source.coop/commit/a646bfb23c1982f021acfa57c84de781a006a84c))
+* add external link to open data viewer in a new tab ([b3191d7](https://github.com/source-cooperative/source.coop/commit/b3191d772d7126e0eb3be6ff29e94ad8ad0a9317)), closes [#417](https://github.com/source-cooperative/source.coop/issues/417)
+* **credentials:** add callout pointing to Source Coop CLI ([#438](https://github.com/source-cooperative/source.coop/issues/438)) ([2002694](https://github.com/source-cooperative/source.coop/commit/2002694c230807bc4a24f14f12c1afa899499417))
+* **credentials:** add OS selector for env var format ([#439](https://github.com/source-cooperative/source.coop/issues/439)) ([f5f08ef](https://github.com/source-cooperative/source.coop/commit/f5f08ef3dbb5b758faf07738b91e186c656ed0c9)), closes [#434](https://github.com/source-cooperative/source.coop/issues/434)
+* **data-connections:** move prefix template to helptext example ([#446](https://github.com/source-cooperative/source.coop/issues/446)) ([f420486](https://github.com/source-cooperative/source.coop/commit/f4204869fef5bc8fe3ef6f294e74a2b6e2c7ed59))
+* **nav:** account-centric dropdown menu ([#404](https://github.com/source-cooperative/source.coop/issues/404)) ([c6e05b7](https://github.com/source-cooperative/source.coop/commit/c6e05b7f5f82b3b3acf6a044e2be3c519733a1f6))
+* **nav:** drop dash icons, divide "New product" in account dropdown ([#442](https://github.com/source-cooperative/source.coop/issues/442)) ([da845b1](https://github.com/source-cooperative/source.coop/commit/da845b112eba8263640bc88846a2525e410950f1))
+* **nav:** omit disabled products, polish account-dropdown product links ([#447](https://github.com/source-cooperative/source.coop/issues/447)) ([9332a7f](https://github.com/source-cooperative/source.coop/commit/9332a7fc8147a084d6d7943a60217aa373078e37))
+* return to current page after logout ([#411](https://github.com/source-cooperative/source.coop/issues/411)) ([c0a75e6](https://github.com/source-cooperative/source.coop/commit/c0a75e6c5ddd18fca29f81e6e7962338a34a8bf0))
+* **uploader:** auto-retry uploads on transient network errors ([ff10161](https://github.com/source-cooperative/source.coop/commit/ff10161109d9a2d057acdef2e9ae064a79d1e970)), closes [#425](https://github.com/source-cooperative/source.coop/issues/425)
+
+
+### Bug Fixes
+
+* automatically retry uploads on transient network errors ([#427](https://github.com/source-cooperative/source.coop/issues/427)) ([58f4625](https://github.com/source-cooperative/source.coop/commit/58f46251faddf7914ddb82380e1f372c21d7d274))
+* **login:** refresh return_to on query-only navigation ([#419](https://github.com/source-cooperative/source.coop/issues/419)) ([c98aa1e](https://github.com/source-cooperative/source.coop/commit/c98aa1e866b9dc017f8fc4742772cc2c89f5b388))
+* **mirrors:** account-scoped connection links + owner-editable mirror prefix ([#440](https://github.com/source-cooperative/source.coop/issues/440)) ([53c9b68](https://github.com/source-cooperative/source.coop/commit/53c9b686cdcac15eb33f1c7f3c5d5ce68ebed873))
+* **mirrors:** allow empty mirror prefix (connection root) ([#448](https://github.com/source-cooperative/source.coop/issues/448)) ([0c6ea54](https://github.com/source-cooperative/source.coop/commit/0c6ea54c33b76b514455a268180fbbe6a59c3ed2))
+* **product:** remove object preview loading skeleton ([#420](https://github.com/source-cooperative/source.coop/issues/420)) ([927a14c](https://github.com/source-cooperative/source.coop/commit/927a14c8dec242c1da1bab322a0f7d747af8635b))
+* **product:** shorten product page card titles ([#430](https://github.com/source-cooperative/source.coop/issues/430)) ([98d8d2e](https://github.com/source-cooperative/source.coop/commit/98d8d2ef0a390a31b14646896700b8acee90e26d))
+* **product:** stop directory-nav skeleton flash ([#449](https://github.com/source-cooperative/source.coop/issues/449)) ([a98d5fa](https://github.com/source-cooperative/source.coop/commit/a98d5fa86a22b3d76a7cd9ede843737faed682be))
+* **uploader:** cancel pending auto-retry timers on cancel/clear/retry ([d6535bc](https://github.com/source-cooperative/source.coop/commit/d6535bc31545054478f47976015a3fb0c07533f3))
+* **uploader:** include endpoint_url in INI credentials format ([#431](https://github.com/source-cooperative/source.coop/issues/431)) ([f3fe3c0](https://github.com/source-cooperative/source.coop/commit/f3fe3c07430b80adef0f70c7a35a083dc27f96c8))
+* **uploader:** show timezone abbreviation on credentials expiration ([3444032](https://github.com/source-cooperative/source.coop/commit/34440324ca0e8b90e7ed973ec1ee6c0fa1f0cd9e)), closes [#424](https://github.com/source-cooperative/source.coop/issues/424)
+* **uploader:** show timezone abbreviation on credentials expiration ([#426](https://github.com/source-cooperative/source.coop/issues/426)) ([75c4f79](https://github.com/source-cooperative/source.coop/commit/75c4f79b12f95a73edb945653daa6c063a2bcb8f))
+* use full Apache 2.0 license text so GitHub can detect it ([6cd3f36](https://github.com/source-cooperative/source.coop/commit/6cd3f3692f9cc63a43ba53f456e76157bf847a07)), closes [#422](https://github.com/source-cooperative/source.coop/issues/422)
+* use full Apache 2.0 license text so GitHub can detect it ([#423](https://github.com/source-cooperative/source.coop/issues/423)) ([8c1b102](https://github.com/source-cooperative/source.coop/commit/8c1b1026d939d0124a4f8cb3c9ee04f49517f33e))
+
+
+### Miscellaneous Chores
+
+* release 1.4.2 ([318a877](https://github.com/source-cooperative/source.coop/commit/318a877bd42aa9c1641a43eb93f0b0df25761e66))
+
+## [1.4.1](https://github.com/source-cooperative/source.coop/compare/v1.4.0...v1.4.1) (2026-07-03)
+
+
+### Bug Fixes
+
+* set mock redirect uri ([c64b6b4](https://github.com/source-cooperative/source.coop/commit/c64b6b46d059e582e43f2c7093487646346d78d8))
+
+## [1.4.0](https://github.com/source-cooperative/source.coop/compare/v1.3.0...v1.4.0) (2026-07-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* require auth for restricted products ([#284](https://github.com/source-cooperative/source.coop/issues/284))
+
+### Features
+
+* add INI-style credentials format tab ([2bcc3f1](https://github.com/source-cooperative/source.coop/commit/2bcc3f17f41aab879ba69bba7b24b02cf38d4e11)), closes [#388](https://github.com/source-cooperative/source.coop/issues/388)
+* add INI-style credentials format tab ([#389](https://github.com/source-cooperative/source.coop/issues/389)) ([ebd4a1e](https://github.com/source-cooperative/source.coop/commit/ebd4a1e3adeeb4e346b4ae0f1d1cb98ad3208500))
+* add X-Robots-Tag header for non-production deployments ([72249b9](https://github.com/source-cooperative/source.coop/commit/72249b91a86de74cbf285e161ca0ab7809c68844)), closes [#302](https://github.com/source-cooperative/source.coop/issues/302)
+* add X-Robots-Tag header for non-production deployments ([#323](https://github.com/source-cooperative/source.coop/issues/323)) ([4fa9f9d](https://github.com/source-cooperative/source.coop/commit/4fa9f9db692a2f283bcc03399b84b4d4d1ce3a13))
+* **admin-ui:** trust-policy sub-pattern preview on the federated connection edit page ([#377](https://github.com/source-cooperative/source.coop/issues/377)) ([ba82dc4](https://github.com/source-cooperative/source.coop/commit/ba82dc4ba88c18cfebd1bb4f2bc4d8a151d70822))
+* **admin:** admin email-to-profile lookup view ([#350](https://github.com/source-cooperative/source.coop/issues/350)) ([a056a28](https://github.com/source-cooperative/source.coop/commit/a056a2818f3f6f9d5855113496eb5f37d514427d))
+* **admin:** data connection management (CRUD, S3/Azure/GCP/R2, product mirrors) ([#364](https://github.com/source-cooperative/source.coop/issues/364)) ([9ca1f53](https://github.com/source-cooperative/source.coop/commit/9ca1f537b56e22bd1c8fc6862fc2d6e27664fd5c))
+* **authz:** let product owners view their own deactivated products ([#399](https://github.com/source-cooperative/source.coop/issues/399)) ([09fd4d0](https://github.com/source-cooperative/source.coop/commit/09fd4d046c22ff8b11922a1c3815da1a4e35209d))
+* **data-connection:** expose secret-less federated config; never return stored secrets ([#376](https://github.com/source-cooperative/source.coop/issues/376)) ([395b6c2](https://github.com/source-cooperative/source.coop/commit/395b6c23adc27013e9d4b97d5ae9e71ca5c65232))
+* **data-connection:** federated backend authentication (AWS web identity + GCP/Azure scaffold) ([#332](https://github.com/source-cooperative/source.coop/issues/332)) ([999a076](https://github.com/source-cooperative/source.coop/commit/999a07650da47e424f1369aacfb51acc928da606))
+* **data-connections:** account-owned data connections ([#383](https://github.com/source-cooperative/source.coop/issues/383)) ([b04755b](https://github.com/source-cooperative/source.coop/commit/b04755b566145263fc85aef9237512bb75d7ba4b))
+* **data-connections:** expose secret-less federated config by connection visibility ([#327](https://github.com/source-cooperative/source.coop/issues/327)) ([#339](https://github.com/source-cooperative/source.coop/issues/339)) ([43f1f63](https://github.com/source-cooperative/source.coop/commit/43f1f63c8906b0ce658bd46b8aa2d2977bf0ca99))
+* **data-connections:** link product-owned connections to admin form ([#392](https://github.com/source-cooperative/source.coop/issues/392)) ([c6e8f10](https://github.com/source-cooperative/source.coop/commit/c6e8f10701b57bf2d20e4720e1b277ed099d5d3f))
+* **data-connections:** require unsigned connections to be read-only ([#394](https://github.com/source-cooperative/source.coop/issues/394)) ([c2af48b](https://github.com/source-cooperative/source.coop/commit/c2af48b4f1c2de78732b434ac7b28a40934b4492))
+* delete product feature with confirmation modal ([#361](https://github.com/source-cooperative/source.coop/issues/361)) ([0f68e47](https://github.com/source-cooperative/source.coop/commit/0f68e47e8ddb80043763ff5bc16b9517cd57909f))
+* **globe:** render live activity per datacenter ([#395](https://github.com/source-cooperative/source.coop/issues/395)) ([d119935](https://github.com/source-cooperative/source.coop/commit/d119935229f3faa16d601dcf954e2db44b5358b1))
+* **globe:** tidy live-activity popup, per-product count on hover ([#397](https://github.com/source-cooperative/source.coop/issues/397)) ([1d92b1f](https://github.com/source-cooperative/source.coop/commit/1d92b1fe2a66af5ec3dc2fe95764fd6440cbec29))
+* **object-browser:** delete files and prefixes in edit mode ([#403](https://github.com/source-cooperative/source.coop/issues/403)) ([2b1426b](https://github.com/source-cooperative/source.coop/commit/2b1426b87919c0ba5645bcb4a3b609c422185127))
+* OIDC auth ([#283](https://github.com/source-cooperative/source.coop/issues/283)) ([c40ec89](https://github.com/source-cooperative/source.coop/commit/c40ec8976b50c29412f6334ad8df85906bb419bd))
+* **products:** choose a data connection and enforce its allowed visibilities ([#338](https://github.com/source-cooperative/source.coop/issues/338)) ([c40818f](https://github.com/source-cooperative/source.coop/commit/c40818fbd7aa40feea63b19ecc44acbfe15681a9))
+* **products:** deactivate products — form toggle, admin-only viewing, API 404s others ([#372](https://github.com/source-cooperative/source.coop/issues/372)) ([77dc24b](https://github.com/source-cooperative/source.coop/commit/77dc24bd8d8604e56a1e8257a5043e9c1218e461))
+* **products:** mark deactivated products in account product list ([#385](https://github.com/source-cooperative/source.coop/issues/385)) ([b8e6806](https://github.com/source-cooperative/source.coop/commit/b8e68062e0730e47f1fca47b70f1215de85860a0))
+* **profile:** link to Ory settings from read-only email field ([#349](https://github.com/source-cooperative/source.coop/issues/349)) ([34a2244](https://github.com/source-cooperative/source.coop/commit/34a224446d39d3606abbe70544d3f51f68c1b2bd))
+* **scripts:** bulk-apply web-identity auth to opendata S3 connections ([#398](https://github.com/source-cooperative/source.coop/issues/398)) ([45e4133](https://github.com/source-cooperative/source.coop/commit/45e413346ec838d17d995acf8a5eb0138f798524))
+* **scripts:** migrate restricted open-data products to unlisted ([#343](https://github.com/source-cooperative/source.coop/issues/343)) ([#371](https://github.com/source-cooperative/source.coop/issues/371)) ([2977ee4](https://github.com/source-cooperative/source.coop/commit/2977ee49f916d41cc75e40654c06a5986ac7f207))
+* **uploads:** route in-browser uploads through the data proxy ([#391](https://github.com/source-cooperative/source.coop/issues/391)) ([92f61ed](https://github.com/source-cooperative/source.coop/commit/92f61ede9c66deb0ed186c1a2b625e94c636875b))
+* **viewer:** Add PDF viewer, PNG bindings ([#315](https://github.com/source-cooperative/source.coop/issues/315)) ([7927431](https://github.com/source-cooperative/source.coop/commit/7927431815971f9d6e11b5ab25164835cf151c70))
+* **viewer:** support ndjson/jsonl ([3790a24](https://github.com/source-cooperative/source.coop/commit/3790a24c723daa274c0259f8df9507da8058e88c)), closes [#390](https://github.com/source-cooperative/source.coop/issues/390)
+
+
+### Bug Fixes
+
+* **api:** return 200 on successful member invite ([#381](https://github.com/source-cooperative/source.coop/issues/381)) ([3be8e49](https://github.com/source-cooperative/source.coop/commit/3be8e49b825526d2f13dd987c37113f99d23d450))
+* **auth:** log out sessions stuck at AAL1 when whoami requires AAL2 ([#396](https://github.com/source-cooperative/source.coop/issues/396)) ([b9af694](https://github.com/source-cooperative/source.coop/commit/b9af6947f6985008c2c85578de77b54bbae799a1))
+* **data-connection:** enforce provider↔auth pairing, tighten ARN + GCP SA validation ([#368](https://github.com/source-cooperative/source.coop/issues/368)) ([4780089](https://github.com/source-cooperative/source.coop/commit/47800897fcd5ffe21646abb00b1c5380438b4602))
+* **data-connections:** admin form-reset, redirect, and prefix-template handling ([#379](https://github.com/source-cooperative/source.coop/issues/379)) ([963e7c8](https://github.com/source-cooperative/source.coop/commit/963e7c848cb209ceea93935c0799752357fd33f2))
+* **data-connections:** correct trust-policy aud to sts.amazonaws.com ([#382](https://github.com/source-cooperative/source.coop/issues/382)) ([d53b894](https://github.com/source-cooperative/source.coop/commit/d53b8940afb10493f10894ad01e7046b35114798))
+* **email-verification:** reconcile Ory verification on every page load ([#347](https://github.com/source-cooperative/source.coop/issues/347)) ([e0a85c3](https://github.com/source-cooperative/source.coop/commit/e0a85c379b20b57481a93d81d8f39dc0fd3122d4))
+* **forms:** opt out of React's auto form-reset so controlled fields don't flash ([#373](https://github.com/source-cooperative/source.coop/issues/373)) ([0eb033f](https://github.com/source-cooperative/source.coop/commit/0eb033f6400c5b8699913cc3fa5c888fccc02b2a))
+* **globe:** fall back to static image when WebGL is disabled ([#387](https://github.com/source-cooperative/source.coop/issues/387)) ([eb5c9a6](https://github.com/source-cooperative/source.coop/commit/eb5c9a60ee07fe69f60edefb6714bc609815f0b5))
+* make full menu item area clickable ([#295](https://github.com/source-cooperative/source.coop/issues/295)) ([e27a3c2](https://github.com/source-cooperative/source.coop/commit/e27a3c23c50b264b0cc0897ce87b785ec8cbefac))
+* **product:** hide edit buttons when data connection is read-only ([#353](https://github.com/source-cooperative/source.coop/issues/353)) ([b57cfab](https://github.com/source-cooperative/source.coop/commit/b57cfabcc232eadc0d767d2a9c757dc2848dd983))
+* **products:** degrade gracefully when a data-proxy read fails ([#400](https://github.com/source-cooperative/source.coop/issues/400)) ([3b5adb5](https://github.com/source-cooperative/source.coop/commit/3b5adb5f0a464c4935d6cb4f717540348a70b29b))
+* re-render auth UI after form-submission redirects ([#344](https://github.com/source-cooperative/source.coop/issues/344)) ([a378ebc](https://github.com/source-cooperative/source.coop/commit/a378ebc1a523eaaed80eca803283056a57e01db4))
+* require auth for restricted products ([#284](https://github.com/source-cooperative/source.coop/issues/284)) ([112265a](https://github.com/source-cooperative/source.coop/commit/112265aea73a84a364d0843ff7798124a5f65f14))
+* return user to current view after login ([#346](https://github.com/source-cooperative/source.coop/issues/346)) ([9dd6d5f](https://github.com/source-cooperative/source.coop/commit/9dd6d5f923237a2f79517c5f7a917609c964ecb4))
+* show same-path re-uploads without a manual refresh ([#409](https://github.com/source-cooperative/source.coop/issues/409)) ([b878b68](https://github.com/source-cooperative/source.coop/commit/b878b68f81134989a58c0fb5f696f3053ed6f682))
+* **uploads:** refresh STS credentials mid-upload ([#401](https://github.com/source-cooperative/source.coop/issues/401)) ([#402](https://github.com/source-cooperative/source.coop/issues/402)) ([8da202d](https://github.com/source-cooperative/source.coop/commit/8da202d177535fa1a39ecca5c60a3fe6a4e95497))
+* use [source-coop] as INI profile name ([c06a5ac](https://github.com/source-cooperative/source.coop/commit/c06a5ac105b6ecbfa5ad95c222aa8846c0f6251a))
+* validate product DOI format ([#319](https://github.com/source-cooperative/source.coop/issues/319)) ([4727dec](https://github.com/source-cooperative/source.coop/commit/4727dec6f267619aef7a8ab8886c88e9b182a24c))
+
+
+### Performance Improvements
+
+* **db:** request-scoped memoization of DynamoDB reads ([#320](https://github.com/source-cooperative/source.coop/issues/320)) ([1f295cf](https://github.com/source-cooperative/source.coop/commit/1f295cf18e0cf451d3ef328fb23d4316cf15dbec))
+
+
+### Miscellaneous Chores
+
+* release 1.4.0 ([810ff3c](https://github.com/source-cooperative/source.coop/commit/810ff3c39a7192e33c037c6d945ebe325493d063))
+
 ## [1.3.0](https://github.com/source-cooperative/source.coop/compare/v1.2.0...v1.3.0) (2026-05-13)
 
 

@@ -2,9 +2,8 @@
 jest.mock("@/components/layout", () => ({}));
 jest.mock("@/components/features/products/ProductsList", () => ({}));
 jest.mock("@/components/features/products/ProductsFilters", () => ({}));
-jest.mock("@/lib/actions/products", () => ({
-  getPaginatedProducts: jest.fn(),
-}));
+jest.mock("@/lib", () => ({}));
+jest.mock("@/lib/operations/products", () => ({}));
 
 import { metadata } from "./page";
 

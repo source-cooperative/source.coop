@@ -41,14 +41,14 @@ function convertRepositoryToProduct(oldProduct: any) {
   const mirrors: Record<string, any> = {};
   for (const [key, mirror] of Object.entries(oldProduct.data.mirrors)) {
     const mirrorData = mirror as any;
+    // Only the fields in ProductMirrorSchema. An earlier revision also wrote a
+    // `storage_type` and a hardcoded `config: { region, bucket }` onto every
+    // mirror; both were schema-invalid, unread, and wrong for any product not in
+    // us-west-2 (issue #513). scripts/scrub-legacy-mirror-fields.ts removes them
+    // from tables already loaded by that revision.
     mirrors[key] = {
-      storage_type: "s3",
       connection_id: mirrorData.data_connection_id,
       prefix: mirrorData.prefix,
-      config: {
-        region: "us-west-2",
-        bucket: "aws-opendata-us-west-2",
-      },
       is_primary: key === oldProduct.data.primary_mirror,
     };
   }

@@ -1,10 +1,12 @@
 import type { Product, ProductMirror } from "@/types";
+import { isConditionalCheckFailed } from "./errors";
 import {
   PutItemCommand,
   ResourceNotFoundException,
 } from "@aws-sdk/client-dynamodb";
 
 import {
+  DeleteCommand,
   GetCommand,
   PutCommand,
   QueryCommand,
@@ -12,6 +14,7 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { accountsTable } from "./accounts";
+import { publicView } from "@/types";
 import { BaseTable } from "./base";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
@@ -104,6 +107,34 @@ export class ProductsTable extends BaseTable {
     return allProducts;
   }
 
+  /**
+   * Returns every product that mirrors data through the given data connection.
+   *
+   * There is no index on `metadata.mirrors[*].connection_id` (it lives inside a
+   * DynamoDB map), so this scans the whole table and filters app-side. It
+   * matches on each mirror's `connection_id` field rather than the map key, so
+   * it is robust to legacy mirrors keyed by region (e.g. "aws-us-east-1") rather
+   * than by connection id. Intended for low-traffic admin views; if product
+   * volume grows large, replace with a denormalized connection index + GSI.
+   */
+  async listProductsByConnectionId(connectionId: string): Promise<Product[]> {
+    const matches: Product[] = [];
+    let lastEvaluatedKey: any = undefined;
+
+    do {
+      const result = await this.list(1000, lastEvaluatedKey);
+      for (const product of result.products) {
+        const mirrors = Object.values(product.metadata?.mirrors ?? {});
+        if (mirrors.some((mirror) => mirror.connection_id === connectionId)) {
+          matches.push(product);
+        }
+      }
+      lastEvaluatedKey = result.lastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return matches;
+  }
+
   async listPublic(
     limit = 50,
     lastEvaluatedKey?: any,
@@ -191,7 +222,7 @@ export class ProductsTable extends BaseTable {
 
       return {
         ...(result.Item as Product),
-        account: account || undefined,
+        account: account ? publicView(account) : undefined,
       };
     } catch (error) {
       if (error instanceof ResourceNotFoundException) return null;
@@ -220,8 +251,27 @@ export class ProductsTable extends BaseTable {
     }
   }
 
-  async update(product: Product): Promise<Product> {
+  async update(
+    product: Product,
+    // Optimistic lock: when set, the write only lands if the row's stored
+    // updated_at still equals the value the caller read. A concurrent writer
+    // bumps updated_at, so the condition fails (ConditionalCheckFailedException)
+    // instead of silently clobbering their change. Omit it for last-write-wins.
+    opts?: { expectedUpdatedAt?: string }
+  ): Promise<Product> {
     try {
+      const values: Record<string, unknown> = {
+        ":title": product.title,
+        ":description": product.description,
+        ":updated_at": new Date().toISOString(),
+        ":visibility": product.visibility,
+        ":metadata": product.metadata,
+        ":search_text": this.buildSearchText(product),
+        ":disabled": product.disabled,
+      };
+      if (opts?.expectedUpdatedAt) {
+        values[":expected_updated_at"] = opts.expectedUpdatedAt;
+      }
       const result = await this.client.send(
         new UpdateCommand({
           TableName: this.table,
@@ -230,15 +280,11 @@ export class ProductsTable extends BaseTable {
             account_id: product.account_id,
           },
           UpdateExpression:
-            "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata, search_text = :search_text",
-          ExpressionAttributeValues: {
-            ":title": product.title,
-            ":description": product.description,
-            ":updated_at": new Date().toISOString(),
-            ":visibility": product.visibility,
-            ":metadata": product.metadata,
-            ":search_text": this.buildSearchText(product),
-          },
+            "SET title = :title, description = :description, updated_at = :updated_at, visibility = :visibility, metadata = :metadata, search_text = :search_text, disabled = :disabled",
+          ...(opts?.expectedUpdatedAt
+            ? { ConditionExpression: "updated_at = :expected_updated_at" }
+            : {}),
+          ExpressionAttributeValues: values,
           ReturnValues: "ALL_NEW",
         })
       );
@@ -270,10 +316,7 @@ export class ProductsTable extends BaseTable {
       await this.client.send(command);
       return [product, true];
     } catch (error) {
-      if (
-        error instanceof Error &&
-        error.name === "ConditionalCheckFailedException"
-      ) {
+      if (isConditionalCheckFailed(error)) {
         return [product, false];
       }
       this.logError("upsert", error, {
@@ -319,12 +362,69 @@ export class ProductsTable extends BaseTable {
     const accounts = await accountsTable.fetchManyByIds(
       products.map((p) => p.account_id).filter((id) => id)
     );
-    const accountMap = new Map(accounts.map((acc) => [acc.account_id, acc]));
+    const accountMap = new Map(accounts.map((acc) => [acc.account_id, publicView(acc)]));
 
     return products.map((item) => ({
       ...item,
       account: accountMap.get(item.account_id) || undefined,
     }));
+  }
+
+  /**
+   * Every product that carries any tag, public or not. Scans the whole table
+   * like listProductsByConnectionId; meant for admin review of suggested tags.
+   */
+  async listTagged(): Promise<Product[]> {
+    const matches: Product[] = [];
+    let lastEvaluatedKey: any = undefined;
+    do {
+      const result = await this.list(1000, lastEvaluatedKey);
+      matches.push(...result.products.filter((p) => p.metadata?.tags?.length));
+      lastEvaluatedKey = result.lastEvaluatedKey;
+    } while (lastEvaluatedKey);
+    return matches;
+  }
+
+  /** Every product carrying the tag, public or not. */
+  async listByTag(tag: string): Promise<Product[]> {
+    return (await this.listTagged()).filter((p) =>
+      p.metadata.tags!.includes(tag)
+    );
+  }
+
+  /** Replaces a product's tags, and nothing else about it. */
+  async setTags(
+    account_id: string,
+    product_id: string,
+    tags: string[]
+  ): Promise<void> {
+    try {
+      await this.client.send(
+        new UpdateCommand({
+          TableName: this.table,
+          Key: { account_id, product_id },
+          UpdateExpression: "SET metadata.tags = :tags",
+          ExpressionAttributeValues: { ":tags": tags },
+        })
+      );
+    } catch (error) {
+      this.logError("setTags", error, { account_id, product_id });
+      throw error;
+    }
+  }
+
+  async delete(account_id: string, product_id: string): Promise<void> {
+    try {
+      await this.client.send(
+        new DeleteCommand({
+          TableName: this.table,
+          Key: { account_id, product_id },
+        })
+      );
+    } catch (error) {
+      this.logError("delete", error, { account_id, product_id });
+      throw error;
+    }
   }
 }
 

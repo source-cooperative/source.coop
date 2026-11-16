@@ -10,11 +10,47 @@ export const productUrl = (
   params?: string
 ) => `/${account_id}/${product_id}` + (params ? `?${params}` : "");
 export const productListUrl = () => "/products";
-export const newProductUrl = () => "/products/new";
+export const newProductUrl = (ownerAccountId?: string) =>
+  "/products/new" +
+  (ownerAccountId ? `?owner=${encodeURIComponent(ownerAccountId)}` : "");
+export const docsUrl = () => "https://docs.source.coop";
+
+// Admin URLs
+export const adminUrl = () => "/admin";
+export const adminAnalyticsUrl = () => "/admin/analytics";
+export const adminUserLookupUrl = () => "/admin/user-lookup";
+export const adminTagsUrl = () => "/admin/tags";
+export const adminDataConnectionsUrl = () => "/admin/data-connections";
+export const adminDataConnectionCreateUrl = () =>
+  "/admin/data-connections/create";
+export const adminDataConnectionEditUrl = (data_connection_id: string) =>
+  `/admin/data-connections/${data_connection_id}`;
+
+// Account-scoped data connection URLs (an account managing the connections it owns)
+export const accountDataConnectionsUrl = (account_id: string) =>
+  `/edit/account/${account_id}/data-connections`;
+export const accountDataConnectionCreateUrl = (account_id: string) =>
+  `/edit/account/${account_id}/data-connections/create`;
+export const accountDataConnectionEditUrl = (
+  account_id: string,
+  data_connection_id: string
+) => `/edit/account/${account_id}/data-connections/${data_connection_id}`;
 
 // Auth URLs
-export const loginUrl = () => CONFIG.auth.routes.login;
+export const loginUrl = (returnTo?: string) => {
+  const base = CONFIG.auth.routes.login;
+  if (!returnTo) return base;
+  const sep = base.includes('?') ? '&' : '?';
+  return `${base}${sep}return_to=${encodeURIComponent(returnTo)}`;
+};
 export const onboardingUrl = () => "/onboarding";
+
+// Product analytics (maintainers/owners/admins). The query param is
+// rewritten by middleware to the internal /-/analytics route, so object
+// paths can never be shadowed and layouts (which can't read search params)
+// stay out of the loop.
+export const productAnalyticsUrl = (account_id: string, product_id: string) =>
+  `/${account_id}/${product_id}?tab=analytics`;
 
 // Object URLs
 export const objectUrl = (
@@ -34,6 +70,12 @@ export const editAccountPermissionsUrl = (account_id: string) =>
   `/edit/account/${account_id}/permissions`;
 export const editAccountMembershipsUrl = (account_id: string) =>
   `/edit/account/${account_id}/memberships`;
+export const editAccountServiceAccountsUrl = (account_id: string) =>
+  `/edit/account/${account_id}/service-accounts`;
+export const createServiceAccountUrl = (account_id: string) =>
+  `/edit/account/${account_id}/service-accounts/create`;
+export const editServiceAccountUrl = (account_id: string, service_account_id: string) =>
+  `/edit/account/${account_id}/service-accounts/${service_account_id}`;
 export const editAccountViewUrl = (account_id: string, view: string) =>
   `/edit/account/${account_id}/${view}`;
 export const editProductUrl = (account_id: string, product_id: string) =>
@@ -49,6 +91,10 @@ export const editProductMembershipsUrl = (
   account_id: string,
   product_id: string
 ) => `/edit/product/${account_id}/${product_id}/memberships`;
+export const editProductDataConnectionsUrl = (
+  account_id: string,
+  product_id: string
+) => `/edit/product/${account_id}/${product_id}/data-connections`;
 export const editProfileUrl = (account_id: string) =>
   `/edit/profile/${account_id}`;
 
@@ -60,6 +106,9 @@ export const newOrganizationUrl = (account_id: string) =>
 export const verifyEmailUrl = () =>
   // `${CONFIG.auth.api.frontendUrl}/ui/verification`;
   `${CONFIG.auth.api.frontendUrl}/self-service/verification/browser`;
+
+export const orySettingsUrl = () =>
+  `${CONFIG.auth.api.frontendUrl}/self-service/settings/browser`;
 
 export const fileSourceUrl = ({ account_id, product_id, object_path }: {
   account_id: string

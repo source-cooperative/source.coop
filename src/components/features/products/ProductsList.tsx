@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useCatalog } from "@/hooks/useCatalog";
 import { Box, Text } from "@radix-ui/themes";
-import type { Product } from "@/types";
+import type { ProductResponse } from "@/types";
 import { ProductListItem } from "./ProductListItem";
 import { ShortcutHelp } from "@/components/features/keyboard/ShortcutHelp";
 import { useProductListKeyboardShortcuts } from "@/hooks/useProductListKeyboardShortcuts";
@@ -18,8 +19,9 @@ export interface PaginationProps {
 }
 
 interface ProductsListProps {
-  products: Product[];
+  products: ProductResponse[];
   grid?: boolean;
+  showCatalog?: boolean;
   pagination?: PaginationProps;
 }
 
@@ -27,8 +29,10 @@ export function ProductsList({
   products,
   grid = false,
   pagination,
+  showCatalog = true,
 }: ProductsListProps) {
   const [showHelp, setShowHelp] = useState(false);
+  const catalog = useCatalog(showCatalog && products.length > 0);
 
   const { selectedIndex } = useProductListKeyboardShortcuts({
     products,
@@ -48,15 +52,22 @@ export function ProductsList({
   return (
     <Box>
       <nav aria-label="Product list">
-        <ul className={grid ? styles.gridList : styles.list} role="listbox">
+        {/* ponytail: a plain list, not a listbox. The j/k shortcuts are a
+            document-level keydown handler with no focus management and no
+            aria-activedescendant, so listbox/option promised a widget that
+            isn't implemented — and role="option" may not contain the link
+            each item renders. aria-current carries the highlight instead. */}
+        <ul className={grid ? styles.gridList : styles.list}>
           {products.map((product, index) => (
             <li
               key={`${product.account_id}/${product.product_id}`}
-              role="option"
-              aria-selected={index === selectedIndex}
+              aria-current={index === selectedIndex || undefined}
             >
               <ProductListItem
                 product={product}
+                catalogEntry={catalog?.get(
+                  `${product.account_id}/${product.product_id}`
+                )}
                 isSelected={index === selectedIndex}
               />
             </li>

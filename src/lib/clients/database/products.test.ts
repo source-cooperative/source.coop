@@ -1,6 +1,9 @@
 import { ProductsTable } from "./products";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import type { Product } from "@/types";
+import type { Account, Product, PublicAccount } from "@/types";
+import { accountsTable } from "./accounts";
+import { createMemoizedRead } from "./request-cache";
+import { fakeReactCache } from "./__test-helpers__/fake-react-cache";
 
 // Mock CONFIG so BaseTable can construct table name
 jest.mock("@/lib/config", () => ({
@@ -122,5 +125,131 @@ describe("ProductsTable search", () => {
       expect(result.products).toHaveLength(1);
       expect(result.products[0].title).toBe("Fields of the World (FTW)");
     });
+  });
+});
+
+describe("ProductsTable.listProductsByConnectionId", () => {
+  const mirroring = (connectionId: string) =>
+    makeProduct({
+      metadata: {
+        tags: [],
+        primary_mirror: "m",
+        mirrors: { m: { connection_id: connectionId } },
+      },
+    } as unknown as Partial<Product>);
+
+  it("shares one scan across every caller in a request", async () => {
+    // The connection detail page renders three components that each ask which
+    // products use the connection -- the usage table, the delete button and the
+    // blocked-reason note. The scan is a full paginated table scan, so this is
+    // only affordable because BaseTable.cachedSend routes reads through the
+    // request-scoped memoizer; the AWS SDK does not use fetch(), so Next's own
+    // dedup would not cover it. Without that, one page load is three scans.
+    const mockSend = jest.fn().mockResolvedValue({
+      Items: [mirroring("conn-1")],
+      LastEvaluatedKey: undefined,
+    });
+    const table = new ProductsTable({
+      client: { send: mockSend } as unknown as DynamoDBDocumentClient,
+      memoizedRead: createMemoizedRead(fakeReactCache),
+    });
+
+    const [a, b, c] = await Promise.all([
+      table.listProductsByConnectionId("conn-1"),
+      table.listProductsByConnectionId("conn-1"),
+      table.listProductsByConnectionId("conn-1"),
+    ]);
+
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    expect(a).toHaveLength(1);
+    expect(b).toHaveLength(1);
+    expect(c).toHaveLength(1);
+  });
+
+  it("still dedupes callers that arrive one after another", async () => {
+    // The three call sites sit behind separate <Suspense> boundaries, so they
+    // resolve sequentially as often as concurrently.
+    const mockSend = jest.fn().mockResolvedValue({
+      Items: [mirroring("conn-1")],
+      LastEvaluatedKey: undefined,
+    });
+    const table = new ProductsTable({
+      client: { send: mockSend } as unknown as DynamoDBDocumentClient,
+      memoizedRead: createMemoizedRead(fakeReactCache),
+    });
+
+    await table.listProductsByConnectionId("conn-1");
+    await table.listProductsByConnectionId("conn-1");
+
+    expect(mockSend).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a different connection's lookup separate", async () => {
+    const mockSend = jest.fn().mockResolvedValue({
+      Items: [mirroring("conn-1")],
+      LastEvaluatedKey: undefined,
+    });
+    const table = new ProductsTable({
+      client: { send: mockSend } as unknown as DynamoDBDocumentClient,
+      memoizedRead: createMemoizedRead(fakeReactCache),
+    });
+
+    // Same scan input either way -- the filtering is app-side -- so one query
+    // serves both, and only the match differs.
+    expect(await table.listProductsByConnectionId("conn-1")).toHaveLength(1);
+    expect(await table.listProductsByConnectionId("conn-2")).toHaveLength(0);
+    expect(mockSend).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ProductsTable account attachment", () => {
+  // Products reach client components whole, so whatever account rides along
+  // is serialized into the page for anyone who loads it.
+  const account = {
+    account_id: "kerner-lab",
+    type: "organization",
+    name: "Kerner Lab",
+    disabled: false,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    emails: [{ address: "lab@example.com", is_primary: true, verified: true, added_at: "2024-01-01T00:00:00Z" }],
+    identity_id: "ory-kerner",
+    flags: ["admin"],
+    metadata_private: { note: "secret" },
+    metadata_public: { bio: "Fields" },
+  } as unknown as Account;
+  const expected = {
+    account_id: "kerner-lab",
+    type: "organization",
+    name: "Kerner Lab",
+    disabled: false,
+    metadata_public: { bio: "Fields" },
+    profile_image: undefined,
+  };
+
+  let mockSend: jest.Mock;
+  let table: InstanceType<typeof ProductsTable>;
+
+  beforeEach(() => {
+    mockSend = jest.fn();
+    table = new ProductsTable({ client: { send: mockSend } as unknown as DynamoDBDocumentClient });
+  });
+
+  it("attaches only the public view to a fetched product", async () => {
+    mockSend.mockResolvedValue({ Item: makeProduct() });
+    (accountsTable.fetchById as jest.Mock).mockResolvedValueOnce(account);
+    expect((await table.fetchById("kerner-lab", "fields-of-the-world"))?.account).toEqual(expected);
+  });
+
+  it("attaches only the public view to listed products", async () => {
+    (accountsTable.fetchManyByIds as jest.Mock).mockResolvedValueOnce([account]);
+    const [product] = await table.attachAccounts([makeProduct()]);
+    expect(product.account).toEqual(expected);
+  });
+
+  it("keeps a full account from passing as a public one", () => {
+    // @ts-expect-error a full account carries emails, flags and its Ory identity
+    const leak: PublicAccount = account;
+    expect(leak).toBe(account);
   });
 });

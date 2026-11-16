@@ -1,4 +1,5 @@
 "use client";
+import { publicView } from "@/types";
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -154,7 +155,7 @@ export function ProfileImageUpload({
 
         {/* Current avatar preview */}
         <Flex>
-          <ProfileAvatar account={account} size="9" />
+          <ProfileAvatar account={publicView(account)} size="9" />
         </Flex>
 
         {/* Upload and Delete buttons */}

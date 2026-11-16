@@ -8,38 +8,42 @@ import {
   Flex,
   Grid,
 } from "@radix-ui/themes";
-import type {
-  IndividualAccount,
-  OrganizationalAccount,
-  AccountEmail,
-  AccountDomain,
-} from "@/types/account";
+import { PlusIcon } from "@radix-ui/react-icons";
+import Link from "next/link";
+import type { AccountDomain, PublicAccount } from "@/types/account";
 import type { Product } from "@/types";
 import { ProductsList } from "@/components/features/products/ProductsList";
 import { OrganizationMembers } from "./OrganizationMembers";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { WebsiteLink } from "./WebsiteLink";
 import { ProfileLocation } from "./ProfileLocation";
-import { editAccountProfileUrl } from "@/lib/urls";
+import { editAccountProfileUrl, newProductUrl } from "@/lib/urls";
 import { EditButton } from "@/components/core";
 
 interface OrganizationProfileProps {
-  account: OrganizationalAccount;
+  account: PublicAccount;
+  /** The organization's primary address, which its profile shows as a contact. */
+  email?: string;
   products: Product[];
-  owners: IndividualAccount[];
-  admins: IndividualAccount[];
-  members: IndividualAccount[];
+  owners: PublicAccount[];
+  admins: PublicAccount[];
+  members: PublicAccount[];
   canEdit: boolean;
+  canCreateProduct: boolean;
 }
 
 export function OrganizationProfile({
   account,
+  email,
   products,
   owners,
   admins,
   members,
   canEdit,
+  canCreateProduct,
 }: OrganizationProfileProps) {
+  const rorId =
+    "ror_id" in account.metadata_public ? account.metadata_public.ror_id : undefined;
   return (
     <Box>
       <Flex gap="4" mb="6" justify="between" align="start">
@@ -78,33 +82,15 @@ export function OrganizationProfile({
               </Text>
             )
           )}
-          {account.emails?.find((email: AccountEmail) => email.is_primary)
-            ?.address && (
+          {email && (
             <Text as="p" size="2">
-              Email:{" "}
-              <RadixLink
-                href={`mailto:${
-                  account.emails?.find(
-                    (email: AccountEmail) => email.is_primary
-                  )?.address
-                }`}
-              >
-                {
-                  account.emails?.find(
-                    (email: AccountEmail) => email.is_primary
-                  )?.address
-                }
-              </RadixLink>
+              Email: <RadixLink href={`mailto:${email}`}>{email}</RadixLink>
             </Text>
           )}
-          {account.metadata_public.ror_id && (
+          {rorId && (
             <Text as="p" size="2">
               ROR ID:{" "}
-              <RadixLink
-                href={`https://ror.org/${account.metadata_public.ror_id}`}
-              >
-                {account.metadata_public.ror_id}
-              </RadixLink>
+              <RadixLink href={`https://ror.org/${rorId}`}>{rorId}</RadixLink>
             </Text>
           )}
         </Box>
@@ -122,9 +108,20 @@ export function OrganizationProfile({
       </Grid>
 
       <Box>
-        <Heading as="h2" size="4" mb="2">
-          Products
-        </Heading>
+        <Flex justify="between" align="center" mb="2">
+          <Heading as="h2" size="4">
+            Products
+          </Heading>
+          {canCreateProduct && (
+            <RadixLink asChild size="1">
+              <Link href={newProductUrl(account.account_id)}>
+                <Flex as="span" align="center" gap="1">
+                  <PlusIcon width="12" height="12" /> New product
+                </Flex>
+              </Link>
+            </RadixLink>
+          )}
+        </Flex>
         {products.length > 0 ? (
           <ProductsList products={products} />
         ) : (

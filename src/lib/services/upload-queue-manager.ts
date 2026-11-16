@@ -20,7 +20,17 @@ export interface QueuedUpload {
   scope: CredentialsScope;
   s3Service: S3UploadService;
   uploadInstance?: Upload;
+  retryCount: number;
+  retryTimeoutId?: ReturnType<typeof setTimeout>;
 }
+
+// Browsers throw "TypeError: Failed to fetch" (or "NetworkError...") for
+// transient connectivity blips — issue #425. Auto-retry those a few times
+// with backoff before surfacing the manual "Retry Upload" button.
+const MAX_AUTO_RETRIES = 3;
+const RETRY_DELAY_MS = 2000;
+const isRetryableError = (message?: string) =>
+  !!message && /failed to fetch|network ?error/i.test(message);
 
 /**
  * Simple imperative upload queue manager
@@ -34,6 +44,14 @@ export class UploadQueueManager {
 
   constructor(maxConcurrent = 2) {
     this.maxConcurrent = maxConcurrent;
+  }
+
+  /** Stop a pending auto-retry so it can't resurrect an item after cancel/clear/retry. */
+  private clearRetryTimer(item: QueuedUpload) {
+    if (item.retryTimeoutId !== undefined) {
+      clearTimeout(item.retryTimeoutId);
+      item.retryTimeoutId = undefined;
+    }
   }
 
   /**
@@ -54,6 +72,7 @@ export class UploadQueueManager {
       totalBytes: file.size,
       scope,
       s3Service,
+      retryCount: 0,
     }));
 
     this.items.push(...newItems);
@@ -68,6 +87,7 @@ export class UploadQueueManager {
     const item = this.items.find((i) => i.id === id);
     if (!item) return;
 
+    this.clearRetryTimer(item);
     item.status = "cancelled";
 
     // Abort if currently uploading
@@ -95,6 +115,10 @@ export class UploadQueueManager {
         return; // Different scope, skip
       }
 
+      // Stop any pending auto-retry too, even for already-"error" items,
+      // so "Cancel All" can't be undone by a timer firing afterwards.
+      this.clearRetryTimer(item);
+
       if (item.status === "uploading" || item.status === "queued") {
         item.status = "cancelled";
 
@@ -119,9 +143,11 @@ export class UploadQueueManager {
     const item = this.items.find((i) => i.id === id);
     if (!item || item.status !== "error") return;
 
+    this.clearRetryTimer(item);
     item.status = "queued";
     item.uploadedBytes = 0;
     item.error = undefined;
+    item.retryCount = 0;
     this.onChange();
     this.process();
   }
@@ -139,9 +165,12 @@ export class UploadQueueManager {
         ) {
           return true; // Keep - different scope
         }
-        return status ? item.status !== status : false;
+        const keep = status ? item.status !== status : false;
+        if (!keep) this.clearRetryTimer(item); // dropped - stop its pending auto-retry
+        return keep;
       });
     } else {
+      this.items.forEach((item) => this.clearRetryTimer(item));
       this.items = [];
     }
     this.onChange();
@@ -214,6 +243,25 @@ export class UploadQueueManager {
       item.uploadInstance = undefined;
       this.onChange();
       this.process(); // Fill the slot we just freed up
+    }
+
+    if (
+      item.status === "error" &&
+      isRetryableError(item.error) &&
+      item.retryCount < MAX_AUTO_RETRIES
+    ) {
+      item.retryCount++;
+      const delay = RETRY_DELAY_MS * item.retryCount;
+      item.retryTimeoutId = setTimeout(() => {
+        item.retryTimeoutId = undefined;
+        if (item.status === "error") {
+          item.status = "queued";
+          item.uploadedBytes = 0;
+          item.error = undefined;
+          this.onChange();
+          this.process();
+        }
+      }, delay);
     }
   }
 }

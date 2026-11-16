@@ -1,11 +1,23 @@
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
-import { accountsTable, getPageSession, membershipsTable } from "@/lib";
-import { isAuthorized } from "@/lib/api/authz";
-import { Actions, MembershipState } from "@/types";
+import {
+  accountsTable,
+  getPageSession,
+  membershipsTable,
+  tagsTable,
+  tagProps,
+} from "@/lib";
+import { canCreateProductForAccount, isAuthorized } from "@/lib/api/authz";
+import { listUsableDataConnections } from "@/lib/data-connections";
+import { Actions, DataConnectionObjectSchema, MembershipState } from "@/types";
 import { Heading, Text } from "@radix-ui/themes";
 import { FormTitle } from "@/components/core";
 
-export default async function NewProductPage() {
+export default async function NewProductPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ owner?: string }>;
+}) {
+  const { owner } = await searchParams;
   const session = await getPageSession();
   if (!session?.account) {
     return (
@@ -36,7 +48,7 @@ export default async function NewProductPage() {
   const memberships = await membershipsTable.listByUser(
     session.account.account_id
   );
-  const potentialOwnerAccounts = [
+  const candidateOwnerAccounts = [
     session.account,
     ...(await accountsTable.fetchManyByIds(
       memberships
@@ -44,6 +56,22 @@ export default async function NewProductPage() {
         .map((membership) => membership.membership_account_id)
     )),
   ];
+  // Only accounts the user can actually create a product under (self with the
+  // flag, or an org they own/maintain) — a read/write-data membership doesn't
+  // qualify, even though it makes the account "potential" above.
+  const potentialOwnerAccounts = candidateOwnerAccounts.filter((account) =>
+    canCreateProductForAccount(session, account)
+  );
+
+  // Strip credentials before handing connections to the client component.
+  const dataConnections = (
+    await listUsableDataConnections(
+      session,
+      potentialOwnerAccounts.map((account) => account.account_id)
+    )
+  ).map((connection) =>
+    DataConnectionObjectSchema.omit({ authentication: true }).parse(connection)
+  );
 
   return (
     <>
@@ -52,7 +80,18 @@ export default async function NewProductPage() {
         description="Create a new product to share with others"
       />
 
-      <ProductCreationForm potentialOwnerAccounts={potentialOwnerAccounts} />
+      <ProductCreationForm
+        potentialOwnerAccounts={potentialOwnerAccounts}
+        dataConnections={dataConnections}
+        {...tagProps(await tagsTable.listAll())}
+        defaultOwnerId={
+          // Preselect the owner from ?owner=… (e.g. "New product" opened from an
+          // org's menu), but only if the user can actually own products there.
+          potentialOwnerAccounts.some((a) => a.account_id === owner)
+            ? owner
+            : undefined
+        }
+      />
     </>
   );
 }

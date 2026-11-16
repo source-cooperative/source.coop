@@ -36,11 +36,25 @@ jest.mock("@/lib/config", () => ({
     },
     environment: {
       isDevelopment: false,
+      isTest: true,
       stage: "test",
     },
     auth: {
+      api: {
+        backendUrl: "http://localhost:4000",
+        frontendUrl: "http://localhost:4000",
+      },
       accessToken: "test-token",
+      oauth2: { audience: "" },
+      routes: {
+        login: "http://localhost:4000/self-service/login/browser",
+        logout: "http://localhost:4000/self-service/logout/browser",
+      },
     },
-    apiSecret: "test-source-key-123",
+    // 32 zero bytes, base64 — a valid key for the encrypted-cookie helpers.
+    proxyCredentialsCookieKey: Buffer.alloc(32).toString("base64"),
+    // Unconfigured by default so analytics components no-op in unrelated
+    // tests; the analytics client's own tests mock this with real values.
+    analytics: { accountId: "", apiToken: "", dataset: "" },
   },
 }));

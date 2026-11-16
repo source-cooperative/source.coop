@@ -96,7 +96,6 @@ export function ProductsFilters() {
         placeholder="Search products..."
         value={searchInput}
         onChange={(e) => setSearchInput(e.target.value)}
-        disabled={isPending}
       />
 
       <TextField.Root
@@ -105,7 +104,6 @@ export function ProductsFilters() {
         placeholder="Filter by tags (comma-separated)"
         value={tagsInput}
         onChange={(e) => setTagsInput(e.target.value)}
-        disabled={isPending}
       />
 
       <Button

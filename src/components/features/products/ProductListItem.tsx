@@ -1,18 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import type { Product } from "@/types";
+import type { ProductResponse } from "@/types";
+import type { CatalogEntry } from "@/types/catalog";
+import {
+  ObjectsUpdated,
+  ProductCatalogStats,
+  StoreFormatPill,
+} from "./ProductCatalogStats";
 import { DateText } from "@/components/display";
 import { Box, Text, Badge, Heading } from "@radix-ui/themes";
 import { TagList } from "./TagList";
 import styles from "./ProductList.module.css";
 import { productUrl } from "@/lib/urls";
 import { DisplayNameLink } from "@/components/core";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface ProductListItemProps {
-  product: Product;
+  product: ProductResponse;
   isSelected?: boolean;
+  catalogEntry?: CatalogEntry;
 }
+
+// Listings show a description's inline formatting only; the full description
+// is on the product page. Headings and links collapse to their text, as a
+// listing links only within Source. Tables and code blocks have no readable
+// inline form, so they are allowed only so the components below can drop them:
+// left disallowed, unwrapDisallowed would spill their text into the card.
+const DESCRIPTION_ELEMENTS = [
+  "p", "strong", "em", "del", "code", "ul", "ol", "li", "br", "table", "pre",
+];
+const DESCRIPTION_COMPONENTS: Components = {
+  table: () => null,
+  pre: () => null,
+};
 
 const VISIBILITY_CONFIG = {
   public: { color: "green" as const, label: "Public" },
@@ -20,7 +42,11 @@ const VISIBILITY_CONFIG = {
   restricted: { color: "red" as const, label: "Restricted" },
 } as const;
 
-export function ProductListItem({ product, isSelected }: ProductListItemProps) {
+export function ProductListItem({
+  product,
+  isSelected,
+  catalogEntry,
+}: ProductListItemProps) {
   const visibility =
     VISIBILITY_CONFIG[product.visibility] || VISIBILITY_CONFIG.restricted;
 
@@ -38,8 +64,21 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
         </Link>
 
         {product.description && (
-          <Text as="p" size="2" color="gray" mb="4">
-            {product.description}
+          <Text
+            as="div"
+            size="2"
+            color="gray"
+            mb="4"
+            className={styles.description}
+          >
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              allowedElements={DESCRIPTION_ELEMENTS}
+              components={DESCRIPTION_COMPONENTS}
+              unwrapDisallowed
+            >
+              {product.description}
+            </ReactMarkdown>
           </Text>
         )}
 
@@ -57,6 +96,12 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
           <Text size="1" color="gray">
             Published on <DateText date={product.created_at} />
           </Text>
+          {catalogEntry?.objects_updated_at && (
+            <>
+              {" • "}
+              <ObjectsUpdated entry={catalogEntry} />
+            </>
+          )}
           <Badge
             size="1"
             color={visibility.color}
@@ -64,12 +109,20 @@ export function ProductListItem({ product, isSelected }: ProductListItemProps) {
           >
             {visibility.label}
           </Badge>
+          {product.disabled && (
+            <Badge size="1" color="amber" aria-label="Deactivated product">
+              Deactivated
+            </Badge>
+          )}
+          <StoreFormatPill entry={catalogEntry} />
         </Box>
 
         {product.metadata.tags &&
           product.metadata.tags.filter(Boolean).length > 0 && (
             <TagList tags={product.metadata.tags} />
           )}
+
+        <ProductCatalogStats entry={catalogEntry} />
       </article>
     </Box>
   );

@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { Account, MembershipRole, Product } from "@/types";
 import { Flex, Button, Dialog } from "@radix-ui/themes";
-import { DynamicForm, FormField } from "@/components/core";
+import {
+  AccountSearchInput,
+  DynamicForm,
+  FormField,
+} from "@/components/core";
 import { inviteMember } from "@/lib/actions/memberships";
 import { PlusIcon } from "@radix-ui/react-icons";
 
@@ -26,12 +30,21 @@ export function InviteMemberForm({
 
   const fields: FormField<InviteMemberFormData>[] = [
     {
-      label: "Account ID",
+      label: "Account",
       name: "account_id",
-      type: "text",
+      type: "custom",
       required: true,
-      placeholder: "user-account-id",
-      description: "The account ID of the user to invite",
+      description:
+        "Search by username or name, or type an account ID. The organization's service accounts are offered too.",
+      customComponent: (controlProps) => (
+        <AccountSearchInput
+          {...controlProps}
+          name="account_id"
+          required
+          placeholder="username or name"
+          memberOf={organization.account_id}
+        />
+      ),
     },
     {
       label: "Role",
@@ -57,7 +70,7 @@ export function InviteMemberForm({
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger>
-        <Button size="2">
+        <Button size="2" highContrast>
           <PlusIcon width="16" height="16" />
           Invite Member
         </Button>
@@ -68,10 +81,12 @@ export function InviteMemberForm({
           Invite a user to join {organization.name} as a member.
         </Dialog.Description>
 
+        {/* Cancel goes through the form's own action row — as a sibling of the
+            form it produced a second right-aligned row under the submit. */}
         <DynamicForm<InviteMemberFormData>
           fields={fields}
           action={inviteMember}
-          submitButtonText="Send Invitation"
+          submitButtonText="Send invitation"
           initialValues={initialValues}
           hiddenFields={{
             organization_id: product
@@ -80,15 +95,14 @@ export function InviteMemberForm({
             product_id: product?.product_id,
           }}
           onSuccess={() => setOpen(false)}
+          secondaryAction={
+            <Dialog.Close>
+              <Button type="button" size="3" variant="soft" color="gray">
+                Cancel
+              </Button>
+            </Dialog.Close>
+          }
         />
-
-        <Flex gap="3" mt="4" justify="end">
-          <Dialog.Close>
-            <Button variant="soft" color="gray">
-              Cancel
-            </Button>
-          </Dialog.Close>
-        </Flex>
       </Dialog.Content>
     </Dialog.Root>
   );

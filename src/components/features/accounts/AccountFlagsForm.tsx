@@ -1,6 +1,6 @@
 "use client";
 
-import { Account, AccountFlags, Actions, UserSession } from "@/types";
+import { Account, AccountFlags, AccountType, Actions, UserSession } from "@/types";
 import { Text, Flex, Checkbox } from "@radix-ui/themes";
 import { Label } from "radix-ui";
 import { DynamicForm } from "@/components/core";
@@ -30,36 +30,66 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
   // To avoid a bug where the checkboxes are reverting to the initial values after form
   // submission, we track the current flag values for controlled checkboxes
   const [flagValues, setFlagValues] = useState(initialValues);
+  // Re-sync from the freshly-fetched account after a save. Read from
+  // account.flags (the source of truth), not the current UI state, or the
+  // checkboxes would keep showing the pre-save values.
   useEffect(() => {
     setFlagValues(
       Object.fromEntries(
         Object.values(AccountFlags).map((flag) => [
           flag,
-          flagValues[flag] || false,
+          account.flags?.includes(flag) || false,
         ])
       ) as AccountFlagsFormData
     );
   }, [account.flags, account.updated_at]);
 
-  // Flag configurations with display names and descriptions
-  const fields: Array<[AccountFlags, string, string]> = [
-    [
-      AccountFlags.CREATE_REPOSITORIES,
-      "Create Repositories",
-      "Allows this account to create new repositories and manage repository settings.",
-    ],
-    [
-      AccountFlags.CREATE_ORGANIZATIONS,
-      "Create Organizations",
-      "Allows this account to create new organizations and manage organizational accounts.",
-    ],
-  ];
+  const isOrganization = account.type === AccountType.ORGANIZATION;
 
-  if (isAdmin(session)) {
+  // Organizations can only be granted the data-connection and service-account
+  // capabilities; the other flags (products, organizations, admin) are
+  // individual-account concerns.
+  const fields: Array<[AccountFlags, string, string]> = isOrganization
+    ? [
+        [
+          AccountFlags.CREATE_DATA_CONNECTIONS,
+          "Create Data Connections",
+          "Allows this organization to create and manage its own data connections to external storage.",
+        ],
+        [
+          AccountFlags.CREATE_SERVICE_ACCOUNTS,
+          "Create Service Accounts",
+          "Allows this organization to create and manage service accounts for its software and pipelines.",
+        ],
+      ]
+    : [
+        [
+          AccountFlags.CREATE_REPOSITORIES,
+          "Create Products",
+          "Allows this account to create new products and manage product settings.",
+        ],
+        [
+          AccountFlags.CREATE_ORGANIZATIONS,
+          "Create Organizations",
+          "Allows this account to create new organizations and manage organizational accounts.",
+        ],
+        [
+          AccountFlags.CREATE_DATA_CONNECTIONS,
+          "Create Data Connections",
+          "Allows this account to create and manage its own data connections to external storage.",
+        ],
+        [
+          AccountFlags.CREATE_SERVICE_ACCOUNTS,
+          "Create Service Accounts",
+          "Allows this account to create and manage service accounts for its software and pipelines.",
+        ],
+      ];
+
+  if (!isOrganization && isAdmin(session)) {
     fields.push([
       AccountFlags.ADMIN,
       "Administrator",
-      "Full administrative access to the platform. Can manage all accounts, repositories, and system settings.",
+      "Full administrative access to the platform. Can manage all accounts, products, and system settings.",
     ]);
   }
 
@@ -71,10 +101,14 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
         name,
         description,
         type: "custom" as const,
-        customComponent: (
+        // Function form: the checkbox itself takes aria-describedby, so each
+        // flag's explanation is announced with it. As a plain node the ids had
+        // nowhere to land and the description sat unassociated.
+        customComponent: (controlProps) => (
           <Label.Root htmlFor={name}>
             <Flex align="center" gap="2">
               <Checkbox
+                {...controlProps}
                 name={name}
                 id={name}
                 checked={flagValues[name]}
@@ -93,7 +127,6 @@ export function AccountFlagsForm({ session, account }: AccountFlagsFormProps) {
       }))}
       action={updateAccountFlags}
       disabled={disabled}
-      submitButtonText="Update"
       initialValues={initialValues}
       hiddenFields={{ account_id: account.account_id }}
     />

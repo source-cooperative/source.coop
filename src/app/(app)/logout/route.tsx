@@ -1,5 +1,6 @@
 import { CONFIG, LOGGER } from "@/lib";
 import { NextRequest, NextResponse } from "next/server";
+import { PROXY_CREDS_COOKIE_NAME } from "@/lib/services/proxy-credentials-shared";
 
 export async function GET(request: NextRequest) {
   const returnTo = new URL(request.url).origin;
@@ -32,5 +33,18 @@ export async function GET(request: NextRequest) {
     );
   }
   const data = await response.json();
-  return NextResponse.redirect(data.logout_url, 302);
+  const res = NextResponse.redirect(data.logout_url, 302);
+  // Drop the cached proxy credentials so the next user on this browser starts
+  // clean. (A returned NextResponse ignores cookies().delete(), so expire it
+  // directly on the response.) Mirror the attributes it was set with in
+  // proxy-credentials-cache.ts — on HTTPS a clearing Set-Cookie that omits
+  // `secure` can be ignored, leaving the cookie alive until its own maxAge.
+  res.cookies.set(PROXY_CREDS_COOKIE_NAME, "", {
+    path: "/",
+    maxAge: 0,
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+  });
+  return res;
 }

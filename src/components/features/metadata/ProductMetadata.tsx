@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { Product } from "@/types";
+import { ProductVisibility, type Product } from "@/types";
 import { CONFIG } from "@/lib";
 import { getBaseUrl } from "@/lib/baseUrl";
 
@@ -57,5 +57,11 @@ export async function generateProductMetadata({
     alternates: {
       canonical: url,
     },
+    ...(product.visibility !== ProductVisibility.Public && {
+      robots: {
+        index: false,
+        follow: false,
+      },
+    }),
   };
 } 

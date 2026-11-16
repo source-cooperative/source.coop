@@ -63,15 +63,117 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
   return null;
 };
 
+// Top-level routes that share the /{segment}/{segment} shape but are not
+// account/product pages — the analytics rewrite must leave them alone.
+const NON_ACCOUNT_SEGMENTS = new Set([
+  "admin",
+  "edit",
+  "email-verified",
+  "feed.xml",
+  "featured",
+  "logout",
+  "onboarding",
+  "products",
+  "repositories",
+]);
+
+/**
+ * Serve the maintainer analytics view on the product root via a query param
+ * (`/{account}/{product}?tab=analytics`). Layouts can't read search params,
+ * so the view lives at the internal `/-/analytics` route (which also keeps
+ * it from shadowing real object paths) and the query-param URL is rewritten
+ * to it here. Other params (e.g. `window`) pass through.
+ *
+ * Exported for tests: the failure mode is a silently dead ANALYTICS tab.
+ */
+export const handleProductAnalyticsTab = (
+  request: NextRequest,
+): NextResponse | null => {
+  const { pathname, searchParams } = request.nextUrl;
+  const match = pathname.match(/^\/([^/]+)\/[^/]+$/);
+  if (
+    searchParams.get("tab") === "analytics" &&
+    match &&
+    !NON_ACCOUNT_SEGMENTS.has(match[1])
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = `${pathname}/-/analytics`;
+    url.searchParams.delete("tab");
+    return NextResponse.rewrite(url);
+  }
+  return null;
+};
+
+/**
+ * Undoes Next.js's percent-encoding of Ory's session cookie.
+ *
+ * A server action that calls `redirect()` renders its target with an internal
+ * fetch whose cookie header Next rebuilds with `encodeURIComponent`, turning
+ * the base64 padding in Ory's session cookie into `%3D`. Ory rejects that
+ * cookie, so the page it lands on renders signed out. Ory's cookie values are
+ * base64url, which never contains `%`, so decoding them restores the original.
+ *
+ * Exported for tests; returns the repaired header, or null when nothing changed.
+ */
+export const restoreOryCookies = (cookie: string | null): string | null => {
+  if (!cookie?.includes("%")) return null;
+  const restored = cookie.replace(
+    /(\bory_\w*session\w*=)([^;]*)/gi,
+    (_, name: string, value: string) => name + decodeURIComponent(value),
+  );
+  return restored === cookie ? null : restored;
+};
+
 const ory = createOryMiddleware({});
 
+// Paths the Ory middleware proxies (self-service flows, session checks). For
+// everything else it returns a no-op NextResponse.next().
+// See node_modules/@ory/nextjs/dist/middleware (proxyRequest match list).
+const ORY_PROXIED_PREFIXES = [
+  "/self-service",
+  "/sessions/whoami",
+  "/ui",
+  "/.well-known/ory",
+  "/.ory",
+];
+
 export const middleware = async (request: NextRequest) => {
-  for (const handler of [handleLegacyRedirects, handleChromeDevTools, ory]) {
+  for (const handler of [handleLegacyRedirects, handleChromeDevTools]) {
     const response = await handler(request);
     if (response) return response;
   }
+
+  // Let Ory handle its own endpoints (it returns proxied responses with
+  // redirects / Set-Cookie that we must not discard). This runs before the
+  // analytics rewrite so two-segment Ory paths (e.g. /sessions/whoami) can
+  // never be diverted by a stray ?tab=analytics.
+  if (
+    ORY_PROXIED_PREFIXES.some((prefix) =>
+      request.nextUrl.pathname.startsWith(prefix),
+    )
+  ) {
+    return ory(request);
+  }
+
+  const analyticsRewrite = handleProductAnalyticsTab(request);
+  if (analyticsRewrite) return analyticsRewrite;
+
+  const cookie = restoreOryCookies(request.headers.get("cookie"));
+  if (cookie) {
+    const headers = new Headers(request.headers);
+    headers.set("cookie", cookie);
+    return NextResponse.next({ request: { headers } });
+  }
+
+  return NextResponse.next();
 };
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|logo|favicon).*)"],
+  // Exclusions are anchored as directories/files — an unanchored prefix
+  // (e.g. `api`) would also skip middleware for any account whose id merely
+  // starts with it (apiuser, logophile, …), silently disabling rewrites
+  // and Ory handling on their pages.
+  matcher: [
+    "/((?!api/|_next/static|_next/image|favicon\\.ico|favicon/|logo/).*)",
+  ],
 };

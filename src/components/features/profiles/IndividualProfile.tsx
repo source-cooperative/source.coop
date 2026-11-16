@@ -6,18 +6,16 @@ import {
   Flex,
   Link as RadixLink,
 } from "@radix-ui/themes";
-import type {
-  IndividualAccount,
-  OrganizationalAccount,
-  Product,
-} from "@/types";
-import { editAccountProfileUrl } from "@/lib/urls";
+import { PlusIcon } from "@radix-ui/react-icons";
+import Link from "next/link";
+import type { IndividualAccount, Product, PublicAccount } from "@/types";
+import { publicView } from "@/types";
+import { editAccountProfileUrl, newProductUrl } from "@/lib/urls";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { ProductsList } from "../products/ProductsList";
 import { WebsiteLink } from "./WebsiteLink";
 import { EmailVerificationStatus } from "./EmailVerificationStatus";
 import { AvatarLinkCompact, EditButton } from "@/components/core";
-import { EmailVerificationCallout } from "../auth/EmailVerificationCallout";
 import { WelcomeCallout } from "./WelcomeCallout";
 
 interface IndividualProfileProps {
@@ -25,9 +23,10 @@ interface IndividualProfileProps {
   isOwner: boolean; // Whether the current user is the owner of the account
   ownedProducts: Product[];
   contributedProducts: Product[];
-  organizations: OrganizationalAccount[];
+  organizations: PublicAccount[];
   showWelcome?: boolean;
   canEdit: boolean;
+  canCreateProduct: boolean;
 }
 
 export function IndividualProfile({
@@ -38,21 +37,19 @@ export function IndividualProfile({
   organizations,
   showWelcome = false,
   canEdit,
+  canCreateProduct,
 }: IndividualProfileProps) {
   const primaryEmail = account.emails?.find((email) => email.is_primary);
   return (
     <Box>
-      {isOwner && (
-        <>
-          {!primaryEmail?.verified && <EmailVerificationCallout />}
-          {showWelcome && <WelcomeCallout accountId={account.account_id} />}
-        </>
+      {isOwner && showWelcome && (
+        <WelcomeCallout accountId={account.account_id} />
       )}
 
       <Box mb="6">
         <Flex gap="4" align="center" justify="between">
           <Flex gap="4" align="center">
-            <ProfileAvatar account={account} size="6" />
+            <ProfileAvatar account={publicView(account)} size="6" />
             <Box>
               <Flex gap="2" align="center">
                 <Heading size="8">{account.name}</Heading>
@@ -72,7 +69,7 @@ export function IndividualProfile({
       </Box>
 
       <Box mb="6">
-        <Grid columns="3" gap="4">
+        <Grid columns={{ initial: "1", xs: "2", sm: "3" }} gap="4">
           {account.metadata_public.domains &&
             account.metadata_public.domains.length > 0 && (
               <Box>
@@ -112,7 +109,7 @@ export function IndividualProfile({
           <Heading size="4" mb="2">
             Organizations
           </Heading>
-          <Grid columns="3" gap="4">
+          <Grid columns={{ initial: "1", xs: "2", sm: "3" }} gap="4">
             {organizations.map((org) => (
               <AvatarLinkCompact account={org} key={org.account_id} />
             ))}
@@ -120,12 +117,27 @@ export function IndividualProfile({
         </Box>
       )}
 
-      {ownedProducts.length > 0 && (
+      {(ownedProducts.length > 0 || canCreateProduct) && (
         <Box mb="6">
-          <Heading size="4" mb="2">
-            Products
-          </Heading>
-          <ProductsList products={ownedProducts} />
+          <Flex justify="between" align="center" mb="2">
+            <Heading size="4">Products</Heading>
+            {canCreateProduct && (
+              <RadixLink asChild size="1">
+                <Link href={newProductUrl(account.account_id)}>
+                  <Flex as="span" align="center" gap="1">
+                    <PlusIcon width="12" height="12" /> New product
+                  </Flex>
+                </Link>
+              </RadixLink>
+            )}
+          </Flex>
+          {ownedProducts.length > 0 ? (
+            <ProductsList products={ownedProducts} />
+          ) : (
+            <Text as="p" size="2">
+              No products available.
+            </Text>
+          )}
         </Box>
       )}
 
