@@ -99,16 +99,3 @@ it("updates the lookup when navigating between products", () => {
   expect(screen.getByText("3")).toBeInTheDocument();
   expect(screen.queryByText("2")).not.toBeInTheDocument();
 });
-
-it("shows when the product's objects last changed, only if the catalog knows", () => {
-  const entry = { account_id: "org", product_id: "data", total_bytes: 2048, object_count: 4 };
-  catalogHook.mockReturnValue(new Map([
-    ["org/data", { ...entry, objects_updated_at: new Date(Date.now() - 3 * 86_400_000).toISOString() }],
-  ]));
-  const { unmount } = renderSummary();
-  expect(screen.getByText("3 days ago")).toHaveAttribute("title", expect.stringContaining("UTC"));
-  unmount();
-  catalogHook.mockReturnValue(new Map([["org/data", entry]]));
-  renderSummary();
-  expect(screen.queryByText("Updated")).not.toBeInTheDocument();
-});

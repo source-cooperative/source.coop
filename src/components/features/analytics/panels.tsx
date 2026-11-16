@@ -106,13 +106,10 @@ export function Stat({
   label,
   help,
   value,
-  title,
 }: {
   label: string;
   help: string;
   value: string;
-  /** Exact value shown on hover, when `value` is rounded. */
-  title?: string;
 }) {
   return (
     <Box pl="3" style={{ borderLeft: "1px solid var(--gray-4)" }}>
@@ -122,7 +119,6 @@ export function Stat({
         size="3"
         weight="bold"
         mt="1"
-        title={title}
         style={mono({ whiteSpace: "nowrap" })}
       >
         {value}
