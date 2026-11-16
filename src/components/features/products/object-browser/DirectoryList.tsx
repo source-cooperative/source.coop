@@ -88,13 +88,14 @@ export function DirectoryList({
     prefix,
   ).filter((item) => !deletedPaths.has(item.path));
 
-  // Directories stay first whichever column is sorted: they have no size or
-  // mtime to order by.
+  // Directories stay first whichever column is sorted. They have no size or
+  // mtime, so only the Name column reorders them.
   const dir = sort.desc ? -1 : 1;
   items.sort((a, b) => {
     if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
     const byName = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-    if (a.isDirectory || sort.key === "name") return dir * byName || 0;
+    if (sort.key === "name") return dir * byName;
+    if (a.isDirectory) return byName;
     const diff =
       sort.key === "size"
         ? a.size - b.size

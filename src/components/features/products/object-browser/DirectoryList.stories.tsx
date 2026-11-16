@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Flex } from "@radix-ui/themes";
+import { expect, userEvent, within } from "storybook/test";
 import { DirectoryList } from "./DirectoryList";
 import { BreadcrumbNav } from "@/components/display/BreadcrumbNav";
 import {
@@ -55,7 +56,8 @@ const product = {
 const object = (
   path: string,
   size: number,
-  type: "file" | "directory" = "file"
+  type: "file" | "directory" = "file",
+  updated_at = "2026-03-12T00:00:00Z",
 ): ProductObject =>
   ({
     id: path,
@@ -64,7 +66,7 @@ const object = (
     size,
     type,
     created_at: "2026-03-12T00:00:00Z",
-    updated_at: "2026-03-12T00:00:00Z",
+    updated_at,
     checksum: "d41d8cd98f00b204e9800998ecf8427e",
   }) as ProductObject;
 
@@ -73,16 +75,41 @@ const object = (
 const tree: ProductObject[] = [
   object("recordings/", 0, "directory"),
   object("recordings/2019/", 0, "directory"),
-  object("recordings/2019/site-a-20190712-0800.flac", 122_880_000),
-  object("recordings/2019/site-a-20190712-0900.flac", 121_453_312),
+  object(
+    "recordings/2019/site-a-20190712-0800.flac",
+    122_880_000,
+    "file",
+    "2019-07-12T08:00:00Z",
+  ),
+  object(
+    "recordings/2019/site-a-20190712-0900.flac",
+    121_453_312,
+    "file",
+    "2019-07-12T09:00:00Z",
+  ),
   object("recordings/2020/", 0, "directory"),
-  object("recordings/2020/site-b-20200103-1100.flac", 98_566_144),
+  object(
+    "recordings/2020/site-b-20200103-1100.flac",
+    98_566_144,
+    "file",
+    "2020-01-03T11:00:00Z",
+  ),
   object("derived/", 0, "directory"),
   object("derived/spectrograms/", 0, "directory"),
-  object("derived/spectrograms/site-a-20190712.png", 2_204_160),
-  object("derived/detections.parquet", 8_412_672),
-  object("README.md", 2_140),
-  object("catalog.parquet", 48_204_112),
+  object(
+    "derived/spectrograms/site-a-20190712.png",
+    2_204_160,
+    "file",
+    "2025-11-02T10:30:00Z",
+  ),
+  object(
+    "derived/detections.parquet",
+    8_412_672,
+    "file",
+    "2026-02-20T16:45:00Z",
+  ),
+  object("README.md", 2_140, "file", "2026-06-01T09:00:00Z"),
+  object("catalog.parquet", 48_204_112, "file", "2026-03-12T00:00:00Z"),
 ];
 
 /** One level of `tree`, given a prefix — what the server returns per path. */
@@ -162,7 +189,7 @@ export const AwkwardNames: Story = {
     objects: [
       object(
         "site-a-hydrophone-array-continuous-passive-acoustic-monitoring-20190712T080000Z-to-20190712T090000Z.flac",
-        122_880_000
+        122_880_000,
       ),
       object("a.txt", 1),
       object("full-archive.tar", 4_398_046_511_104),
@@ -182,9 +209,54 @@ export const Virtualized: Story = {
     objects: Array.from({ length: 250 }, (_, i) =>
       object(
         `recordings/site-a-${String(i).padStart(4, "0")}.flac`,
-        60_000_000 + i * 1_024
-      )
+        60_000_000 + i * 1_024,
+      ),
     ),
   },
 };
 
+/**
+ * Click a column header to sort by it; click it again to reverse. Folders stay
+ * on top whichever column is sorted, since they have no size or date. This
+ * story clicks Modified twice, so the listing opens newest first.
+ */
+export const SortedByModified: Story = {
+  args: Default.args,
+  render: Default.render,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const modified = canvas.getByRole("button", { name: "Modified" });
+    await userEvent.click(modified);
+    await userEvent.click(modified);
+    await expect(
+      canvas.getByRole("columnheader", { name: "Modified" }),
+    ).toHaveAttribute("aria-sort", "descending");
+  },
+};
+
+/**
+ * Each file row shows one action, Download. Copy URL and, in edit mode,
+ * Delete sit behind the \u22ef menu, which this story opens. Delete only
+ * appears once the viewer has write credentials, which a story cannot mint.
+ */
+export const RowMenuOpen: Story = {
+  args: Default.args,
+  render: Default.render,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getAllByRole("button", { name: /more actions for/i })[0],
+    );
+  },
+};
+
+/**
+ * Below 640px Size and Modified drop out and the name keeps the room. The
+ * viewport is pinned rather than the story boxed in, so the page padding is
+ * the real one.
+ */
+export const Narrow: Story = {
+  args: Default.args,
+  render: Default.render,
+  globals: { viewport: { value: "mobile1", isRotated: false } },
+};
