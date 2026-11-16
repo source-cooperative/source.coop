@@ -188,9 +188,9 @@ export function DirectoryRow({
             </Link>
           </Box>
 
-          {/* Folders show an em dash: an empty cell reads as missing data. */}
+          {/* Folders have no size or mtime, so their cells stay blank. */}
           <MonoText color="gray" size="1" className={styles.numeric}>
-            {item.isDirectory ? "—" : item.size > 0 ? formatBytes(item.size) : ""}
+            {!item.isDirectory && item.size > 0 ? formatBytes(item.size) : ""}
           </MonoText>
 
           {/* Directories have no real mtime. suppressHydrationWarning: "now"
@@ -209,9 +209,7 @@ export function DirectoryRow({
               </MonoText>
             </Tooltip>
           ) : (
-            <MonoText color="gray" size="1" className={styles.numeric}>
-              {item.isDirectory ? "—" : ""}
-            </MonoText>
+            <MonoText color="gray" size="1" className={styles.numeric} />
           )}
 
           <Box>
