@@ -9,8 +9,8 @@ import { ProductMetaCard } from "./ProductMetaCard";
  *
  * **Metadata Updated** is when someone last edited the product's own record,
  * such as its title or description. **Objects Updated** is when any object in
- * the product was last written, from the metadata catalog, with the exact time
- * on hover. The catalog loads in the browser after the page, so that row
+ * the product was last written, from the metadata catalog, shown in the
+ * viewer's local time, with how long ago on hover. The catalog loads in the browser after the page, so that row
  * appears a moment later, and is left out for a product it has no date for.
  */
 const meta = {
@@ -38,7 +38,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The product's objects were last written three days ago. */
+/** The product's objects were last written three days ago; hover the date to read that. */
 export const Default: Story = {
   beforeEach: () => {
     const realFetch = window.fetch;
@@ -58,7 +58,7 @@ export const Default: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(await canvas.findByText("3 days ago")).toBeInTheDocument();
+    await expect(await canvas.findByTitle("3 days ago")).toBeInTheDocument();
     await expect(canvas.getByText("Metadata Updated")).toBeInTheDocument();
   },
 };

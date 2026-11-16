@@ -17,12 +17,14 @@ const renderRow = () =>
 
 const entry = { account_id: "org", product_id: "data" };
 
-it("shows when the product's objects last changed, with the UTC time as its title", () => {
-  const objects_updated_at = new Date(Date.now() - 3 * 86_400_000).toISOString();
-  catalogHook.mockReturnValue(new Map([["org/data", { ...entry, objects_updated_at }]]));
+it("shows the local date and time, with how long ago as its title", () => {
+  const updated = new Date(Date.now() - 3 * 86_400_000);
+  catalogHook.mockReturnValue(new Map([["org/data", { ...entry, objects_updated_at: updated.toISOString() }]]));
   renderRow();
   expect(screen.getByText("Objects Updated")).toBeInTheDocument();
-  expect(screen.getByText("3 days ago")).toHaveAttribute("title", expect.stringContaining("UTC"));
+  expect(screen.getByTitle("3 days ago")).toHaveTextContent(
+    updated.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }),
+  );
 });
 
 it("renders nothing until the catalog loads, or when it has no date", () => {

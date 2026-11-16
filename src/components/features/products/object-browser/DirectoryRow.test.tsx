@@ -36,17 +36,18 @@ const renderRow = (item: Parameters<typeof DirectoryRow>[0]["item"]) =>
   );
 
 describe("DirectoryRow last modified", () => {
-  it("shows a relative time with the UTC timestamp as its title", () => {
+  it("shows the local date and time, with how long ago as its title", () => {
+    const updated = new Date(Date.now() - 21 * 24 * 3600 * 1000);
     renderRow({
       name: "catalog.json",
       path: "catalog.json",
       size: 1234,
-      updated_at: new Date(Date.now() - 21 * 24 * 3600 * 1000).toISOString(),
+      updated_at: updated.toISOString(),
       isDirectory: false,
     });
-    expect(screen.getByText("3 weeks ago")).toHaveAttribute(
-      "title",
-      expect.stringContaining("UTC")
+    const cell = screen.getByTitle("3 weeks ago");
+    expect(cell).toHaveTextContent(
+      updated.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
     );
   });
 
@@ -58,7 +59,7 @@ describe("DirectoryRow last modified", () => {
       updated_at: new Date().toISOString(),
       isDirectory: true,
     });
-    expect(screen.queryByText(/ago$/)).toBeNull();
+    expect(screen.queryByTitle(/ago$/)).toBeNull();
   });
 
   it("puts copy behind a menu, leaving download as the one row action", () => {

@@ -26,7 +26,8 @@ import { useRouter } from "next/navigation";
 import { MonoText } from "@/components/core/MonoText";
 import type { FileNode } from "./utils";
 import type { Product } from "@/types";
-import { formatBytes, formatDate, formatRelativeTime } from "@/lib/format";
+import { formatBytes } from "@/lib/format";
+import { useWhen } from "@/hooks/useWhen";
 import { objectUrl } from "@/lib/urls";
 import styles from "./ObjectBrowser.module.css";
 import { useState } from "react";
@@ -35,6 +36,18 @@ import {
   useS3Credentials,
   deleteStatusText,
 } from "@/components/features/uploader";
+
+/** The Modified cell: the viewer's local date and time, how long ago on hover. */
+function Modified({ iso }: { iso: string }) {
+  const { text, hover } = useWhen(iso);
+  return (
+    <Tooltip content={hover}>
+      <MonoText color="gray" size="1" title={hover} className={styles.numeric}>
+        {text}
+      </MonoText>
+    </Tooltip>
+  );
+}
 
 interface DirectoryRowProps {
   item: FileNode;
@@ -193,21 +206,9 @@ export function DirectoryRow({
             {!item.isDirectory && item.size > 0 ? formatBytes(item.size) : ""}
           </MonoText>
 
-          {/* Directories have no real mtime. suppressHydrationWarning: "now"
-              differs between server and client render, so a just-uploaded file
-              can disagree by seconds. */}
+          {/* Directories have no real mtime. */}
           {!item.isDirectory && item.updated_at ? (
-            <Tooltip content={formatDate(item.updated_at, true)}>
-              <MonoText
-                color="gray"
-                size="1"
-                title={formatDate(item.updated_at, true)}
-                suppressHydrationWarning
-                className={styles.numeric}
-              >
-                {formatRelativeTime(item.updated_at)}
-              </MonoText>
-            </Tooltip>
+            <Modified iso={item.updated_at} />
           ) : (
             <MonoText color="gray" size="1" className={styles.numeric} />
           )}
