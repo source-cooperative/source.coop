@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { IndividualProfile } from "./IndividualProfile";
-import type { IndividualAccount, OrganizationalAccount } from "@/types";
+import type { IndividualAccount, PublicAccount } from "@/types";
 
 /**
  * A person's profile page. The organization list is the interesting part: it
@@ -10,7 +10,7 @@ import type { IndividualAccount, OrganizationalAccount } from "@/types";
  * See the Mobile story for that case.
  */
 const meta = {
-  title: "Features/Profiles/IndividualProfile",
+  title: "Features/Account page/IndividualProfile",
   component: IndividualProfile,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof IndividualProfile>;
@@ -45,7 +45,7 @@ const organizations = [
       ...org,
       type: "organization",
       metadata_public: {},
-    }) as unknown as OrganizationalAccount
+    }) as unknown as PublicAccount
 );
 
 export const Default: Story = {

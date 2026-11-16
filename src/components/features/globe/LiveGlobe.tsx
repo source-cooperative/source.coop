@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Tooltip } from "@radix-ui/themes";
+import { Theme, Tooltip } from "@radix-ui/themes";
 import { CONFIG } from "@/lib/config";
 import Globe, { GlobeMethods } from "react-globe.gl";
 import {
@@ -338,8 +338,9 @@ export function LiveGlobe({
             _pointVec.set(pos3d.x, pos3d.y, pos3d.z);
             _projVec.copy(_pointVec); // save unnormalized for projection
             _camToPoint.copy(_pointVec).sub(camera.position);
-            const cosAngle =
-              -_pointVec.normalize().dot(_camToPoint.normalize());
+            const cosAngle = -_pointVec
+              .normalize()
+              .dot(_camToPoint.normalize());
             if (cosAngle <= 0) {
               el.style.display = "none";
               continue;
@@ -561,35 +562,39 @@ export function LiveGlobe({
       </div>
       {selected &&
         createPortal(
-          <div
-            className={styles.popup}
-            style={{
-              left: selected.x,
-              top: selected.y,
-            }}
-          >
-            {selected.location && (
-              <div className={styles.popupLocation}>{selected.location}</div>
-            )}
-            {selected.products.length > 0 && (
-              <div className={styles.popupProducts}>
-                {selected.products.map(([name, n]) => (
-                  <Tooltip
-                    key={name}
-                    className={styles.tooltipContent}
-                    content={`${n.toLocaleString()} ${n === 1 ? "request" : "requests"}`}
-                  >
-                    <a href={`/${name}`} className={styles.popupLink}>
-                      <span className={styles.popupName}>{name}</span>
-                      <span className={styles.popupArrow} aria-hidden="true">
-                        →
-                      </span>
-                    </a>
-                  </Tooltip>
-                ))}
-              </div>
-            )}
-          </div>,
+          // The portal leaves the app's Theme root; a nested Theme carries its
+          // appearance (and so its colors) out to document.body.
+          <Theme asChild>
+            <div
+              className={styles.popup}
+              style={{
+                left: selected.x,
+                top: selected.y,
+              }}
+            >
+              {selected.location && (
+                <div className={styles.popupLocation}>{selected.location}</div>
+              )}
+              {selected.products.length > 0 && (
+                <div className={styles.popupProducts}>
+                  {selected.products.map(([name, n]) => (
+                    <Tooltip
+                      key={name}
+                      className={styles.tooltipContent}
+                      content={`${n.toLocaleString()} ${n === 1 ? "request" : "requests"}`}
+                    >
+                      <a href={`/${name}`} className={styles.popupLink}>
+                        <span className={styles.popupName}>{name}</span>
+                        <span className={styles.popupArrow} aria-hidden="true">
+                          →
+                        </span>
+                      </a>
+                    </Tooltip>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Theme>,
           document.body,
         )}
     </>

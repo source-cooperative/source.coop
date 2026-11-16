@@ -3,6 +3,7 @@ import { OrganizationProfile } from "@/components/features/profiles/Organization
 import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
 import {
   accountsTable,
+  hidePendingTags,
   isIndividualAccount,
   membershipsTable,
   productsTable,
@@ -10,14 +11,18 @@ import {
 import {
   type IndividualAccount,
   type OrganizationalAccount,
-  type Product,
   Actions,
   MembershipRole,
   MembershipState,
 } from "@/types";
 import { getPageSession } from "@/lib/api/utils";
-import { isAuthorized } from "@/lib/api/authz";
+import {
+  canCreateProductForAccount,
+  canListOnProfile,
+  isAuthorized,
+} from "@/lib/api/authz";
 import { getPendingInvitation } from "@/lib/actions/memberships";
+import { publicView } from "@/types";
 
 interface OrganizationProfilePageProps {
   account: OrganizationalAccount;
@@ -26,9 +31,7 @@ interface OrganizationProfilePageProps {
 export async function OrganizationProfilePage({
   account,
 }: OrganizationProfilePageProps) {
-  // Get session to check authentication status
   const session = await getPageSession();
-  const isAuthenticated = session?.account && !session.account.disabled;
 
   let [memberships, { products }] = await Promise.all([
     membershipsTable.listByAccount(account.account_id),
@@ -39,7 +42,7 @@ export async function OrganizationProfilePage({
     // Only consider active memberships
     .filter((membership) => membership.state === MembershipState.Member)
     // Only consider memberships that are not product-specific
-    .filter((membership) => membership.repository_id === undefined);
+    .filter((membership) => membership.product_id === undefined);
 
   const relatedUserAccounts = new Map(
     (
@@ -73,18 +76,9 @@ export async function OrganizationProfilePage({
         !!account && isIndividualAccount(account)
     );
 
-  // Check if the authenticated user is a member of this organization
-  const isMember =
-    isAuthenticated &&
-    session?.account &&
-    memberships
-      .map((membership) => membership.account_id)
-      .includes(session.account.account_id);
-
-  // Filter products based on authentication status
-  if (!isAuthenticated || !isMember) {
-    products = products.filter((product) => product.visibility === "public");
-  }
+  products = await hidePendingTags(
+    products.filter((product) => canListOnProfile(session, product))
+  );
 
   // Check for pending invitation
   const pendingInvitation = await getPendingInvitation(account.account_id);
@@ -101,19 +95,14 @@ export async function OrganizationProfilePage({
 
       <Box py="6">
         <OrganizationProfile
-          account={account}
+          account={publicView(account)}
+          email={account.emails?.find((e) => e.is_primary)?.address}
           products={products}
-          owners={owners}
-          admins={admins}
-          members={members}
+          owners={owners.map(publicView)}
+          admins={admins.map(publicView)}
+          members={members.map(publicView)}
           canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
-          canCreateProduct={isAuthorized(
-            session,
-            // Same partial-product check the create action runs, so the link
-            // only appears when the create would actually be allowed.
-            { account_id: account.account_id } as Product,
-            Actions.CreateRepository
-          )}
+          canCreateProduct={canCreateProductForAccount(session, account)}
         />
       </Box>
     </Container>

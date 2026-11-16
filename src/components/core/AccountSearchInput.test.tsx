@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { Dialog, Theme } from "@radix-ui/themes";
 import { AccountSearchInput } from "./AccountSearchInput";
 import { searchAccounts } from "@/lib/actions/account";
+import { AccountType } from "@/types";
 
 jest.mock("@/lib/actions/account", () => ({
   searchAccounts: jest.fn(),
@@ -23,8 +24,8 @@ describe("AccountSearchInput", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSearchAccounts.mockResolvedValue([
-      { account_id: "jane-doe", name: "Jane Doe" },
-      { account_id: "janet-r", name: "Janet Reyes" },
+      { account_id: "jane-doe", name: "Jane Doe", type: AccountType.INDIVIDUAL },
+      { account_id: "janet-r", name: "Janet Reyes", type: AccountType.INDIVIDUAL },
     ]);
   });
 
@@ -35,7 +36,7 @@ describe("AccountSearchInput", () => {
     await user.type(screen.getByRole("combobox"), "jane");
 
     await waitFor(() => {
-      expect(mockSearchAccounts).toHaveBeenCalledWith("jane");
+      expect(mockSearchAccounts).toHaveBeenCalledWith("jane", undefined);
     });
 
     const options = await screen.findAllByRole("option");
@@ -44,6 +45,24 @@ describe("AccountSearchInput", () => {
     // The handle is what identifies the account, so it is on the card too --
     // two people can share a display name.
     expect(options[0]).toHaveTextContent("@jane-doe");
+    expect(options[0]).not.toHaveTextContent("Service account");
+  });
+
+  it("badges a service account among the matches", async () => {
+    mockSearchAccounts.mockResolvedValue([
+      { account_id: "jane-doe", name: "Jane Doe", type: AccountType.INDIVIDUAL },
+      { account_id: "nightly-sync", name: "Nightly Sync", type: AccountType.SERVICE },
+    ]);
+    const user = userEvent.setup();
+    renderInput();
+
+    await user.type(screen.getByRole("combobox"), "n");
+    await user.type(screen.getByRole("combobox"), "i");
+
+    const options = await screen.findAllByRole("option");
+    expect(options[0]).not.toHaveTextContent("Service account");
+    expect(options[1]).toHaveTextContent("Nightly Sync");
+    expect(options[1]).toHaveTextContent("Service account");
   });
 
   it("submits the handle, not the display name, when a match is clicked", async () => {
@@ -101,7 +120,7 @@ describe("AccountSearchInput", () => {
     await user.type(input, "x");
 
     await waitFor(() => {
-      expect(mockSearchAccounts).toHaveBeenCalledWith("jane-doex");
+      expect(mockSearchAccounts).toHaveBeenCalledWith("jane-doex", undefined);
     });
   });
 

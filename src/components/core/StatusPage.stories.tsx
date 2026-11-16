@@ -26,10 +26,6 @@ export const NotAuthorized: Story = {
   args: { type: "not-authorized" },
 };
 
-export const Unauthenticated: Story = {
-  args: { type: "unauthenticated" },
-};
-
 /** Callers can replace any of it; the icon is what stays. */
 export const CustomCopy: Story = {
   args: {
@@ -39,8 +35,4 @@ export const CustomCopy: Story = {
     actionText: "Back to the account",
     actionHref: "/",
   },
-};
-
-export const WithoutAction: Story = {
-  args: { type: "not-authorized", showAction: false },
 };

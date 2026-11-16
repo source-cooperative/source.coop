@@ -1,5 +1,71 @@
 # Changelog
 
+## [1.7.0](https://github.com/source-cooperative/source.coop/compare/v1.6.0...v1.7.0) (2026-10-05)
+
+
+### Features
+
+* **accounts:** add sign-ins and grant products from the section's corner ([#611](https://github.com/source-cooperative/source.coop/issues/611)) ([5155a90](https://github.com/source-cooperative/source.coop/commit/5155a907003458eddf75a00cb838e03851aa9221))
+* **accounts:** add the Service Account type ([#563](https://github.com/source-cooperative/source.coop/issues/563)) ([274a80c](https://github.com/source-cooperative/source.coop/commit/274a80ced7aadfbcf35c7c9917532872e7117f19))
+* **accounts:** confirm disabling and deleting a service account, delete by typing its id ([#609](https://github.com/source-cooperative/source.coop/issues/609)) ([bd15356](https://github.com/source-cooperative/source.coop/commit/bd15356565b87775d13019b26371cf182234ddf6))
+* **accounts:** end API keys in a CRC-32 checksum ([#596](https://github.com/source-cooperative/source.coop/issues/596)) ([cdada60](https://github.com/source-cooperative/source.coop/commit/cdada6029ced7d463426a41969324e1fc8e2b5d8))
+* **accounts:** example usage in each sign-in row's menu, not at creation ([#608](https://github.com/source-cooperative/source.coop/issues/608)) ([ccd3cb5](https://github.com/source-cooperative/source.coop/commit/ccd3cb5c191b9d58dfd2e2da2b40644facff1aae))
+* **accounts:** explain the Ref field and link GitHub's subject examples ([#612](https://github.com/source-cooperative/source.coop/issues/612)) ([99ed3fa](https://github.com/source-cooperative/source.coop/commit/99ed3fadfeda90765421b2fd1e7cc8a1519eb13c))
+* **accounts:** fill in a trusted repository and show the trust as JSON ([#627](https://github.com/source-cooperative/source.coop/issues/627)) ([be061f1](https://github.com/source-cooperative/source.coop/commit/be061f13373caf015ef1058653f1f7c3d7348ce3))
+* **accounts:** highlight example usage, with its copy button in the block ([#610](https://github.com/source-cooperative/source.coop/issues/610)) ([8320443](https://github.com/source-cooperative/source.coop/commit/83204433649e7e62b6b281adac80a9d08307869b))
+* **accounts:** issue an API key when creating a service account ([#607](https://github.com/source-cooperative/source.coop/issues/607)) ([cd2339d](https://github.com/source-cooperative/source.coop/commit/cd2339d22d0b539a30da4eb68c750265c7442f9e))
+* **accounts:** issue, revoke and expire opaque API keys for service accounts ([#570](https://github.com/source-cooperative/source.coop/issues/570)) ([2bc0480](https://github.com/source-cooperative/source.coop/commit/2bc0480bd86aed35b31e1c61417aa1726feb1e88))
+* **accounts:** label the create_repositories flag "Create Products" ([#637](https://github.com/source-cooperative/source.coop/issues/637)) ([bbe9b14](https://github.com/source-cooperative/source.coop/commit/bbe9b14f674e47b2a8eac63c0f5d4b5269d9e1e0))
+* **accounts:** manage service accounts from account settings ([#567](https://github.com/source-cooperative/source.coop/issues/567)) ([e164f24](https://github.com/source-cooperative/source.coop/commit/e164f243d3d378b5d34b5146e9e2fc68a53a2527))
+* **accounts:** offer a repository's immutable name in the trust form ([#614](https://github.com/source-cooperative/source.coop/issues/614)) ([06a832f](https://github.com/source-cooperative/source.coop/commit/06a832f6db6df71873f9d785f62f6d8e86a287a7))
+* **accounts:** one "Add sign-in" menu for creating and editing a service account ([#626](https://github.com/source-cooperative/source.coop/issues/626)) ([644d6a2](https://github.com/source-cooperative/source.coop/commit/644d6a2e8d349809c166be883e06c5a42de62253))
+* **accounts:** one "Signs in with" section for workflows and API keys ([#606](https://github.com/source-cooperative/source.coop/issues/606)) ([2c6d8fc](https://github.com/source-cooperative/source.coop/commit/2c6d8fc186cf9a2c9a2db14f7de8b0f350386723))
+* **accounts:** rename service accounts; back link on data connection edit ([#623](https://github.com/source-cooperative/source.coop/issues/623)) ([9af1ffa](https://github.com/source-cooperative/source.coop/commit/9af1ffa2ecab8a5c7cc9f863d6f9977e2bc026b5))
+* **accounts:** resolve accounts by (issuer, subject) ([#565](https://github.com/source-cooperative/source.coop/issues/565)) ([6ed15cf](https://github.com/source-cooperative/source.coop/commit/6ed15cf04c16826fe222c96b76d82c0b6eb44cc0))
+* **accounts:** revoke leaked API keys via self-revoke and GitHub secret scanning ([#581](https://github.com/source-cooperative/source.coop/issues/581)) ([2413d96](https://github.com/source-cooperative/source.coop/commit/2413d96f4efe334d330234e965a7f4d95e478618))
+* **accounts:** show one workflow with the sign-in step highlighted ([#628](https://github.com/source-cooperative/source.coop/issues/628)) ([8c3bb60](https://github.com/source-cooperative/source.coop/commit/8c3bb60065ac02e026171d5dfcb5de24e7622906))
+* **accounts:** show who revoked an API key ([#629](https://github.com/source-cooperative/source.coop/issues/629)) ([889f328](https://github.com/source-cooperative/source.coop/commit/889f328beca879ecb1929db338fce92504db4d9b))
+* **accounts:** trust a branch, tag or environment by name, verified with GitHub ([#632](https://github.com/source-cooperative/source.coop/issues/632)) ([1fccbec](https://github.com/source-cooperative/source.coop/commit/1fccbec5fabbc8af7a450a66081000541e167daa))
+* **accounts:** trust subjects per account, the way a role's trust policy does ([#566](https://github.com/source-cooperative/source.coop/issues/566)) ([113ecae](https://github.com/source-cooperative/source.coop/commit/113ecae87f328e063af64a080fafe29b2d707e06))
+* gate service accounts behind a CREATE_SERVICE_ACCOUNTS flag ([#635](https://github.com/source-cooperative/source.coop/issues/635)) ([ac31d24](https://github.com/source-cooperative/source.coop/commit/ac31d24e29f2d5bb7f6deb0c62190da9d030d7a1))
+* **memberships:** show and grant service accounts on the membership pages ([#564](https://github.com/source-cooperative/source.coop/issues/564)) ([78d110b](https://github.com/source-cooperative/source.coop/commit/78d110bf768b19f2e06a173835d1b35e7647da30))
+* **object-browser:** delete in the background with progress, in batches ([#583](https://github.com/source-cooperative/source.coop/issues/583)) ([b00c17e](https://github.com/source-cooperative/source.coop/commit/b00c17e3da8959c71f61d4bd09ccda8d9d9b2cbd))
+* **products:** refresh button for the object listing ([#625](https://github.com/source-cooperative/source.coop/issues/625)) ([bf47211](https://github.com/source-cooperative/source.coop/commit/bf472110c13d583b0564c413495c92b58bb23adf))
+* **ui:** a shared ItemList whose rows link edge to edge ([#621](https://github.com/source-cooperative/source.coop/issues/621)) ([09d707f](https://github.com/source-cooperative/source.coop/commit/09d707fb7d10d65dc3f93e7358d4de25a4c4fe62))
+
+
+### Bug Fixes
+
+* **accounts:** always put the ref or environment on a line of its own ([#618](https://github.com/source-cooperative/source.coop/issues/618)) ([8699c19](https://github.com/source-cooperative/source.coop/commit/8699c198d3437f5e6d1f68ec0daab34ae33cacbb))
+* **accounts:** drop the hash-storage note from the issued-key dialog ([#587](https://github.com/source-cooperative/source.coop/issues/587)) ([71b6628](https://github.com/source-cooperative/source.coop/commit/71b6628ffb13162f5b624a2eb4e3123491db44a7))
+* **accounts:** keep "Use it" inline after the immutable repository name ([#617](https://github.com/source-cooperative/source.coop/issues/617)) ([717b877](https://github.com/source-cooperative/source.coop/commit/717b877492b6e668a0346aa2ef79263a55bbbf29))
+* **accounts:** mask a just-issued API key until asked to show it ([#622](https://github.com/source-cooperative/source.coop/issues/622)) ([5a0d864](https://github.com/source-cooperative/source.coop/commit/5a0d8648c197490cf0529bde4a6081c6407a5afa))
+* **accounts:** offer a whole workflow or the step alone as a trusted workflow's example ([#616](https://github.com/source-cooperative/source.coop/issues/616)) ([eef4fbd](https://github.com/source-cooperative/source.coop/commit/eef4fbd2339b6987d94058d5aaf4382bd12ebf20))
+* **accounts:** order an API key's variables from where to how ([#619](https://github.com/source-cooperative/source.coop/issues/619)) ([93c800c](https://github.com/source-cooperative/source.coop/commit/93c800cef1c2c4e1e6f6afb93baed269af5413e0))
+* **accounts:** say what a GitHub run's subject claim names ([6e15647](https://github.com/source-cooperative/source.coop/commit/6e156479e6c1b9c636fc599957ff87552566f8d2))
+* **accounts:** show the API key count on every service account row ([#605](https://github.com/source-cooperative/source.coop/issues/605)) ([faa821d](https://github.com/source-cooperative/source.coop/commit/faa821dfd39299e77d0237ca8f4290ffd0976148))
+* **admin:** search users as you type and list every match ([#568](https://github.com/source-cooperative/source.coop/issues/568)) ([73e3be9](https://github.com/source-cooperative/source.coop/commit/73e3be9322c781f4b18112e126e4e97808343521))
+* **api:** answer unmatched /api paths with a JSON 404 ([#630](https://github.com/source-cooperative/source.coop/issues/630)) ([e79eb4a](https://github.com/source-cooperative/source.coop/commit/e79eb4ab0e1518c9825546ac92a34bd9e372f0d2))
+* **api:** remove legacy API keys and the api-keys table ([#374](https://github.com/source-cooperative/source.coop/issues/374)) ([f845857](https://github.com/source-cooperative/source.coop/commit/f8458574a5882b3ee4bc4ffeae520c4a7d4cf0ad))
+* **auth:** keep the session across a server action redirect ([#604](https://github.com/source-cooperative/source.coop/issues/604)) ([2572d85](https://github.com/source-cooperative/source.coop/commit/2572d85b4a2afe410b2c002518b97352a82f91e9))
+* **authz:** allow org owners to create products without CREATE_REPOSITORIES flag ([#508](https://github.com/source-cooperative/source.coop/issues/508)) ([b77a514](https://github.com/source-cooperative/source.coop/commit/b77a514b1a68cc4c642e33b50d84379b16c88014))
+* **authz:** limit the self-authorization shortcut to individual accounts ([#562](https://github.com/source-cooperative/source.coop/issues/562)) ([4482c04](https://github.com/source-cooperative/source.coop/commit/4482c04bdf5c0579807f3e38dcf2afabadeec7ea))
+* **data-connections:** let a connection row wrap instead of collapsing on mobile ([#532](https://github.com/source-cooperative/source.coop/issues/532)) ([03b8747](https://github.com/source-cooperative/source.coop/commit/03b8747e21ba64fa60e12c5a5c77ca5e37f2dd1d))
+* keep unlisted products out of search engines and profile listings ([#574](https://github.com/source-cooperative/source.coop/issues/574)) ([37323b7](https://github.com/source-cooperative/source.coop/commit/37323b755427381aeee88034f1cbab2a5f4c79d6))
+* make organization contact email editable ([#293](https://github.com/source-cooperative/source.coop/issues/293)) ([a14311e](https://github.com/source-cooperative/source.coop/commit/a14311eab6f8e2e9e953bbfb712f4b246bec74d3))
+* **products:** truncate a product's DOI instead of overflowing the row ([#533](https://github.com/source-cooperative/source.coop/issues/533)) ([4f1fab8](https://github.com/source-cooperative/source.coop/commit/4f1fab87630eba0c673fc0fa0853d7e4fcc0b028))
+* **profiles:** keep deactivated products listed for their owners ([#579](https://github.com/source-cooperative/source.coop/issues/579)) ([1f06414](https://github.com/source-cooperative/source.coop/commit/1f064140c2e4e0a96e5358d5752376b66be0857c))
+* **profiles:** truncate long website links instead of wrapping them ([#531](https://github.com/source-cooperative/source.coop/issues/531)) ([5df79d5](https://github.com/source-cooperative/source.coop/commit/5df79d54e9bfff7411d9c42e22542b515e86db07))
+* render inline markdown in product list descriptions ([#603](https://github.com/source-cooperative/source.coop/issues/603)) ([7e9a94a](https://github.com/source-cooperative/source.coop/commit/7e9a94a8ac6fbe9364009dca4355b56d2cba746d))
+* **seo:** disallow crawling on non-production deployments ([#585](https://github.com/source-cooperative/source.coop/issues/585)) ([5e05878](https://github.com/source-cooperative/source.coop/commit/5e058786bb153ea3453e8bc3567023b6e27397af))
+* **seo:** keep crawlers on product pages, out of the file browser ([#586](https://github.com/source-cooperative/source.coop/issues/586)) ([0ffe1e6](https://github.com/source-cooperative/source.coop/commit/0ffe1e6e392c4b55d227c07cab0b7eceebefb061))
+* **service-accounts:** high-contrast primary buttons ([#620](https://github.com/source-cooperative/source.coop/issues/620)) ([d517679](https://github.com/source-cooperative/source.coop/commit/d51767933ee591b68ef941c4d7aa3d4799dac439))
+
+
+### Performance Improvements
+
+* **api:** record API key use after the exchange response ([#631](https://github.com/source-cooperative/source.coop/issues/631)) ([a096968](https://github.com/source-cooperative/source.coop/commit/a0969682588f80df7aef48141e4bfd78f1c39100))
+
 ## [1.6.0](https://github.com/source-cooperative/source.coop/compare/v1.5.1...v1.6.0) (2026-08-30)
 
 

@@ -190,7 +190,6 @@ export function EditProfileForm({
     <DynamicForm<EditProfileFormData>
       fields={fields}
       action={updateAccountProfile}
-      submitButtonText="Save Changes"
       initialValues={initialValues}
       hiddenFields={{
         account_id: initialAccount.account_id,

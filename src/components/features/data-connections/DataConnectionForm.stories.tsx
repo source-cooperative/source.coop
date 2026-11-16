@@ -23,7 +23,7 @@ import {
  * credential looks like next to one that was never set.
  */
 const meta = {
-  title: "Features/Data connections/DataConnectionForm",
+  title: "Features/Settings/Data connections/DataConnectionForm",
   component: DataConnectionForm,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof DataConnectionForm>;
@@ -123,5 +123,27 @@ export const AccountOwned: Story = {
     mode: "edit",
     ownerAccountId: "miskatonic",
     dataConnection: s3Connection,
+  },
+};
+
+/**
+ * Keyless S3 access: the proxy assumes your IAM role with its own OIDC token,
+ * so nothing secret is stored. Below the role ARN is the trust policy to give
+ * that role, filled in with its AWS account and this connection's id. It admits
+ * this connection alone; a role that trusts the proxy without it can be
+ * assumed by any connection on Source Cooperative.
+ */
+export const WebIdentityRole: Story = {
+  args: {
+    mode: "edit",
+    ownerAccountId: "miskatonic",
+    proxyOrigin: "https://data.source.coop",
+    dataConnection: {
+      ...s3Connection,
+      authentication: {
+        type: DataConnectionAuthenticationType.S3WebIdentityRole,
+        role_arn: "arn:aws:iam::123456789012:role/source-cooperative-proxy",
+      },
+    } as unknown as EditableDataConnection,
   },
 };

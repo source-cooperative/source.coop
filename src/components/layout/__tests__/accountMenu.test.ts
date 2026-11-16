@@ -4,7 +4,7 @@ describe("invitationLink", () => {
   it("routes an org invite to the org page, using the org name", () => {
     expect(
       invitationLink(
-        { membership_account_id: "acme", repository_id: undefined },
+        { membership_account_id: "acme", product_id: undefined },
         { organizationName: "Acme Corp" }
       )
     ).toEqual({ href: "/acme", label: "Acme Corp" });
@@ -13,7 +13,7 @@ describe("invitationLink", () => {
   it("routes a product invite to the product page, using the product title", () => {
     expect(
       invitationLink(
-        { membership_account_id: "acme", repository_id: "roads" },
+        { membership_account_id: "acme", product_id: "roads" },
         { productTitle: "Road Network" }
       )
     ).toEqual({ href: "/acme/roads", label: "Road Network" });
@@ -21,10 +21,10 @@ describe("invitationLink", () => {
 
   it("falls back to ids when names are missing", () => {
     expect(
-      invitationLink({ membership_account_id: "acme", repository_id: undefined }, {})
+      invitationLink({ membership_account_id: "acme", product_id: undefined }, {})
     ).toEqual({ href: "/acme", label: "acme" });
     expect(
-      invitationLink({ membership_account_id: "acme", repository_id: "roads" }, {})
+      invitationLink({ membership_account_id: "acme", product_id: "roads" }, {})
     ).toEqual({ href: "/acme/roads", label: "acme/roads" });
   });
 });

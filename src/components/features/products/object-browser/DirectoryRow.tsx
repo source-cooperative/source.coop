@@ -8,6 +8,7 @@ import {
   AlertDialog,
   Button,
   Text,
+  Spinner,
   DropdownMenu,
 } from "@radix-ui/themes";
 import {
@@ -32,6 +33,7 @@ import { useState } from "react";
 import {
   useUploadManager,
   useS3Credentials,
+  deleteStatusText,
 } from "@/components/features/uploader";
 
 interface DirectoryRowProps {
@@ -62,15 +64,13 @@ export function DirectoryRow({
   onDeleted,
 }: DirectoryRowProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const router = useRouter();
   const {
     cancelUpload,
     retryUpload,
     getUploadsForScope,
-    deleteObject,
-    deletePrefix,
+    deletions,
+    deletePath,
   } = useUploadManager();
   const { getCredentials } = useS3Credentials();
 
@@ -85,34 +85,25 @@ export function DirectoryRow({
   // same signal the upload controls use. Delete is gated on it.
   const canEdit = !!getCredentials(scope);
 
-  const handleDelete = async () => {
-    setDeleting(true);
-    setDeleteError(null);
-    try {
-      if (item.isDirectory) {
-        await deletePrefix(item.path, scope);
-      } else {
-        await deleteObject(item.path, scope);
-      }
-      // Hide it now (the refetch below can be stale), then reconcile.
-      onDeleted?.(item.path);
-      setConfirmOpen(false);
-      router.refresh(); // re-fetch the server-rendered listing
-    } catch (error) {
-      // Keep the dialog open and tell the user — a partial failure on a large
-      // prefix otherwise looks just like the stale-listing case. A prefix delete
-      // is per-object and non-atomic, so a mid-way failure leaves some objects
-      // gone and the rest intact; warn about that. A single file is all-or-nothing.
-      console.error("Delete failed", error);
-      const reason = error instanceof Error ? error.message : "request failed";
-      setDeleteError(
-        item.isDirectory
-          ? `Delete may be partial — ${reason}. Retry to remove remaining items.`
-          : `Delete failed — ${reason}. Please retry.`,
-      );
-    } finally {
-      setDeleting(false);
-    }
+  const deletion = deletions.find(
+    (d) =>
+      d.path === item.path &&
+      d.scope.accountId === scope.accountId &&
+      d.scope.productId === scope.productId
+  );
+  const deleting = deletion?.status === "deleting";
+
+  // The delete runs in the background (progress in the account menu), so the
+  // dialog closes at once and the user can keep browsing. A failure is
+  // reported there and on this row, whose delete button stays for a retry.
+  const handleDelete = () => {
+    deletePath(item.path, item.isDirectory, scope)
+      .then(() => {
+        // Hide it now (the refetch below can be stale), then reconcile.
+        onDeleted?.(item.path);
+        router.refresh(); // re-fetch the server-rendered listing
+      })
+      .catch((error) => console.error("Delete failed", error));
   };
 
   // Find the upload ID for this item if it's uploading
@@ -199,11 +190,7 @@ export function DirectoryRow({
 
           {/* Folders show an em dash: an empty cell reads as missing data. */}
           <MonoText color="gray" size="1" className={styles.numeric}>
-            {item.isDirectory
-              ? "—"
-              : item.size > 0
-                ? formatBytes(item.size)
-                : ""}
+            {item.isDirectory ? "—" : item.size > 0 ? formatBytes(item.size) : ""}
           </MonoText>
 
           {/* Directories have no real mtime. suppressHydrationWarning: "now"
@@ -293,7 +280,24 @@ export function DirectoryRow({
                 </Tooltip>
               )}
 
-              {!isUploading && (!item.isDirectory || canEdit) && (
+              {deleting && (
+                <Flex align="center" gap="2">
+                  <Spinner size="1" />
+                  <Text size="1" color="gray">
+                    {deleteStatusText(deletion)}
+                  </Text>
+                </Flex>
+              )}
+
+              {deletion?.status === "error" && (
+                <Tooltip content={deletion.error}>
+                  <Text size="1" color="red">
+                    Delete failed
+                  </Text>
+                </Tooltip>
+              )}
+
+              {!isUploading && !deleting && (!item.isDirectory || canEdit) && (
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger>
                     <IconButton
@@ -328,13 +332,10 @@ export function DirectoryRow({
 
               {/* Opened by the menu item. It is not nested in the menu, whose
                   content unmounts as it closes. */}
-              {canEdit && !isUploading && (
+              {canEdit && !isUploading && !deleting && (
                 <AlertDialog.Root
                   open={confirmOpen}
-                  onOpenChange={(o) => {
-                    setConfirmOpen(o);
-                    if (!o) setDeleteError(null);
-                  }}
+                  onOpenChange={setConfirmOpen}
                 >
                   <AlertDialog.Content maxWidth="450px">
                     <AlertDialog.Title>
@@ -348,27 +349,16 @@ export function DirectoryRow({
                     </AlertDialog.Description>
                     <Flex gap="3" mt="4" justify="end">
                       <AlertDialog.Cancel>
-                        <Button variant="soft" color="gray" disabled={deleting}>
+                        <Button variant="soft" color="gray">
                           Cancel
                         </Button>
                       </AlertDialog.Cancel>
-                      {/* Not AlertDialog.Action: that closes the dialog on
-                          click. We close manually after the async delete
-                          resolves so it stays open (disabled) while in flight. */}
-                      <Button
-                        color="red"
-                        onClick={handleDelete}
-                        disabled={deleting}
-                        loading={deleting}
-                      >
-                        Delete
-                      </Button>
+                      <AlertDialog.Action>
+                        <Button color="red" onClick={handleDelete}>
+                          Delete
+                        </Button>
+                      </AlertDialog.Action>
                     </Flex>
-                    {deleteError && (
-                      <Text as="p" size="1" color="red" mt="2">
-                        {deleteError}
-                      </Text>
-                    )}
                   </AlertDialog.Content>
                 </AlertDialog.Root>
               )}

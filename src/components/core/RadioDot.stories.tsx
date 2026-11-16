@@ -26,18 +26,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Checked: Story = {
-  args: { checked: true },
-};
-
-export const Unchecked: Story = {
-  args: { checked: false },
-};
-
-export const Disabled: Story = {
-  args: { checked: true, disabled: true },
-};
-
 /**
  * Side by side with Radix's own radio. These should be indistinguishable in
  * every row; if they are not, the token set has moved.

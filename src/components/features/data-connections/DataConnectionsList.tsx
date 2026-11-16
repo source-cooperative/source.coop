@@ -1,15 +1,10 @@
 import { Text } from "@radix-ui/themes";
-import { ChevronRightIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
-import { Account, DataConnection, DataProvider } from "@/types";
+import { DataConnection, DataProvider, type PublicAccount } from "@/types";
 import { AccountInfoHoverCard } from "@/components/core/AccountInfoHoverCard";
 import { accountUrl } from "@/lib/urls";
-import {
-  ConnectionList,
-  ConnectionRow,
-  ConnectionMarker,
-  ConnectionsEmpty,
-} from "./ConnectionRow";
+import { ItemList } from "@/components/core/ItemList";
+import { ConnectionsEmpty } from "./ConnectionsEmpty";
 
 const PROVIDER_LABEL: Record<DataProvider, string> = {
   [DataProvider.S3]: "s3",
@@ -49,7 +44,7 @@ interface DataConnectionsListProps {
    * system-owned (unowned) connections from account-owned ones. Omit it
    * (account-scoped view), where every connection has the same owner.
    */
-  ownerAccounts?: Record<string, Account>;
+  ownerAccounts?: Record<string, PublicAccount>;
 }
 
 /**
@@ -63,7 +58,7 @@ function OwnerLabel({
   ownerAccounts,
 }: {
   owner?: string;
-  ownerAccounts: Record<string, Account>;
+  ownerAccounts: Record<string, PublicAccount>;
 }) {
   if (!owner) {
     return <>system</>;
@@ -105,24 +100,20 @@ export function DataConnectionsList({
   }
 
   return (
-    <ConnectionList>
+    <ItemList.Root>
       {connections.map((conn) => (
-        <ConnectionRow
+        <ItemList.Row
           key={conn.data_connection_id}
+          href={editHref(conn.data_connection_id)}
           title={
-            <Link
-              href={editHref(conn.data_connection_id)}
-              style={{ color: "var(--accent-11)", textDecoration: "none" }}
-            >
-              <Text size="2" weight="medium">
-                {conn.name}
-              </Text>
-            </Link>
+            <Text size="2" weight="medium">
+              {conn.name}
+            </Text>
           }
           markers={
             // The one state here worth marking. Read-only is deliberate, not a
             // fault, so it is marked where true and unmentioned where false.
-            conn.read_only && <ConnectionMarker>Read only</ConnectionMarker>
+            conn.read_only && <ItemList.Marker>Read only</ItemList.Marker>
           }
           meta={
             <>
@@ -145,9 +136,8 @@ export function DataConnectionsList({
                 : conn.allowed_visibilities.join(", ")}
             </Text>
           }
-          actions={<ChevronRightIcon color="var(--gray-9)" />}
         />
       ))}
-    </ConnectionList>
+    </ItemList.Root>
   );
 }

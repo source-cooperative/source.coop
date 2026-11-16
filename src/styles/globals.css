@@ -33,6 +33,18 @@
 :root .radix-themes {
   --default-font-family: var(--font-ibm-plex);
   --code-font-family: "Berkeley Mono", Menlo, Consolas, monospace;
+
+  /* Every Radix focus outline is `2px solid var(--focus-8)`, and --focus-8
+     defaults to --accent-8. With accentColor="gray" that is #bbbbbb: roughly
+     1.9:1 against a white page, where WCAG 2.1 asks 3:1 of a focus indicator.
+     On an input it landed a shade away from the #cecece border it was supposed
+     to stand out from.
+
+     --accent-12 instead: #202020 here, ~15:1, and it inverts to near-white in
+     dark mode because it is a token rather than a literal. Overriding a
+     --focus-N token is Radix's documented way to recolour focus; nothing here
+     reaches into its internals. */
+  --focus-8: var(--accent-12);
   --cursor-button: pointer;
   --cursor-checkbox: pointer;
   --cursor-disabled: default;

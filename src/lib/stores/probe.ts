@@ -30,6 +30,11 @@ export type StoreFormat = "zarr2" | "zarr3" | "icechunk";
 export interface StoreProbe {
   renderable: boolean;
   format?: StoreFormat;
+  /**
+   * Icechunk spec layout version: 1 = legacy refs/ layout (pre-2.x),
+   * 2 = current repo-object layout (spec 2.x). Only set when format is "icechunk".
+   */
+  icechunkVersion?: 1 | 2;
   /** Tier 3 outcome. Informational only — does not affect `renderable`. */
   chunkCanary?: "ok" | "inconclusive";
   /** Why it isn't renderable (or a note); logged, not shown to users. */
@@ -352,7 +357,7 @@ async function probeIcechunkRefs(io: Io): Promise<StoreProbe | null> {
   // multi-MB (they hold the whole manifest), so read only the leading magic
   // bytes via a Range request rather than downloading the entire object.
   const snapshot = await getBytes(io, snapshotRel, `bytes=0-${ICECHUNK_MAGIC.length - 1}`);
-  return { renderable: true, format: "icechunk", chunkCanary: hasIcechunkMagic(snapshot) ? "ok" : "inconclusive" };
+  return { renderable: true, format: "icechunk", icechunkVersion: 1, chunkCanary: hasIcechunkMagic(snapshot) ? "ok" : "inconclusive" };
 }
 
 /**
@@ -366,7 +371,7 @@ async function probeIcechunkRefs(io: Io): Promise<StoreProbe | null> {
 async function probeIcechunkRepoInfo(io: Io): Promise<StoreProbe> {
   const repo = await getBytes(io, "repo", `bytes=0-${ICECHUNK_MAGIC.length - 1}`);
   if (hasIcechunkMagic(repo)) {
-    return { renderable: true, format: "icechunk", chunkCanary: "ok" };
+    return { renderable: true, format: "icechunk", icechunkVersion: 2, chunkCanary: "ok" };
   }
   return { renderable: false, reason: "no icechunk ref or repo info object" };
 }

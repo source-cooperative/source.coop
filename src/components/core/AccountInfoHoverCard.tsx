@@ -1,5 +1,5 @@
-import { Text, Flex, HoverCard } from "@radix-ui/themes";
-import { Account } from "@/types";
+import { Badge, Text, Flex, HoverCard } from "@radix-ui/themes";
+import { AccountType, type PublicAccount } from "@/types";
 import { AccountIdentity, accountCardSurface } from "./AccountIdentity";
 // Deep import, not the `../features/profiles` barrel: that barrel also
 // re-exports EditProfileForm and OrganizationMembers, which reach server-only
@@ -8,7 +8,7 @@ import { AccountIdentity, accountCardSurface } from "./AccountIdentity";
 import { ProfileAvatar } from "../features/profiles/ProfileAvatar";
 
 interface AccountInfoHoverCardProps {
-  account: Account;
+  account: PublicAccount;
   children: React.ReactNode;
   showHoverCard?: boolean;
   isLink?: boolean;
@@ -43,6 +43,15 @@ export function AccountInfoHoverCard({
             accountId={account.account_id}
             avatar={<ProfileAvatar account={account} size="2" />}
           />
+
+          {/* The badge the picker and the memberships table give a machine. */}
+          {account.type === AccountType.SERVICE && (
+            <Flex>
+              <Badge size="1" color="gray" variant="outline">
+                Service account
+              </Badge>
+            </Flex>
+          )}
 
           {account.metadata_public?.bio && (
             <Text size="2" color="gray">

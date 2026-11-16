@@ -8,7 +8,7 @@ import { EmailVerificationCallout } from "./EmailVerificationCallout";
  * is the half that draws them.
  */
 const meta = {
-  title: "Features/Auth/EmailVerificationCallout",
+  title: "Features/App shell/EmailVerificationCallout",
   component: EmailVerificationCallout,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof EmailVerificationCallout>;

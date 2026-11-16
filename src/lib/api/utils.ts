@@ -1,10 +1,9 @@
 /**
  * @fileoverview Utility functions for API operations in the Source Cooperative application.
  *
- * This module provides utility functions for handling API requests, user sessions, and generating gravatar URLs. It includes functionality for:
+ * This module provides utility functions for handling API requests and user sessions. It includes functionality for:
  * - Retrieving and validating user sessions
  * - Checking admin status
- * - Generating gravatar URLs
  *
  * The module interacts with Ory for session management and uses custom database
  * operations for retrieving user and membership information.
@@ -38,14 +37,23 @@ import { isAuthorized } from "@/lib/api/authz";
 import { getServerSession } from "@ory/nextjs/app";
 import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
-import md5 from "md5";
 import { authenticateWithOidcToken } from "./oidc";
+import {
+  authenticateWithOryAccessToken,
+  isOryToken,
+} from "./ory-access-token";
 import { CONFIG } from "@/lib/config";
 import { LOGGER } from "@/lib/logging";
 
+const READS = new Set(["GET", "HEAD"]);
+
 /**
  * Retrieves the current user session from the request context.
- * Attempts OIDC token authentication first, then falls back to cookie-based authentication.
+ *
+ * A bearer token is either an Ory access token (from `source-coop login`) or
+ * an assertion the data proxy signed on a caller's behalf; its issuer says
+ * which, and only that verifier sees it. Without an Authorization header, the
+ * session cookie is used.
  *
  * @param req - The Next.js API request object.
  * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
@@ -56,11 +64,26 @@ export async function getApiSession(
   const authorization = req.headers.get("Authorization");
 
   if (authorization) {
-    LOGGER.debug("Attempting OIDC token authentication", {
+    const audience = CONFIG.auth.oauth2.audience || new URL(req.url).origin;
+    const token = authorization.toLowerCase().startsWith("bearer ")
+      ? authorization.slice(7)
+      : "";
+    if (isOryToken(token)) {
+      return authenticateWithOryAccessToken(token, audience);
+    }
+    // The data proxy's assertions only read: the proxy can sign any subject,
+    // so its key must not be able to change anything as anyone.
+    if (!READS.has(req.method)) {
+      LOGGER.warn("Refusing a proxy assertion for a write", {
+        operation: "getApiSession",
+        metadata: { method: req.method },
+      });
+      return null;
+    }
+    LOGGER.debug("Attempting proxy assertion authentication", {
       operation: "getApiSession",
-      metadata: { method: "OIDC token" },
+      metadata: { method: "proxy assertion" },
     });
-    const audience = new URL(req.url).origin;
     const oidcSession = await authenticateWithOidcToken(
       authorization,
       audience,
@@ -163,51 +186,4 @@ export async function getOryIdentityIdByEmail(
   }
 
   return identities[0]?.id ?? null;
-}
-
-export async function getEmail(identity_id: string): Promise<string | null> {
-  const response = await fetch(
-    `${CONFIG.auth.api.backendUrl}/admin/identities/${identity_id}`,
-    {
-      headers: {
-        Authorization: `Bearer ${CONFIG.auth.accessToken}`,
-      },
-    },
-  );
-
-  if (!response.ok) {
-    return null;
-  }
-  const data = await response.json();
-
-  for (const recover_address of data.recovery_addresses) {
-    return recover_address.value;
-  }
-
-  return null;
-}
-
-/**
- * Generates a Gravatar profile image URL based on the provided email address.
- * If no email is provided, it uses a default email address.
- *
- * @param email - The email address to generate the Gravatar URL for.
- * @returns A string containing the Gravatar URL for the given email.
- *
- * @example
- * const imageUrl = getProfileImage('user@example.com');
- * Returns: 'https://www.gravatar.com/avatar/[MD5 hash of email]'
- */
-export function getProfileImage(email: string): string {
-  if (!email) {
-    email = "default@default.com";
-  }
-  // Trim and lowercase the email
-  const trimmedEmail = email.trim().toLowerCase();
-
-  // Create an MD5 hash of the email
-  const hash = md5(trimmedEmail);
-
-  // Construct and return the Gravatar URL
-  return `https://www.gravatar.com/avatar/${hash}`;
 }

@@ -2,6 +2,7 @@ import "@radix-ui/themes/styles.css";
 import "@/styles/globals.css";
 import { ThemeProvider } from "@/styles/theme";
 import { SessionProvider } from "@ory/elements-react/client";
+import { Analytics } from "@vercel/analytics/next";
 import NextTopLoader from "nextjs-toploader";
 import { IBM_Plex_Sans } from "next/font/google";
 import { S3CredentialsProvider, UploadProvider } from "@/components";
@@ -46,6 +47,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
             </S3CredentialsProvider>
           </SessionProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );

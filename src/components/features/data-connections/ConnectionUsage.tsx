@@ -3,7 +3,7 @@ import Link from "next/link";
 import { productsTable } from "@/lib/clients";
 import { productUrl } from "@/lib/urls";
 import { SectionHeader } from "@/components/core";
-import { ConnectionMarker } from "./ConnectionRow";
+import { ItemList } from "@/components/core/ItemList";
 
 /**
  * Lists the products that mirror data through a given data connection. The
@@ -70,7 +70,7 @@ export async function ConnectionUsage({
                       <Text size="2">{product.title || product.product_id}</Text>
                     </Link>
                     {/* Identifiers in the code face, exactly as a
-                        <ConnectionRow>'s meta line renders them. */}
+                        <ItemList.Row>'s meta line renders them. */}
                     <Text
                       size="1"
                       color="gray"
@@ -87,7 +87,7 @@ export async function ConnectionUsage({
                     {/* Primary is the one served from, so it is marked; being a
                         mirror is the ordinary case and stays plain. */}
                     {isPrimary ? (
-                      <ConnectionMarker>Primary</ConnectionMarker>
+                      <ItemList.Marker>Primary</ItemList.Marker>
                     ) : (
                       <Text size="2" color="gray">
                         Mirror
@@ -99,7 +99,7 @@ export async function ConnectionUsage({
                         Deactivating is a deliberate act, not a fault, and a badge
                         on every row saying "nothing is wrong" is noise. */}
                     {product.disabled ? (
-                      <ConnectionMarker>Deactivated</ConnectionMarker>
+                      <ItemList.Marker>Deactivated</ItemList.Marker>
                     ) : (
                       <Text size="2">Active</Text>
                     )}

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { MembershipsTable } from "./MembershipsTable";
 import {
-  type Account,
+  type PublicAccount,
   type Membership,
   MembershipRole,
   MembershipState,
@@ -18,7 +18,7 @@ import {
  * `revokeMembership` is an `fn()` stub, so the row actions do nothing.
  */
 const meta = {
-  title: "Features/Memberships/MembershipsTable",
+  title: "Features/Settings/Memberships/MembershipsTable",
   component: MembershipsTable,
   parameters: { layout: "padded" },
 } satisfies Meta<typeof MembershipsTable>;
@@ -26,8 +26,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const account = (account_id: string, name: string) =>
-  ({ account_id, name, type: "individual" }) as unknown as Account;
+const account = (account_id: string, name: string, type = "individual") =>
+  ({ account_id, name, type }) as unknown as PublicAccount;
 
 const membership = (
   account_id: string,
@@ -80,4 +80,41 @@ export const NotEditable: Story = {
 
 export const Empty: Story = {
   args: { ...base, memberships: [], editable: true },
+};
+
+/**
+ * A service account among the members. It is badged, and its name is not a
+ * link — a machine has no profile page to land on. It can only ever be a
+ * reader or a writer, so it sorts below the people who own and maintain.
+ */
+export const WithServiceAccount: Story = {
+  args: {
+    ...base,
+    editable: true,
+    memberships: [
+      membership("acoltrane", MembershipRole.Owners, MembershipState.Member),
+      membership("miskatonic--nightly-sync", MembershipRole.WriteData, MembershipState.Member),
+      membership("newcomer", MembershipRole.ReadData, MembershipState.Invited),
+    ],
+    memberAccountsMap: new Map([
+      ...memberAccountsMap,
+      ["miskatonic--nightly-sync", account("miskatonic--nightly-sync", "Nightly Sync", "service")],
+    ]),
+  },
+};
+
+/**
+ * A member whose account is gone, such as a deleted one. With no account to
+ * show, the row names it by its id, and its role can still be changed or
+ * revoked.
+ */
+export const MissingAccount: Story = {
+  args: {
+    ...base,
+    editable: true,
+    memberships: [
+      ...memberships,
+      membership("departed", MembershipRole.ReadData, MembershipState.Member),
+    ],
+  },
 };

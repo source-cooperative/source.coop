@@ -8,7 +8,6 @@
 import { NextRequest } from "next/server";
 import { productsTable } from "@/lib/clients/database/products";
 import {
-  apiKeysTable,
   accountsTable,
   membershipsTable,
   isIndividualAccount,
@@ -21,20 +20,20 @@ import { AccountType } from "@/types";
 jest.mock("@/lib/clients/database/products", () => ({
   productsTable: {
     listByAccount: jest.fn(),
+    attachAccounts: jest.fn(async (products) => products),
   },
 }));
 
 jest.mock("@/lib/clients/database", () => ({
-  apiKeysTable: {
-    fetchById: jest.fn(),
-  },
-  accountsTable: {
-    fetchById: jest.fn(),
-  },
+  // The same tables the route's operation reads, under their other import path.
+  ...jest.requireMock("@/lib/clients/database/products"),
+  ...jest.requireMock("@/lib/clients/database/accounts"),
   membershipsTable: {
     listByUser: jest.fn(),
   },
   isIndividualAccount: jest.fn(),
+  // No product here has tags awaiting review.
+  hidePendingTags: async (products: unknown[]) => products,
 }));
 
 jest.mock("@/lib/clients/database/accounts", () => ({
@@ -129,7 +128,7 @@ describe("/api/v1/products/[account_id]", () => {
       });
 
       expect(response.status).toBe(200);
-      const { products } = await response.json();
+      const { items: products } = await response.json();
       expect(products).toHaveLength(2);
       expect(products).toContainEqual(
         expect.objectContaining({ product_id: "public-repo" })
@@ -153,7 +152,7 @@ describe("/api/v1/products/[account_id]", () => {
       });
 
       expect(response.status).toBe(200);
-      const { products } = await response.json();
+      const { items: products } = await response.json();
       expect(products).toHaveLength(1);
       expect(products).toContainEqual(
         expect.objectContaining({ product_id: "public-repo" })
@@ -188,7 +187,7 @@ describe("/api/v1/products/[account_id]", () => {
       });
 
       expect(response.status).toBe(200);
-      const { products } = await response.json();
+      const { items: products } = await response.json();
       // Private product of another account should be filtered out
       expect(products).toHaveLength(0);
     });
@@ -225,7 +224,7 @@ describe("/api/v1/products/[account_id]", () => {
       });
 
       expect(response.status).toBe(200);
-      const { products } = await response.json();
+      const { items: products } = await response.json();
       expect(products).toHaveLength(1);
       expect(products[0].product_id).toBe("public-repo");
     });

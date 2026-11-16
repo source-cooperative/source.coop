@@ -80,7 +80,7 @@ export function MonoLabel({
  * That clip is also why the minimum track is as wide as it is: it would hide
  * a value that outgrew its column just as quietly as it hides the divider,
  * and 120px holds the widest of these a product realistically reports — a
- * ten-character downloads count.
+ * ten-character request count.
  */
 export function StatRow({
   children,
@@ -127,7 +127,7 @@ export function Stat({
   );
 }
 
-/** Green swatch + "N-day downloads" caption, or the hovered day's date. */
+/** Green swatch + "N-day requests" caption, or the hovered day's date. */
 export function HoverCaption({
   days,
   hovered,
@@ -146,15 +146,15 @@ export function HoverCaption({
       )}
       <MonoLabel help={HELP.window}>
         {hovered === null
-          ? `${days.length}-day downloads`
+          ? `${days.length}-day requests`
           : formatDateSSR(days[hovered].date)}
       </MonoLabel>
     </Flex>
   );
 }
 
-/** Daily downloads bars; hovering highlights a bar and reports its index. */
-export function DownloadsChart({
+/** Daily requests bars; hovering highlights a bar and reports its index. */
+export function RequestsChart({
   days,
   hovered,
   onHover,
@@ -168,7 +168,7 @@ export function DownloadsChart({
   return (
     <Box
       role="img"
-      aria-label={`Daily downloads over the past ${days.length} days`}
+      aria-label={`Daily requests over the past ${days.length} days`}
       onMouseLeave={() => onHover(null)}
       // Clicking the chart must not move focus (a click inside the Radix
       // tab panel otherwise promotes focus to it and draws its focus ring
@@ -227,17 +227,17 @@ export function UsersContent({ users }: { users: UsageUsers }) {
           value={compactFormat.format(Math.round(users.registered)).toLowerCase()}
         />
         <Stat
-          label="Anon downloads"
+          label="Anon requests"
           help={HELP.anon}
           value={compactFormat.format(Math.round(users.anonRequests)).toLowerCase()}
         />
       </StatRow>
 
       <Box mt="3">
-        <MonoLabel help={HELP.distribution}>IPs by download count</MonoLabel>
+        <MonoLabel help={HELP.distribution}>IPs by request count</MonoLabel>
         {users.uniqueIps === 0 ? (
           <Text as="div" size="1" color="gray" mt="2">
-            No download activity in this period.
+            No activity in this period.
           </Text>
         ) : (
           <Box mt="2">
@@ -250,9 +250,9 @@ export function UsersContent({ users }: { users: UsageUsers }) {
 }
 
 /**
- * Pareto-style chart of the per-IP population: quasi-log downloads-per-IP
+ * Pareto-style chart of the per-IP population: quasi-log requests-per-IP
  * bins in their natural order (bars), with a line accumulating "IPs with
- * this many downloads or fewer" toward the total. Single axis: the line
+ * this many requests or fewer" toward the total. Single axis: the line
  * accumulates IP counts, not a second percent scale; tooltips carry the
  * percentage. Bins stay ordinal — ranking them by size would shuffle an
  * ordered scale.
@@ -277,7 +277,7 @@ function DistributionChart({
   return (
     <Box
       role="img"
-      aria-label="Pareto chart of unique IPs by downloads per IP"
+      aria-label="Pareto chart of unique IPs by requests per IP"
       onMouseDown={(event) => event.preventDefault()}
       style={{ userSelect: "none", WebkitUserSelect: "none" }}
     >
@@ -321,7 +321,7 @@ function DistributionChart({
                   })}
                 >
                   <Text as="div" size="1">
-                    {numberFormat.format(row.ips)} IPs · {label} downloads
+                    {numberFormat.format(row.ips)} IPs · {label} requests
                   </Text>
                   <Text as="div" size="1" color="gray">
                     {(row.share * 100).toFixed(0)}% of IPs at or below this

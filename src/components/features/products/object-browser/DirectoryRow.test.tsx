@@ -11,8 +11,8 @@ jest.mock("@/components/features/uploader", () => ({
     cancelUpload: jest.fn(),
     retryUpload: jest.fn(),
     getUploadsForScope: () => [],
-    deleteObject: jest.fn(),
-    deletePrefix: jest.fn(),
+    deletions: [],
+    deletePath: jest.fn(),
   }),
   useS3Credentials: () => ({ getCredentials: () => null }),
 }));

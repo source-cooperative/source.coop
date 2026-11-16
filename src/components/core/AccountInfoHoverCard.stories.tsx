@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Text } from "@radix-ui/themes";
 import { AccountInfoHoverCard } from "./AccountInfoHoverCard";
-import type { Account } from "@/types";
+import type { PublicAccount } from "@/types";
 
 /**
  * The card that introduces an account on hover, wherever a name appears in
- * passing — a product's owner, a connection's owner, a member list.
+ * passing — a product's owner, a connection's owner, a member list. A service
+ * account is marked as one.
  *
  * **Hover the name to open it.** The card is the whole component, so a
  * screenshot of the closed state shows nothing.
@@ -30,7 +31,7 @@ const account = {
   metadata_public: {
     bio: "Works on open ocean-acoustics data and cloud-native infrastructure.",
   },
-} as unknown as Account;
+} as unknown as PublicAccount;
 
 export const Default: Story = {
   args: {
@@ -42,16 +43,24 @@ export const Default: Story = {
 /** No bio recorded: the card is the identity block alone, not an empty gap. */
 export const WithoutBio: Story = {
   args: {
-    account: { ...account, metadata_public: {} } as unknown as Account,
+    account: { ...account, metadata_public: {} } as unknown as PublicAccount,
     children: <Text size="2">Alice Coltrane</Text>,
   },
 };
 
-/** Suppressed entirely — used where the surrounding row is already the account. */
-export const Disabled: Story = {
+/**
+ * A service account, marked with the badge it carries in the account picker
+ * and the memberships table.
+ */
+export const ServiceAccount: Story = {
   args: {
-    account,
-    showHoverCard: false,
-    children: <Text size="2">Alice Coltrane (no card on hover)</Text>,
+    account: {
+      account_id: "miskatonic--nightly-sync",
+      name: "Nightly Sync",
+      type: "service",
+      owner_account_id: "miskatonic",
+      metadata_public: {},
+    } as unknown as PublicAccount,
+    children: <Text size="2">Nightly Sync</Text>,
   },
 };

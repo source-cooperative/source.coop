@@ -9,25 +9,23 @@
  */
 
 import { Suspense } from "react";
-import { BreadcrumbNav } from "@/components/display/BreadcrumbNav";
-import { FetchCredentialsButton } from "@/components/features/uploader/FetchCredentialsButton";
 import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
 import { ProductSummaryCard } from "@/components/features/products/ProductSummaryCard";
+import { ProductCatalogSummary } from "@/components/features/products/ProductCatalogSummary";
 import { ProductMetaCard } from "@/components/features/products/ProductMetaCard";
+import { ProductContentsCard } from "@/components/features/products/object-browser/ProductContentsCard";
 import {
   ProductTabs,
   UsageCard,
   UsageCardSkeleton,
 } from "@/components/features/analytics";
 import { isAnalyticsConfigured } from "@/lib/clients/analytics";
-import { SectionHeader } from "@/components/core/SectionHeader";
 import { Dropzone } from "@/components/features/uploader/Dropzone";
 import { getPageSession } from "@/lib";
 import { isAuthorized } from "@/lib/api/authz";
 import { dataConnectionsTable } from "@/lib/clients/database";
-import { productUrl } from "@/lib/urls";
 import { Actions } from "@/types/shared";
-import { Box, Callout, Card, Flex, Grid } from "@radix-ui/themes";
+import { Box, Callout, Flex, Grid } from "@radix-ui/themes";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { getPendingInvitation } from "@/lib/actions/memberships";
 import { ProductSchemaMetadata } from "@/components/features/products/ProductSchemaMetadata";
@@ -125,45 +123,31 @@ export default async function ProductLayout({
         >
           {/* Mobile edge padding applies to the summary text only — cards
               stay full-bleed like they were before the two-column rework */}
-          <Box px={{ initial: "4", md: "0" }}>
+          <Box id="summary" px={{ initial: "4", md: "0" }}>
             <ProductSummaryCard product={product} />
           </Box>
           <Dropzone product={product} prefix={prefix}>
-            <Card>
-              <SectionHeader
-                title="Contents"
-                rightButton={
-                  canWriteData && (
-                    <FetchCredentialsButton
-                      scope={{ accountId: account_id, productId: product_id }}
-                      prefix={prefix}
-                    />
-                  )
-                }
-              >
-                <Box
-                  pb="3"
-                  mb="3"
-                  style={{
-                    borderBottom: "1px solid var(--gray-5)",
-                  }}
-                >
-                  <Flex direction="row" gap="2" align="center" justify="between">
-                    <BreadcrumbNav
-                      path={path?.map((p) => decodeURIComponent(p)) || []}
-                      baseUrl={productUrl(account_id, product_id)}
-                    />
-                  </Flex>
-                </Box>
-              </SectionHeader>
+            <ProductContentsCard
+              accountId={account_id}
+              productId={product_id}
+              path={path?.map((p) => decodeURIComponent(p)) || []}
+              prefix={prefix}
+              canWriteData={canWriteData}
+            >
               {children}
-            </Card>
+            </ProductContentsCard>
           </Dropzone>
         </Flex>
 
         <Flex width="100%" className="product-meta" direction="column" gap="4">
           <ProductMetaCard product={product} />
-          {/* Public downloads summary, the same for every viewer (managers
+
+          {/* Whole-product object types from the metadata catalog, fetched
+              client-side; absent until it loads or when the product has no
+              entry. */}
+          <ProductCatalogSummary accountId={account_id} productId={product_id} />
+
+          {/* Public requests summary, the same for every viewer (managers
               reach /-/analytics via the ANALYTICS tab). Streams in after
               the page shell; hidden when analytics is off. The skeleton
               reserves the card's space so warm-cache data fills in instead

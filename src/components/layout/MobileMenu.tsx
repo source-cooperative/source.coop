@@ -16,9 +16,10 @@ import {
   newProductUrl,
   newOrganizationUrl,
   docsUrl,
+  adminTagsUrl,
 } from "@/lib";
 import { LoginButton } from "@/components/core";
-import { isAdmin, isAuthorized } from "@/lib/api/authz";
+import { canCreateProductForAccount, isAdmin, isAuthorized } from "@/lib/api/authz";
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";
 import { Actions, UserSession } from "@/types";
 import { ProfileAvatar } from "@/components/features/profiles/ProfileAvatar";
@@ -71,14 +72,16 @@ export function MobileMenu({
   session,
   accounts,
   pendingInvitations,
+  hasPendingTags = false,
 }: {
   session: UserSession;
   accounts: DropdownAccount[];
   pendingInvitations: DropdownInvitation[];
+  /** There are suggested tags for an admin to review. */
+  hasPendingTags?: boolean;
 }) {
   // Single-open accordion: one expanded section at a time (account id / "…").
   const [expanded, setExpanded] = useState<string | null>(null);
-  const canCreateProduct = isAuthorized(session, "*", Actions.CreateRepository);
   const canCreateOrg = isAuthorized(session, "*", Actions.CreateAccount);
   const hasInvitations = pendingInvitations.length > 0;
   const toggle = (key: string) =>
@@ -100,56 +103,62 @@ export function MobileMenu({
           </a>
           <div className={styles.mobileDivider} />
 
-          {accounts.map(({ account, isSelf, products }) => (
-            <Section
-              key={account.account_id}
-              expanded={expanded === account.account_id}
-              onToggle={() => toggle(account.account_id)}
-              label={
-                <Flex align="center" gap="2">
-                  <ProfileAvatar account={account} size="1" />
-                  <Text>{account.name}</Text>
-                  {isSelf && (
-                    <Text size="1" color="gray">
-                      you
-                    </Text>
-                  )}
-                </Flex>
-              }
-            >
-              <Row
-                href={accountUrl(account.account_id)}
-                onNavigate={close}
-                indent
+          {accounts.map(({ account, isSelf, products }) => {
+            const canCreateProduct = canCreateProductForAccount(
+              session,
+              account
+            );
+            return (
+              <Section
+                key={account.account_id}
+                expanded={expanded === account.account_id}
+                onToggle={() => toggle(account.account_id)}
+                label={
+                  <Flex align="center" gap="2">
+                    <ProfileAvatar account={account} size="1" />
+                    <Text>{account.name}</Text>
+                    {isSelf && (
+                      <Text size="1" color="gray">
+                        you
+                      </Text>
+                    )}
+                  </Flex>
+                }
               >
-                {isSelf ? "View profile" : "View organization"}
-              </Row>
-              {products.length > 0 ? (
-                products.map((p) => (
-                  <Row
-                    key={p.product_id}
-                    href={productUrl(account.account_id, p.product_id)}
-                    onNavigate={close}
-                    indent
-                  >
-                    {p.title}
-                  </Row>
-                ))
-              ) : (
-                <MutedRow indent>No products yet</MutedRow>
-              )}
-              {canCreateProduct && (
                 <Row
-                  href={newProductUrl(account.account_id)}
+                  href={accountUrl(account.account_id)}
                   onNavigate={close}
                   indent
-                  icon={<PlusIcon />}
                 >
-                  New product
+                  {isSelf ? "View profile" : "View organization"}
                 </Row>
-              )}
-            </Section>
-          ))}
+                {products.length > 0 ? (
+                  products.map((p) => (
+                    <Row
+                      key={p.product_id}
+                      href={productUrl(account.account_id, p.product_id)}
+                      onNavigate={close}
+                      indent
+                    >
+                      {p.title}
+                    </Row>
+                  ))
+                ) : (
+                  <MutedRow indent>No products yet</MutedRow>
+                )}
+                {canCreateProduct && (
+                  <Row
+                    href={newProductUrl(account.account_id)}
+                    onNavigate={close}
+                    indent
+                    icon={<PlusIcon />}
+                  >
+                    New product
+                  </Row>
+                )}
+              </Section>
+            );
+          })}
 
           {canCreateOrg && <div className={styles.mobileDivider} />}
           {canCreateOrg && (
@@ -188,11 +197,19 @@ export function MobileMenu({
             <Section
               expanded={expanded === "admin"}
               onToggle={() => toggle("admin")}
-              label={<Text>Admin</Text>}
+              label={
+                <Flex align="center" gap="2">
+                  <Text>Admin</Text>
+                  {hasPendingTags && <span className={styles.mobileDot} />}
+                </Flex>
+              }
             >
               {ADMIN_TOOLS.map((tool) => (
                 <Row key={tool.href} href={tool.href} onNavigate={close} indent>
                   {tool.name}
+                  {hasPendingTags && tool.href === adminTagsUrl() && (
+                    <span className={styles.mobileDot} />
+                  )}
                 </Row>
               ))}
             </Section>

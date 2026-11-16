@@ -11,6 +11,7 @@ import {
   TextField,
 } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
+import { useFormChanges } from "@/hooks/useFormChanges";
 import { Field } from "./Field";
 import { FormActions } from "./FormActions";
 import { SectionHeader } from "./SectionHeader";
@@ -230,7 +231,7 @@ export function DynamicForm<T extends Record<string, any>>({
   fields,
   action,
   disabled,
-  submitButtonText = "Submit",
+  submitButtonText = "Save",
   hiddenFields = {},
   className,
   initialValues,
@@ -287,6 +288,8 @@ export function DynamicForm<T extends Record<string, any>>({
     const formData = new FormData(event.currentTarget);
     startTransition(() => formAction(formData));
   };
+
+  const { formRef, dirty } = useFormChanges(state.success && state);
 
   // Call onSuccess when form submission is successful
   React.useEffect(() => {
@@ -516,7 +519,7 @@ export function DynamicForm<T extends Record<string, any>>({
   };
 
   return (
-    <form onSubmit={handleSubmit} className={className}>
+    <form ref={formRef} onSubmit={handleSubmit} className={className}>
       {/* Hidden fields */}
       {Object.entries(hiddenFields).map(([name, value]) => (
         <input key={name} type="hidden" name={name} value={value} />
@@ -585,6 +588,7 @@ export function DynamicForm<T extends Record<string, any>>({
             secondary={secondaryAction}
             message={state?.message}
             success={state.success}
+            unsaved={dirty}
           />
         )}
       </Flex>

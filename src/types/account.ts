@@ -15,17 +15,20 @@ import {
   MIN_ID_LENGTH,
   MAX_ID_LENGTH,
   ID_REGEX,
+  MAX_SERVICE_ACCOUNT_ID_LENGTH,
+  SERVICE_ACCOUNT_ID_REGEX,
   AccountFlagsSchema,
   MIN_NAME_LENGTH,
   MAX_NAME_LENGTH,
 } from "./shared";
+import { avatarUrl } from "@/lib/avatar";
 
 extendZodWithOpenApi(z);
 
 export enum AccountType {
   INDIVIDUAL = "individual",
   ORGANIZATION = "organization",
-  // SERVICE = "service",  // TODO: Enable when we support services
+  SERVICE = "service",
 }
 
 export const AccountTypeSchema = z
@@ -138,19 +141,42 @@ export const IndividualAccountSchema = BaseAccountSchema.extend({
 
 export type IndividualAccount = z.infer<typeof IndividualAccountSchema>;
 
+// Only a person signs in. `not: {}` is OpenAPI for a property that is never
+// present (the generator insists on a `type`, which `not` makes moot).
+const NoIdentitySchema = z.undefined().openapi({ type: "string", not: {} });
+
 // Organizational account schema
 export const OrganizationalAccountSchema = BaseAccountSchema.extend({
   type: z.literal(AccountType.ORGANIZATION),
-  identity_id: z.undefined(),
+  identity_id: NoIdentitySchema,
   metadata_public: OrganizationalAccountProfileSchema,
 }).openapi("OrganizationalAccount");
 
 export type OrganizationalAccount = z.infer<typeof OrganizationalAccountSchema>;
 
+// Service account schema. A machine principal owned by another account: it
+// has no Ory identity (it authenticates as a subject it trusts, or with an
+// API key) and no
+// profile beyond the shared fields.
+export const ServiceAccountSchema = BaseAccountSchema.extend({
+  account_id: z
+    .string()
+    .max(MAX_SERVICE_ACCOUNT_ID_LENGTH)
+    .regex(SERVICE_ACCOUNT_ID_REGEX, "A service account id is `{owner}--{id}`")
+    .openapi({ example: "acme--nightly-sync" }),
+  type: z.literal(AccountType.SERVICE),
+  identity_id: NoIdentitySchema,
+  owner_account_id: z.string().openapi({ example: "owner-account-id" }),
+  metadata_public: BaseAccountProfileSchema,
+}).openapi("ServiceAccount");
+
+export type ServiceAccount = z.infer<typeof ServiceAccountSchema>;
+
 export const AccountSchema = z
   .discriminatedUnion("type", [
     IndividualAccountSchema,
     OrganizationalAccountSchema,
+    ServiceAccountSchema,
   ])
   .openapi("Account");
 
@@ -158,22 +184,31 @@ export type Account = z.infer<typeof AccountSchema>;
 
 export type AccountProfile = z.infer<typeof AccountProfileSchema>;
 
-export const AccountProfileResponseSchema = z
-  .union([
-    IndividualAccountProfileSchema.extend({
-      profile_image: z.optional(z.string()),
-      type: z.optional(z.nativeEnum(AccountType)),
+export const PublicAccountSchema = z
+  .object({
+    account_id: z.string(),
+    type: z.nativeEnum(AccountType),
+    name: z.string(),
+    disabled: z.boolean(),
+    metadata_public: AccountProfileSchema,
+    profile_image: z.optional(z.string()).openapi({
+      description: "The uploaded profile image, or else a Gravatar.",
     }),
-    OrganizationalAccountProfileSchema.extend({
-      profile_image: z.optional(z.string()),
-      type: z.optional(z.nativeEnum(AccountType)),
-    }),
-  ])
-  .openapi("AccountProfileResponse");
+  })
+  .openapi("PublicAccount", {
+    description:
+      "The part of an account anyone may read: no emails, flags, sign-in identity or private metadata.",
+  });
 
-export type AccountProfileResponse = z.infer<
-  typeof AccountProfileResponseSchema
->;
+// The private keys are typed `never` so a full `Account` doesn't satisfy
+// `PublicAccount` structurally: wherever an account crosses to the browser,
+// the compiler demands `publicView()`.
+export type PublicAccount = z.infer<typeof PublicAccountSchema> & {
+  emails?: never;
+  flags?: never;
+  identity_id?: never;
+  metadata_private?: never;
+};
 
 export const AccountCreationRequestSchema = z
   .object({
@@ -213,11 +248,36 @@ export type AccountCreationRequest = z.infer<
   typeof AccountCreationRequestSchema
 >;
 
-export const OrganizationCreationRequestSchema =
-  AccountCreationRequestSchema.extend({
+/**
+ * What the create form posts: the display name, the owner, and the service
+ * account's own short id, which the action joins to the owner's id.
+ */
+export const ServiceAccountCreationRequestSchema =
+  AccountCreationRequestSchema.pick({ name: true }).extend({
+    local_id: AccountCreationRequestSchema.shape.account_id,
     owner_account_id: z.string(),
   });
 
-export type OrganizationCreationRequest = z.infer<
-  typeof OrganizationCreationRequestSchema
+export type ServiceAccountCreationRequest = z.infer<
+  typeof ServiceAccountCreationRequestSchema
 >;
+
+// Type guards
+export const isIndividualAccount = (acc: Account): acc is IndividualAccount =>
+  acc.type === AccountType.INDIVIDUAL;
+
+export const isOrganizationalAccount = (acc: Account): acc is OrganizationalAccount =>
+  acc.type === AccountType.ORGANIZATION;
+
+export const isServiceAccount = (acc: Account): acc is ServiceAccount =>
+  acc.type === AccountType.SERVICE;
+
+/**
+ * The part of an account anyone may read. Anything that hands an account to
+ * the browser hands it this, since a client component's props are serialized
+ * into the page whether or not they are rendered.
+ */
+export function publicView(account: Account): PublicAccount {
+  const { account_id, type, name, disabled, metadata_public } = account;
+  return { account_id, type, name, disabled, metadata_public, profile_image: avatarUrl(account) };
+}

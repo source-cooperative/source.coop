@@ -11,7 +11,13 @@
 
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import { MIN_ID_LENGTH, MAX_ID_LENGTH, ID_REGEX } from "./shared";
+import {
+  MIN_ID_LENGTH,
+  MAX_ID_LENGTH,
+  MAX_SERVICE_ACCOUNT_ID_LENGTH,
+  ACCOUNT_ID_REGEX,
+  ID_REGEX,
+} from "./shared";
 
 extendZodWithOpenApi(z);
 
@@ -58,12 +64,14 @@ export const MembershipSchema = z
       .string()
       .uuid()
       .openapi({ example: "00000000-0000-0000-0000-000000000000" }),
+    // The member, which may be a service account; the account it is a member
+    // of never is.
     account_id: z
       .string()
       .min(MIN_ID_LENGTH)
-      .max(MAX_ID_LENGTH)
+      .max(MAX_SERVICE_ACCOUNT_ID_LENGTH)
       .toLowerCase()
-      .regex(ID_REGEX, "Invalid account ID format")
+      .regex(ACCOUNT_ID_REGEX, "Invalid account ID format")
       .openapi({ example: "account-id" }),
     membership_account_id: z
       .string()
@@ -72,16 +80,16 @@ export const MembershipSchema = z
       .toLowerCase()
       .regex(ID_REGEX, "Invalid membership account ID format")
       .openapi({ example: "organization-id" }),
-    repository_id: z
+    product_id: z
       .optional(
         z
           .string()
           .min(MIN_ID_LENGTH)
           .max(MAX_ID_LENGTH)
           .toLowerCase()
-          .regex(ID_REGEX, "Invalid repository ID format")
+          .regex(ID_REGEX, "Invalid product ID format")
       )
-      .openapi({ example: "repository-id" }),
+      .openapi({ example: "product-id" }),
     role: MembershipRoleSchema,
     state: MembershipStateSchema,
     state_changed: z.string().datetime("Invalid date format for state changed"),
@@ -90,9 +98,3 @@ export const MembershipSchema = z
 
 export type Membership = z.infer<typeof MembershipSchema>;
 
-export const MembershipInvitationSchema = MembershipSchema.pick({
-  account_id: true,
-  role: true,
-}).openapi("MembershipInvitation");
-
-export type MembershipInvitation = z.infer<typeof MembershipInvitationSchema>;

@@ -1,6 +1,6 @@
 {
   "name": "source-cooperative",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -31,6 +31,10 @@
     "@aws-sdk/lib-storage": "^3.914.0",
     "@aws-sdk/s3-request-presigner": "^3.914.0",
     "@duckdb/node-api": "^1.4.4-r.1",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/api-logs": "^0.223.2",
+    "@opentelemetry/instrumentation": "^0.223.2",
+    "@opentelemetry/sdk-logs": "^0.223.2",
     "@ory/client": "^1.21.3",
     "@ory/elements-react": "^1.0.0-next.41",
     "@ory/nextjs": "^1.0.0-rc.0",
@@ -42,7 +46,9 @@
     "@radix-ui/react-select": "^2.1.6",
     "@radix-ui/themes": "^3.2.1",
     "@tanstack/react-virtual": "^3.13.4",
+    "@vercel/analytics": "^2.0.1",
     "@vercel/functions": "^2.0.0",
+    "@vercel/otel": "^2.3.0",
     "bright": "^1.0.0",
     "http-status-codes": "^2.3.0",
     "isomorphic-dompurify": "^2.23.0",
@@ -67,6 +73,7 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "^13.0.0",
     "@babel/core": "^7.26.10",
     "@babel/preset-env": "^7.26.9",
     "@babel/preset-react": "^7.26.3",

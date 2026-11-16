@@ -1,6 +1,6 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
-import { AccountSchema } from "@/types/account";
+import { PublicAccountSchema, type PublicAccount } from "@/types/account";
 import { MIN_ID_LENGTH, MAX_ID_LENGTH, ID_REGEX } from "@/types/shared";
 
 extendZodWithOpenApi(z);
@@ -70,14 +70,22 @@ export const ProductSchema = z
     updated_at: z.string(),
     visibility: ProductVisibilitySchema,
     metadata: ProductMetadataSchema,
-    account: AccountSchema.optional(),
+    account: PublicAccountSchema.optional(),
     disabled: z.boolean(),
     featured: z.number(),
     search_text: z.string().optional(),
-  })
-  .openapi("Product");
+  });
 
-export type Product = z.infer<typeof ProductSchema>;
+// `account` is the narrowed `PublicAccount`, not the schema's inferred shape,
+// so attaching a full `Account` to a product is a compile error.
+export type Product = Omit<z.infer<typeof ProductSchema>, "account"> & {
+  account?: PublicAccount;
+};
+
+/** A product as the API answers it, with the public view of its account. */
+export const ProductResponseSchema = ProductSchema.openapi("Product");
+
+export type ProductResponse = Product;
 
 export const ProductCreationRequestSchema = ProductSchema.omit({
   created_at: true,

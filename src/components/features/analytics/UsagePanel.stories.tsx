@@ -7,7 +7,7 @@ import { HELP } from "./style";
 import { UsagePanel } from "./UsagePanel";
 
 /**
- * The analytics card on a product page — downloads, data served, countries,
+ * The analytics card on a product page — requests, data served, countries,
  * over a daily bar chart. Every viewer sees it, signed in or not.
  *
  * `UsageCard`, the thing actually mounted in the product layout, is an async
@@ -17,13 +17,13 @@ import { UsagePanel } from "./UsagePanel";
  * the rendering, which is as close to the real card as a browser can get.
  *
  * Each state here is a different product's traffic, and in the app you would
- * have to find such a product to see it: one with no downloads at all, one
+ * have to find such a product to see it: one with no requests at all, one
  * that got linked from somewhere big on a single day, one serving petabytes.
  * Hovering a bar swaps the stats row to that day — that part is live here.
  */
 const meta = {
   component: UsagePanel,
-  title: "Features/Analytics/UsagePanel",
+  title: "Features/Product page/Analytics/UsagePanel",
   parameters: { layout: "padded" },
   decorators: [
     (Story, context) => (
@@ -63,7 +63,7 @@ const dayStart = (index: number, length: number) =>
 const wobble = (i: number, seed = 0) =>
   (Math.sin(i * 1.7 + seed) + Math.sin(i * 0.41 + seed) + 2) / 4;
 
-/** A window of days from a per-day downloads function. */
+/** A window of days from a per-day requests function. */
 function makeDays(
   length: number,
   requestsAt: (i: number) => number,
@@ -101,11 +101,11 @@ export const Default: Story = {
 const quiet = makeDays(28, () => 0);
 
 /**
- * Published but never downloaded. The card still renders — an empty chart and
+ * Published but never requested. The card still renders — an empty chart and
  * three zeros, rather than the card hiding itself, which is what `null` from
  * `getUsage` (unconfigured or failed) does instead.
  */
-export const NoDownloads: Story = {
+export const NoRequests: Story = {
   args: { days: quiet, totals: totalsOf(quiet, 0) },
 };
 
@@ -131,21 +131,10 @@ const petabyte = makeDays(
 
 /**
  * A heavily used product, to check the stats row survives numbers that are
- * wide in every column at once — six-figure downloads beside petabytes.
+ * wide in every column at once — six-figure request counts beside petabytes.
  */
 export const HighVolume: Story = {
   args: { days: petabyte, totals: totalsOf(petabyte, 148) },
-};
-
-const week = makeDays(7, (i) => 210 + wobble(i, 3) * 140);
-
-/**
- * Seven days rather than 28. The card is pinned to `USAGE_DAYS` in the app,
- * so this window is only reachable through the full analytics page — but the
- * panel is the same one, and it has to hold up with a quarter of the bars.
- */
-export const ShortWindow: Story = {
-  args: { days: week, totals: totalsOf(week, 19) },
 };
 
 /**

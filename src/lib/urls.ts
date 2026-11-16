@@ -19,6 +19,7 @@ export const docsUrl = () => "https://docs.source.coop";
 export const adminUrl = () => "/admin";
 export const adminAnalyticsUrl = () => "/admin/analytics";
 export const adminUserLookupUrl = () => "/admin/user-lookup";
+export const adminTagsUrl = () => "/admin/tags";
 export const adminDataConnectionsUrl = () => "/admin/data-connections";
 export const adminDataConnectionCreateUrl = () =>
   "/admin/data-connections/create";
@@ -69,6 +70,12 @@ export const editAccountPermissionsUrl = (account_id: string) =>
   `/edit/account/${account_id}/permissions`;
 export const editAccountMembershipsUrl = (account_id: string) =>
   `/edit/account/${account_id}/memberships`;
+export const editAccountServiceAccountsUrl = (account_id: string) =>
+  `/edit/account/${account_id}/service-accounts`;
+export const createServiceAccountUrl = (account_id: string) =>
+  `/edit/account/${account_id}/service-accounts/create`;
+export const editServiceAccountUrl = (account_id: string, service_account_id: string) =>
+  `/edit/account/${account_id}/service-accounts/${service_account_id}`;
 export const editAccountViewUrl = (account_id: string, view: string) =>
   `/edit/account/${account_id}/${view}`;
 export const editProductUrl = (account_id: string, product_id: string) =>

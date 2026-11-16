@@ -27,7 +27,6 @@ interface StatusPageProps {
   iconSize?: number;
   containerSize?: "1" | "2" | "3" | "4";
   minHeight?: string;
-  showAction?: boolean;
 }
 
 const statusConfig = {
@@ -76,7 +75,6 @@ export function StatusPage({
   iconSize = 48,
   containerSize,
   minHeight = "60vh",
-  showAction = true,
 }: StatusPageProps) {
   const config = statusConfig[type];
   const IconComponent = config.icon;
@@ -109,14 +107,13 @@ export function StatusPage({
           {finalDescription}
         </Text>
 
-        {showAction &&
-          (action ? (
-            <Box mt="5">{action}</Box>
-          ) : (
-            <RadixLink size="3" mt="5" asChild>
-              <Link href={finalActionHref}>{finalActionText}</Link>
-            </RadixLink>
-          ))}
+        {action ? (
+          <Box mt="5">{action}</Box>
+        ) : (
+          <RadixLink size="3" mt="5" asChild>
+            <Link href={finalActionHref}>{finalActionText}</Link>
+          </RadixLink>
+        )}
       </Flex>
     </Container>
   );

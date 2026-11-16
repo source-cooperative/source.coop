@@ -3,7 +3,12 @@
  * failure mode is a silently dead ANALYTICS tab — pin its behavior.
  */
 import { NextRequest } from "next/server";
-import { handleProductAnalyticsTab } from "./middleware";
+import {
+  handleCaseRedirect,
+  config,
+  handleProductAnalyticsTab,
+  restoreOryCookies,
+} from "./middleware";
 
 const rewriteTarget = (url: string): string | null =>
   handleProductAnalyticsTab(new NextRequest(url))?.headers.get(
@@ -38,4 +43,68 @@ it("ignores non-matching requests", () => {
   expect(
     rewriteTarget("https://source.coop/products/new?tab=analytics"),
   ).toBeNull();
+});
+
+describe("restoreOryCookies", () => {
+  it("decodes the padding Next.js encodes in a server action redirect", () => {
+    expect(
+      restoreOryCookies("theme=dark; ory_session_abc=MTcx_a-b%3D%3D; x=a%3Db"),
+    ).toBe("theme=dark; ory_session_abc=MTcx_a-b==; x=a%3Db");
+    expect(restoreOryCookies("ory_kratos_session=YQ%3D")).toBe(
+      "ory_kratos_session=YQ=",
+    );
+  });
+
+  it("leaves an unencoded header alone", () => {
+    expect(restoreOryCookies("ory_session_abc=MTcx==; x=a%3Db")).toBeNull();
+    expect(restoreOryCookies(null)).toBeNull();
+  });
+});
+
+describe("handleCaseRedirect", () => {
+  const redirectTo = (url: string, method = "GET") => {
+    const res = handleCaseRedirect(new NextRequest(url, { method }));
+    return res && res.status + " " + res.headers.get("location");
+  };
+
+  it("lowercases the account", () => {
+    expect(redirectTo("https://source.coop/ALukach")).toBe(
+      "308 https://source.coop/alukach",
+    );
+  });
+
+  it("lowercases the account and product but not the object path", () => {
+    expect(redirectTo("https://source.coop/Acme/Data/Dir/File.TIF?x=1")).toBe(
+      "308 https://source.coop/acme/data/Dir/File.TIF?x=1",
+    );
+  });
+
+  it("leaves lowercase paths alone", () => {
+    expect(redirectTo("https://source.coop/acme/data/File.TIF")).toBeNull();
+  });
+
+  it("leaves the second segment of non-account routes alone", () => {
+    expect(redirectTo("https://source.coop/products/Foo")).toBeNull();
+    expect(redirectTo("https://source.coop/Admin/Foo")).toBe(
+      "308 https://source.coop/admin/Foo",
+    );
+  });
+
+  it("only redirects GET and HEAD", () => {
+    expect(redirectTo("https://source.coop/ALukach", "POST")).toBeNull();
+  });
+});
+
+describe("middleware matcher", () => {
+  const matches = (path: string) =>
+    new RegExp(`^${config.matcher[0]}$`).test(path);
+
+  it("skips public assets with mixed-case names", () => {
+    expect(matches("/img/ringsIcon.svg")).toBe(false);
+    expect(matches("/logo/logolockup-light.svg")).toBe(false);
+  });
+
+  it("still runs for accounts whose id starts with an excluded prefix", () => {
+    expect(matches("/imgur/Data")).toBe(true);
+  });
 });

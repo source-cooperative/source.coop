@@ -135,6 +135,60 @@ describe("Product Page Metadata", () => {
     expect(metadata.twitter?.images).toContain("https://source.coop/api/og?type=product&account_id=test-account&product_id=test-product");
   });
 
+  it("marks an unlisted product noindex so it can't be crawled from its own page", async () => {
+    const mockProduct = {
+      id: "test-product",
+      product_id: "test-product",
+      title: "Test Product",
+      description: "A test product description",
+      visibility: "unlisted",
+      account: {
+        account_id: "test-account",
+        name: "Test Account",
+      },
+    };
+
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(mockProduct);
+    (getPageSession as jest.Mock).mockResolvedValue(null);
+    (isAuthorized as jest.Mock).mockReturnValue(true);
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({
+        account_id: "test-account",
+        product_id: "test-product",
+      }),
+    });
+
+    expect(metadata.robots).toEqual({ index: false, follow: false });
+  });
+
+  it("leaves a public product indexable", async () => {
+    const mockProduct = {
+      id: "test-product",
+      product_id: "test-product",
+      title: "Test Product",
+      description: "A test product description",
+      visibility: "public",
+      account: {
+        account_id: "test-account",
+        name: "Test Account",
+      },
+    };
+
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(mockProduct);
+    (getPageSession as jest.Mock).mockResolvedValue(null);
+    (isAuthorized as jest.Mock).mockReturnValue(true);
+
+    const metadata = await generateMetadata({
+      params: Promise.resolve({
+        account_id: "test-account",
+        product_id: "test-product",
+      }),
+    });
+
+    expect(metadata.robots).toBeUndefined();
+  });
+
   it("calls notFound when product is not found", async () => {
     const { notFound } = await import("next/navigation");
 

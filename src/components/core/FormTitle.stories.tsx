@@ -11,10 +11,6 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  args: { title: "Edit Data Connection" },
-};
-
 export const WithDescription: Story = {
   args: {
     title: "Edit Data Connection",

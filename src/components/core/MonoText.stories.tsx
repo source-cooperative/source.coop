@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Flex, Text } from "@radix-ui/themes";
 import { MonoText } from "./MonoText";
 
 /**
@@ -21,26 +20,4 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: { children: "miskatonic/abyssal-acoustics" },
-};
-
-/** Beside prose, which is the point: it should read as a different kind of thing. */
-export const AgainstProse: Story = {
-  args: { children: "@acoltrane" },
-  render: (args) => (
-    <Flex direction="column" gap="2">
-      <Text size="2">Alice Coltrane</Text>
-      <MonoText {...args} size="1" color="gray" />
-    </Flex>
-  ),
-};
-
-export const Sizes: Story = {
-  args: { children: "s3://miskatonic-archive" },
-  render: (args) => (
-    <Flex direction="column" gap="2">
-      <MonoText {...args} size="1" />
-      <MonoText {...args} size="2" />
-      <MonoText {...args} size="3" />
-    </Flex>
-  ),
 };

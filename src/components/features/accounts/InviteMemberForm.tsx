@@ -30,17 +30,19 @@ export function InviteMemberForm({
 
   const fields: FormField<InviteMemberFormData>[] = [
     {
-      label: "User",
+      label: "Account",
       name: "account_id",
       type: "custom",
       required: true,
-      description: "Search by username or name, or type an account ID",
+      description:
+        "Search by username or name, or type an account ID. The organization's service accounts are offered too.",
       customComponent: (controlProps) => (
         <AccountSearchInput
           {...controlProps}
           name="account_id"
           required
           placeholder="username or name"
+          memberOf={organization.account_id}
         />
       ),
     },
@@ -68,7 +70,7 @@ export function InviteMemberForm({
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger>
-        <Button size="2">
+        <Button size="2" highContrast>
           <PlusIcon width="16" height="16" />
           Invite Member
         </Button>
@@ -84,7 +86,7 @@ export function InviteMemberForm({
         <DynamicForm<InviteMemberFormData>
           fields={fields}
           action={inviteMember}
-          submitButtonText="Send Invitation"
+          submitButtonText="Send invitation"
           initialValues={initialValues}
           hiddenFields={{
             organization_id: product

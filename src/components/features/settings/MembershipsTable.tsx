@@ -4,7 +4,8 @@ import { Text, Table, Flex, Button, Badge } from "@radix-ui/themes";
 import { PersonIcon } from "@radix-ui/react-icons";
 import {
   Membership,
-  Account,
+  type PublicAccount,
+  AccountType,
   MembershipRole,
   MembershipState,
   Actions,
@@ -18,7 +19,7 @@ import { useActionState } from "react";
 
 interface MembershipsTableProps {
   memberships: Membership[];
-  memberAccountsMap: Map<string, Account>;
+  memberAccountsMap: Map<string, PublicAccount>;
   userSession: UserSession;
   emptyStateMessage: string;
   emptyStateDescription: string;
@@ -118,7 +119,24 @@ export function MembershipsTable({
             return (
               <Table.Row key={membership.membership_id}>
                 <Table.Cell>
-                  <AvatarLinkCompact account={memberAccount!} size="1" />
+                  {memberAccount?.type === AccountType.SERVICE ? (
+                    // Badged, and not a link: a machine has no profile page.
+                    <Flex gap="2" align="center">
+                      <AvatarLinkCompact
+                        account={memberAccount}
+                        size="1"
+                        link={false}
+                      />
+                      <Badge size="1" color="gray" variant="outline">
+                        Service account
+                      </Badge>
+                    </Flex>
+                  ) : memberAccount ? (
+                    <AvatarLinkCompact account={memberAccount} size="1" />
+                  ) : (
+                    // A member whose account is gone, such as a deleted one.
+                    <Text size="2">{membership.account_id}</Text>
+                  )}
                 </Table.Cell>
                 <Table.Cell>
                   <Badge

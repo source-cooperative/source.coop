@@ -1,222 +1,81 @@
-/**
- * @openapi
- * /data-connections/{data_connection_id}:
- *   get:
- *     tags: [Data Connections]
- *     summary: Get data connection details
- *     description: Retrieves the details of a specific data connection. Secret-bearing authentication (static keys/tokens) is always stripped; secret-less federated config (role ARN, workload-identity IDs) is returned to any authorized caller.
- *     parameters:
- *       - in: path
- *         name: data_connection_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the data connection to retrieve
- *     responses:
- *       200:
- *         description: Successfully retrieved data connection
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/DataConnection'
- *       401:
- *         description: Unauthorized - No valid session found or insufficient permissions
- *       404:
- *         description: Not Found - Data connection not found
- *       500:
- *         description: Internal server error
- */
-import { NextRequest, NextResponse } from "next/server";
-import { Actions, DataConnectionSchema } from "@/types";
-import { StatusCodes } from "http-status-codes";
-import { isAdmin, isAuthorized } from "@/lib/api/authz";
-import { sanitizeDataConnection } from "@/lib/api/sanitize-data-connection";
-import { getApiSession } from "@/lib/api/utils";
-import { dataConnectionsTable } from "@/lib/clients";
+import { z } from "zod";
+import { DataConnectionObjectSchema } from "@/types";
+import { withApiSession, toResponse } from "@/lib/api/handler";
+import { bearer, errors, json, registry } from "@/lib/api/openapi";
+import {
+  deleteDataConnection,
+  getDataConnection,
+  updateDataConnection,
+  UpdateDataConnectionSchema,
+} from "@/lib/operations/data-connections";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ data_connection_id: string }> }
-) {
-  try {
-    const session = await getApiSession(request);
+type Params = { data_connection_id: string };
 
-    const { data_connection_id } = await params;
-    const dataConnection = await dataConnectionsTable.fetchById(
-      data_connection_id
-    );
-    if (!dataConnection) {
-      return NextResponse.json(
-        { error: `Data connection with ID ${data_connection_id} not found` },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
+const params = z.object({
+  data_connection_id: z
+    .string()
+    .openapi({ description: "The data connection's ID." }),
+});
 
-    if (!isAuthorized(session, dataConnection, Actions.GetDataConnection)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
+registry.registerPath({
+  method: "get",
+  path: "/data-connections/{data_connection_id}",
+  tags: ["Data Connections"],
+  summary: "Get a data connection",
+  description:
+    "Static keys and SAS tokens are never returned; federated settings such as a role ARN are.",
+  request: { params },
+  responses: {
+    200: json("The connection.", DataConnectionObjectSchema),
+    ...errors(403, 404),
+  },
+});
 
-    // sanitizeDataConnection strips secret-bearing authentication (write-only).
-    const sanitized = sanitizeDataConnection(dataConnection);
+export const GET = withApiSession<Params>(async ({ session, params }) =>
+  toResponse(await getDataConnection(session, params.data_connection_id))
+);
 
-    return NextResponse.json(sanitized, { status: StatusCodes.OK });
-  } catch (err: unknown) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+registry.registerPath({
+  method: "patch",
+  path: "/data-connections/{data_connection_id}",
+  tags: ["Data Connections"],
+  summary: "Update a data connection",
+  description:
+    "Each field given replaces the stored one; `details` and `authentication` are replaced whole. Since secrets are never returned, a secret left blank or out under the same `authentication.type` keeps the stored one. A connection's ID and owner never change.",
+  security: bearer,
+  request: {
+    params,
+    body: {
+      content: { "application/json": { schema: UpdateDataConnectionSchema } },
+    },
+  },
+  responses: {
+    200: json("The connection, as it now stands.", DataConnectionObjectSchema),
+    ...errors(400, 401, 403, 404),
+  },
+});
 
-/**
- * @openapi
- * /data-connections/{data_connection_id}:
- *   put:
- *     tags: [Data Connections]
- *     summary: Update data connection
- *     description: Updates an existing data connection. Only users with the `admin` flag may update data connections.
- *     parameters:
- *       - in: path
- *         name: data_connection_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the data connection to update
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/DataConnection'
- *     responses:
- *       200:
- *         description: Successfully updated data connection
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/DataConnection'
- *       400:
- *         description: Bad Request - Invalid data connection data
- *       401:
- *         description: Unauthorized - No valid session found or insufficient permissions
- *       404:
- *         description: Not Found - Data connection not found
- *       500:
- *         description: Internal server error
- */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ data_connection_id: string }> }
-) {
-  try {
-    const session = await getApiSession(request);
-    const { data_connection_id } = await params;
-    const dataConnectionUpdate = DataConnectionSchema.parse(
-      await request.json()
-    );
-    const existingDataConnection = await dataConnectionsTable.fetchById(
-      data_connection_id
-    );
-    if (!existingDataConnection) {
-      return NextResponse.json(
-        { error: `Data connection with ID ${data_connection_id} not found` },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (
-      !isAuthorized(session, existingDataConnection, Actions.PutDataConnection)
-    ) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    // Admin-only route: the spread lets the body overwrite any field, including
-    // `owner` (now load-bearing for account-scoped authz). Acceptable since only
-    // platform admins reach here; the account-scoped server actions preserve it.
-    const updatedDataConnection = {
-      ...existingDataConnection,
-      ...dataConnectionUpdate,
-    };
-    // update() (attribute_exists guard), not create() (attribute_not_exists):
-    // the connection already exists, so create() would fail its condition → 500.
-    const dataConnection = await dataConnectionsTable.update(
-      updatedDataConnection
-    );
-    const sanitized = sanitizeDataConnection(dataConnection);
-    return NextResponse.json(sanitized, { status: StatusCodes.OK });
-  } catch (err: unknown) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+export const PATCH = withApiSession<Params>(async ({ session, params, body }) =>
+  toResponse(
+    await updateDataConnection(session, params.data_connection_id, body)
+  )
+);
 
-/**
- * @openapi
- * /data-connections/{data_connection_id}:
- *   delete:
- *     tags: [Data Connections]
- *     summary: Delete data connection
- *     description: Deletes an existing data connection. Only users with the `admin` flag may delete data connections.
- *     parameters:
- *       - in: path
- *         name: data_connection_id
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the data connection to delete
- *     responses:
- *       200:
- *         description: Successfully deleted data connection
- *       401:
- *         description: Unauthorized - No valid session found or insufficient permissions
- *       404:
- *         description: Not Found - Data connection not found
- *       500:
- *         description: Internal server error
- */
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ data_connection_id: string }> }
-) {
-  try {
-    const session = await getApiSession(request);
-    const { data_connection_id } = await params;
-    const dataConnection = await dataConnectionsTable.fetchById(
-      data_connection_id
-    );
-    if (!dataConnection) {
-      return NextResponse.json(
-        { error: `Data connection with ID ${data_connection_id} not found` },
-        { status: StatusCodes.NOT_FOUND }
-      );
-    }
-    if (!isAuthorized(session, dataConnection, Actions.DeleteDataConnection)) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: StatusCodes.UNAUTHORIZED }
-      );
-    }
-    // Note: Actual deletion logic would be implemented here
-    return NextResponse.json(
-      { message: "Data connection deleted successfully" },
-      { status: StatusCodes.OK }
-    );
-  } catch (err: unknown) {
-    const errorMessage =
-      err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: StatusCodes.INTERNAL_SERVER_ERROR }
-    );
-  }
-}
+registry.registerPath({
+  method: "delete",
+  path: "/data-connections/{data_connection_id}",
+  tags: ["Data Connections"],
+  summary: "Delete a data connection",
+  description:
+    "Refused while any product still keeps its data on the connection.",
+  security: bearer,
+  request: { params },
+  responses: {
+    200: json("The connection that was deleted.", DataConnectionObjectSchema),
+    ...errors(401, 403, 404, 409),
+  },
+});
+
+export const DELETE = withApiSession<Params>(async ({ session, params }) =>
+  toResponse(await deleteDataConnection(session, params.data_connection_id))
+);

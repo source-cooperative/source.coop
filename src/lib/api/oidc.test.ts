@@ -10,7 +10,12 @@ import {
   type FlattenedJWSInput,
   type JWSHeaderParameters,
 } from "jose";
-import { authenticateWithOidcToken, _setJwks } from "./oidc";
+import {
+  authenticateWithOidcToken,
+  verifyProxyAssertion,
+  PROXY_SELF_SUBJECT,
+  _setJwks,
+} from "./oidc";
 
 // Generate a test RSA key pair
 let privateKey: CryptoKey;
@@ -63,6 +68,7 @@ jest.mock("@/lib/config", () => ({
 jest.mock("@/lib/clients/database", () => ({
   accountsTable: {
     fetchByOryId: jest.fn(),
+    fetchById: jest.fn(),
   },
   membershipsTable: {
     listByUser: jest.fn(),
@@ -261,5 +267,97 @@ describe("authenticateWithOidcToken", () => {
 
     // Restore
     CONFIG.storage.endpoint = originalEndpoint;
+  });
+
+  test("resolves a service account's own id as its subject, after trying Ory", async () => {
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(null);
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
+      account_id: "nightly-sync",
+      type: "service",
+      owner_account_id: "acme",
+      disabled: false,
+      flags: [],
+    });
+    (membershipsTable.listByUser as jest.Mock).mockResolvedValue([]);
+
+    const token = await createToken({ sub: "nightly-sync" });
+    const session = await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE);
+
+    expect(session?.account?.account_id).toBe("nightly-sync");
+    expect(session?.identity_id).toBeNull();
+    expect(accountsTable.fetchById).toHaveBeenCalledWith("nightly-sync");
+  });
+
+  test("refuses a subject that names both a person and a service account", async () => {
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue({
+      account_id: "alice",
+      type: "individual",
+      identity_id: "ambiguous",
+      disabled: false,
+      flags: [],
+    });
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
+      account_id: "ambiguous",
+      type: "service",
+      owner_account_id: "acme",
+      disabled: false,
+      flags: [],
+    });
+
+    const token = await createToken({ sub: "ambiguous" });
+    expect(await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE)).toBeNull();
+  });
+
+  test("never resolves a person's or organization's handle as a subject", async () => {
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(null);
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
+      account_id: "alice",
+      type: "individual",
+      identity_id: "ory-alice",
+      disabled: false,
+      flags: [],
+    });
+
+    const token = await createToken({ sub: "alice" });
+    expect(await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE)).toBeNull();
+  });
+
+  test("never makes a session for the proxy's own subject, even if an account had that id", async () => {
+    (accountsTable.fetchByOryId as jest.Mock).mockResolvedValue(null);
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({
+      account_id: PROXY_SELF_SUBJECT,
+      type: "service",
+      owner_account_id: "acme",
+      disabled: false,
+      flags: [],
+    });
+
+    const token = await createToken({ sub: PROXY_SELF_SUBJECT });
+    expect(await authenticateWithOidcToken(`Bearer ${token}`, AUDIENCE)).toBeNull();
+    expect(accountsTable.fetchById).not.toHaveBeenCalled();
+  });
+});
+
+describe("verifyProxyAssertion", () => {
+  beforeEach(() => {
+    _setJwks(async () => importJWK(publicJwk, "RS256"));
+  });
+  afterAll(() => _setJwks(null));
+
+  test("returns the claims of a valid assertion without resolving anyone", async () => {
+    const token = await createToken({ sub: PROXY_SELF_SUBJECT });
+    const payload = await verifyProxyAssertion(`Bearer ${token}`, AUDIENCE);
+    expect(payload?.sub).toBe(PROXY_SELF_SUBJECT);
+    expect(payload?.iss).toBe(ISSUER);
+    expect(accountsTable.fetchById).not.toHaveBeenCalled();
+    expect(accountsTable.fetchByOryId).not.toHaveBeenCalled();
+  });
+
+  test("returns null for a wrong issuer, a wrong audience, an expired token, or no token", async () => {
+    expect(await verifyProxyAssertion(`Bearer ${await createToken({ sub: "x" }, { issuer: "https://evil" })}`, AUDIENCE)).toBeNull();
+    expect(await verifyProxyAssertion(`Bearer ${await createToken({ sub: "x" }, { audience: "https://other" })}`, AUDIENCE)).toBeNull();
+    expect(await verifyProxyAssertion(`Bearer ${await createToken({ sub: "x" }, { expiresIn: "-1m" })}`, AUDIENCE)).toBeNull();
+    expect(await verifyProxyAssertion(null, AUDIENCE)).toBeNull();
+    expect(await verifyProxyAssertion("Basic abc", AUDIENCE)).toBeNull();
   });
 });

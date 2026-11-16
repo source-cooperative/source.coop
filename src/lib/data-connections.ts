@@ -11,12 +11,8 @@ import { accountsTable, dataConnectionsTable } from "@/lib/clients/database";
  * can manage any; a system-owned (unowned) connection is admin-only; an
  * account-owned connection is managed by that account's owners/maintainers
  * (canManageAccountDataConnections, which also requires the account's
- * CREATE_DATA_CONNECTIONS flag).
- *
- * This mirrors the rule the private `canManageConnection` in
- * actions/data-connections.ts applies to connection CRUD, but computes the
- * admin decision itself instead of taking it as a param, so non-action callers
- * (e.g. the product mirror-prefix action) can reuse it.
+ * CREATE_DATA_CONNECTIONS flag). Connection CRUD and the product mirror-prefix
+ * action both apply it.
  */
 export async function canManageDataConnection(
   session: UserSession | null,
@@ -80,21 +76,28 @@ export function canUseDataConnectionFor(
 }
 
 /**
- * List the data connections a user is permitted to use when creating a product.
+ * List the data connections a user may pick when creating a product under one
+ * of `ownerAccountIds`: readable (`GetDataConnection`) and usable for at least
+ * one of those accounts ({@link canUseDataConnectionFor}).
  *
- * A connection is usable when the session is authorized both to read it
- * (`GetDataConnection`) and to create products against it (`UseDataConnection`).
+ * The owner filter is applied here, not in the form: an owned connection
+ * carries its account's bucket names and prefixes, and anything returned is
+ * serialized to the browser.
+ *
  * The returned objects are unsanitized (credentials intact); callers that hand
  * these to the client must strip `authentication` first.
  */
 export async function listUsableDataConnections(
-  session: UserSession | null
+  session: UserSession | null,
+  ownerAccountIds: string[]
 ): Promise<DataConnection[]> {
   const dataConnections = await dataConnectionsTable.listAll();
 
   return dataConnections.filter(
     (dataConnection) =>
-      isAuthorized(session, dataConnection, Actions.UseDataConnection) &&
-      isAuthorized(session, dataConnection, Actions.GetDataConnection)
+      isAuthorized(session, dataConnection, Actions.GetDataConnection) &&
+      ownerAccountIds.some((accountId) =>
+        canUseDataConnectionFor(session, dataConnection, accountId)
+      )
   );
 }

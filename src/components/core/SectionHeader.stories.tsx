@@ -52,19 +52,6 @@ export const WithRightButton: Story = {
   },
 };
 
-/** Red throughout, which is how <DangerZone> is built. */
-export const Danger: Story = {
-  args: {
-    title: "Danger zone",
-    color: "red",
-    children: (
-      <Text size="2" color="gray">
-        Irreversible actions live here.
-      </Text>
-    ),
-  },
-};
-
 /**
  * Consecutive sections have to read as separate blocks rather than one
  * continuous column of fields — and the space between them belongs to the

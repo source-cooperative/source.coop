@@ -11,9 +11,11 @@ import type { Account } from "@/types";
  * the dialog's edge. The fix was to portal it out, and this story is where that
  * regresses visibly.
  *
- * **Open the dialog and type two or more characters** into the User field. The
- * suggestions come from the mocked `searchAccounts`; the list should overflow
- * the dialog rather than being clipped by it.
+ * **Open the dialog and type two or more characters** into the Account field.
+ * The suggestions come from the mocked `searchAccounts`; the list should
+ * overflow the dialog rather than being clipped by it. The organization's own
+ * service accounts are offered alongside people — the mock returns one for
+ * `miskatonic` — since they are granted access through the same form.
  *
  * There is no product-scoped story. Passing a `product` changes only two hidden
  * fields — `organization_id` and `product_id` — so it renders identically, and
@@ -23,9 +25,9 @@ import type { Account } from "@/types";
  * the product.
  */
 const meta = {
-  title: "Features/Memberships/InviteMemberForm",
+  title: "Features/Settings/Memberships/InviteMemberForm",
   component: InviteMemberForm,
-  parameters: { layout: "padded" },
+  parameters: { layout: "padded", docs: { story: { inline: false, iframeHeight: 480 } } },
 } satisfies Meta<typeof InviteMemberForm>;
 
 export default meta;

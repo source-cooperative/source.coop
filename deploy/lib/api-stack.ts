@@ -53,8 +53,10 @@ export class ApiStack extends cdk.Stack {
       database.accountsTable,
       database.productsTable,
       database.dataConnectionsTable,
-      database.apiKeysTable,
       database.membershipsTable,
+      database.accountTrustsTable,
+      database.serviceAccountKeysTable,
+      database.tagsTable,
     ]) {
       table.grantReadWriteData(vercel.vercelRole);
     }
@@ -63,9 +65,10 @@ export class ApiStack extends cdk.Stack {
     assets.bucket.grantPut(vercel.vercelRole);
     assets.bucket.grantDelete(vercel.vercelRole);
 
-    // Platform-hosted opendata buckets the data proxy reads/writes for
-    // connections backed by Source's own storage.
-    const writableBuckets = [
+    // Regions of the platform-hosted opendata buckets the data proxy
+    // reads/writes for connections backed by Source's own storage. Each region
+    // has one platform data connection, `aws-opendata-{region}`.
+    const regions = [
       "ap-northeast-1",
       "ap-northeast-2",
       "ap-northeast-3",
@@ -83,7 +86,8 @@ export class ApiStack extends cdk.Stack {
       "us-east-2",
       "us-west-1",
       "us-west-2",
-    ]
+    ];
+    const writableBuckets = regions
       .map((region) => `${region}.opendata.source.coop`)
       .map((bucket) => (isProduction ? bucket : `dev.${bucket}`));
 
@@ -97,6 +101,7 @@ export class ApiStack extends cdk.Stack {
           ? "https://data.staging.source.coop"
           : `https://data.${props.stage}.source.coop`,
       writableBuckets,
+      platformConnectionIds: regions.map((region) => `aws-opendata-${region}`),
     });
   }
 }
