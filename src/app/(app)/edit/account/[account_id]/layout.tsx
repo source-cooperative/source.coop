@@ -129,8 +129,7 @@ export default async function AccountLayout({
         Actions.GetAccountFlags,
       ),
     },
-    // Individuals and organizations alike can own service accounts, once
-    // granted the CREATE_SERVICE_ACCOUNTS flag.
+    // Individuals and organizations alike can own service accounts.
     {
       id: "service-accounts",
       label: "Service Accounts",
