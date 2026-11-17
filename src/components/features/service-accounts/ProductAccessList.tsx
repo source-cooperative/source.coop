@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Flex, IconButton, SegmentedControl, Text, Tooltip } from "@radix-ui/themes";
+import { Flex, IconButton, Link as RadixLink, SegmentedControl, Text, Tooltip } from "@radix-ui/themes";
 import { Cross2Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
 import { ItemList } from "@/components/core/ItemList";
 import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
@@ -83,19 +83,22 @@ export function ProductAccessList({
             <ItemList.Row
               key={product_id}
               title={
-                <Link
-                  href={productUrl(ownerAccountId, product_id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "var(--accent-11)", textDecoration: "none" }}
+                // The row's name, so the same ink as any other; the icon and
+                // the underline on hover say it is a link.
+                <RadixLink
+                  asChild
+                  size="2"
+                  weight="medium"
+                  color="gray"
+                  highContrast
+                  underline="hover"
+                  style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)" }}
                 >
-                  <Flex align="center" gap="1">
-                    <Text size="2" weight="medium">
-                      {title}
-                    </Text>
+                  <Link href={productUrl(ownerAccountId, product_id)} target="_blank" rel="noopener noreferrer">
+                    {title}
                     <ExternalLinkIcon width="12" height="12" aria-label="opens in a new tab" />
-                  </Flex>
-                </Link>
+                  </Link>
+                </RadixLink>
               }
               meta={`${ownerAccountId}/${product_id}`}
               actions={

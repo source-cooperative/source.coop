@@ -36,8 +36,13 @@ export default async function ServiceAccountPage({ params }: PageProps) {
     productsTable.listByAccountAll(account_id),
     serviceAccountKeysTable.listByAccount(account.account_id),
   ]);
-  // The owner, and whoever issued or revoked a key, for their cards.
-  const named = [account_id, ...keys.flatMap((k) => [k.created_by, k.revoked_by])];
+  // The owner, whoever added a trust, and whoever issued or revoked a key, for
+  // their cards.
+  const named = [
+    account_id,
+    ...trusts.map((t) => t.created_by),
+    ...keys.flatMap((k) => [k.created_by, k.revoked_by]),
+  ];
   const accounts = Object.fromEntries(
     (await accountsTable.fetchManyByIds([...new Set(named.filter((id) => id != null))])).map((a) => [
       a.account_id,

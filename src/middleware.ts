@@ -64,7 +64,8 @@ const handleLegacyRedirects = (request: NextRequest): NextResponse | null => {
 };
 
 // Top-level routes that share the /{segment}/{segment} shape but are not
-// account/product pages — the analytics rewrite must leave them alone.
+// account/product pages — the analytics rewrite and the case redirect must
+// leave their second segment alone.
 const NON_ACCOUNT_SEGMENTS = new Set([
   "admin",
   "edit",
@@ -76,6 +77,31 @@ const NON_ACCOUNT_SEGMENTS = new Set([
   "products",
   "repositories",
 ]);
+
+/**
+ * Redirect `/{Account}/{Product}/...` to its lowercase form. Account and
+ * product ids are lowercase-only, so a mixed-case URL can only be a typo or a
+ * hand-typed handle. Only the id segments change: everything after them is an
+ * object path, and object keys are case-sensitive.
+ *
+ * Exported for tests.
+ */
+export const handleCaseRedirect = (
+  request: NextRequest,
+): NextResponse | null => {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const { pathname } = request.nextUrl;
+  const parts = pathname.split("/");
+  // parts[0] is "" (leading slash), parts[1] the account, parts[2] the product.
+  const idParts = NON_ACCOUNT_SEGMENTS.has(parts[1].toLowerCase()) ? 2 : 3;
+  const lowered = parts
+    .map((part, i) => (i > 0 && i < idParts ? part.toLowerCase() : part))
+    .join("/");
+  if (lowered === pathname) return null;
+  const url = request.nextUrl.clone();
+  url.pathname = lowered;
+  return NextResponse.redirect(url, 308);
+};
 
 /**
  * Serve the maintainer analytics view on the product root via a query param
@@ -155,6 +181,9 @@ export const middleware = async (request: NextRequest) => {
     return ory(request);
   }
 
+  const caseRedirect = handleCaseRedirect(request);
+  if (caseRedirect) return caseRedirect;
+
   const analyticsRewrite = handleProductAnalyticsTab(request);
   if (analyticsRewrite) return analyticsRewrite;
 
@@ -173,7 +202,11 @@ export const config = {
   // (e.g. `api`) would also skip middleware for any account whose id merely
   // starts with it (apiuser, logophile, …), silently disabling rewrites
   // and Ory handling on their pages.
+  //
+  // `img/` is excluded for the same reason as `favicon/` and `logo/`: public
+  // files keep their mixed-case names (`/img/ringsIcon.svg`), and the case
+  // redirect would lowercase them into a 404.
   matcher: [
-    "/((?!api/|_next/static|_next/image|favicon\\.ico|favicon/|logo/).*)",
+    "/((?!api/|_next/static|_next/image|favicon\\.ico|favicon/|logo/|img/).*)",
   ],
 };

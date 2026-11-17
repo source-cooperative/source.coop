@@ -103,10 +103,17 @@ describe("getProxyCredentials", () => {
       expiration: "2026-04-10T13:00:00Z",
     });
 
-    // Last fetch call should be the STS exchange
-    const lastCall = fetchMock.mock.calls[fetchMock.mock.calls.length - 1][0] as string;
-    expect(lastCall).toContain("Action=AssumeRoleWithWebIdentity");
-    expect(lastCall).toContain("RoleArn=_default");
+    // Last fetch call should be the STS exchange, with the token kept out of
+    // the URL (fetch spans record it).
+    const [stsUrl, stsInit] = fetchMock.mock.calls[
+      fetchMock.mock.calls.length - 1
+    ] as [string, RequestInit];
+    expect(stsUrl).toMatch(/\/\.sts$/);
+    expect(stsInit.method).toBe("POST");
+    const stsBody = stsInit.body as URLSearchParams;
+    expect(stsBody.get("Action")).toBe("AssumeRoleWithWebIdentity");
+    expect(stsBody.get("RoleArn")).toBe("_default");
+    expect(stsBody.get("WebIdentityToken")).toBeTruthy();
   });
 
   // Drives the 4-call skip_consent Hydra flow, then returns the given STS body.

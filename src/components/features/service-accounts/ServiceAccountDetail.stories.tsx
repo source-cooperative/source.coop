@@ -61,12 +61,13 @@ const account = {
   metadata_public: {},
 } as ServiceAccountSummary["account"];
 
-const trust = (subject: string) => ({
+const trust = (subject: string, last_used_at?: string) => ({
   account_id: "miskatonic--nightly-sync",
   issuer: GITHUB_ACTIONS_ISSUER,
   subject,
   created_at: "2026-03-12T00:00:00Z",
   created_by: "acoltrane",
+  last_used_at,
 });
 
 const grant = (product_id: string, role: MembershipRole) => ({
@@ -82,8 +83,9 @@ const grant = (product_id: string, role: MembershipRole) => ({
 const summary: ServiceAccountSummary = {
   account,
   trusts: [
-    trust("repo:miskatonic/climate-data:ref:refs/heads/main"),
+    trust("repo:miskatonic/climate-data:ref:refs/heads/main", "2026-03-20T00:00:00Z"),
     trust("repo:miskatonic@8123456/climate-data@9456789:environment:production"),
+    trust("repo:miskatonic/field-notes:ref:refs/tags/v2.1.0", "2026-11-08T00:00:00Z"),
   ],
   grants: [
     grant("climate-data", MembershipRole.WriteData),
@@ -113,6 +115,12 @@ const summary: ServiceAccountSummary = {
   ],
 };
 
+/**
+ * Each trusted workflow is named by its repository, which opens on GitHub,
+ * with the branch, tag or environment it runs from beneath. Hover the
+ * repository for the exact subject; a lock marks one pinned to the
+ * repository's ID.
+ */
 export const Default: Story = { args: { summary } };
 
 /** Disabled: marked beside the name, with Enable in place of Disable. */

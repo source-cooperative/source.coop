@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateWithOidcToken } from "@/lib/api/oidc";
 import { isAdmin } from "@/lib/api/authz";
@@ -16,6 +16,7 @@ import {
 import { Problem, problem, problemResponse } from "@/lib/api/problems";
 import { accountTrustsTable } from "@/lib/clients/database";
 import { invalid, unauthenticated } from "@/lib/operations/result";
+import { LOGGER } from "@/lib/logging";
 
 const BodySchema = z.object({
   issuer: z.string().min(1).openapi({ description: "The verified token's `iss`." }),
@@ -74,6 +75,24 @@ async function exchange(request: NextRequest, { params }: Context) {
       trusted: false,
     };
     return problemResponse(refusal);
+  }
+  // Only the proxy's own call is a use: an admin asking is not an exchange.
+  // Best-effort and after the response, so a throttled write neither delays
+  // nor refuses a trusted workflow.
+  if (session.account.account_id === account_id) {
+    after(() =>
+      accountTrustsTable.touch(account_id, issuer, subject).catch((error: unknown) =>
+        LOGGER.warn("Could not record trust use", {
+          operation: "trustExchange",
+          metadata: {
+            account_id,
+            issuer,
+            subject,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        })
+      )
+    );
   }
   return NextResponse.json({ trusted });
 }
