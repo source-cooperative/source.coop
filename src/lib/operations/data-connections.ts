@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   Actions,
   DataConnection,
+  DataConnectionAuthenticationSchema,
   DataConnectionObjectSchema,
   DataConnectionSchema,
   MIN_ID_LENGTH,
@@ -60,7 +61,13 @@ const UpdateFields = DataConnectionObjectSchema.omit({
 export const UpdateDataConnectionSchema = UpdateFields.extend({
   prefix_template: UpdateFields.shape.prefix_template.nullable(),
   required_flag: UpdateFields.shape.required_flag.nullable(),
-  authentication: UpdateFields.shape.authentication.nullable(),
+  // A fresh union of the same variants: zod-to-openapi documents `.nullable()`
+  // on the registered `DataConnectionAuthentication` as a `$ref` that still
+  // rejects null.
+  authentication: z
+    .discriminatedUnion("type", DataConnectionAuthenticationSchema.options)
+    .nullable()
+    .optional(),
 }).openapi("UpdateDataConnection");
 
 export const ListDataConnectionsQuerySchema = PageQuerySchema.extend({

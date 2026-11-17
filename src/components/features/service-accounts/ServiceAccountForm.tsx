@@ -14,12 +14,14 @@ import { TrashIcon } from "@radix-ui/react-icons";
 import { Field, FormActions, SectionHeader } from "@/components/core";
 import { ItemList } from "@/components/core/ItemList";
 import { createServiceAccount } from "@/lib/actions/service-accounts";
+import { useFormChanges } from "@/hooks/useFormChanges";
 import {
   IDLE_SERVICE_ACCOUNT_FORM_STATE,
   slugifyToId,
   type Product,
 } from "@/types";
 import { ProductAccessList, type ProductAccess } from "./ProductAccessList";
+import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
 import { GrantProductDialog } from "./GrantProductDialog";
 import { AddSignInMenu, SIGN_IN_DESCRIPTION } from "./AddSignInMenu";
 import type { ApiKeyDraft } from "./IssueApiKeyDialog";
@@ -36,6 +38,8 @@ function RemoveButton({ label, onRemove }: { label: string; onRemove: () => void
 
 interface ServiceAccountFormProps {
   ownerAccountId: string;
+  /** The owner's account, for its card on hover. */
+  accounts?: AccountsById;
   products: Pick<Product, "product_id" | "title">[];
   /** The data proxy's origin, shown as the audience a trusted workflow's token must carry. */
   proxyOrigin?: string;
@@ -50,9 +54,11 @@ interface ServiceAccountFormProps {
  */
 export function ServiceAccountForm({
   ownerAccountId,
+  accounts,
   products,
   proxyOrigin,
 }: ServiceAccountFormProps) {
+  const owner = <AccountMention id={ownerAccountId} accounts={accounts} />;
   const [state, formAction, pending] = useActionState(
     createServiceAccount,
     IDLE_SERVICE_ACCOUNT_FORM_STATE
@@ -68,6 +74,7 @@ export function ServiceAccountForm({
       return access ? { ...rest, [product_id]: access } : rest;
     });
   const [apiKey, setApiKey] = useState<ApiKeyDraft | null>(null);
+  const { formRef, dirty } = useFormChanges(state.success && state);
 
   // A rejected id opens the field, so the error sits beside something to fix.
   const showIdField = editingId || !!state.fieldErrors.local_id;
@@ -83,12 +90,12 @@ export function ServiceAccountForm({
   }, [state.issued, router]);
 
   return (
-    <form action={formAction}>
+    <form ref={formRef} action={formAction}>
       <input type="hidden" name="owner_account_id" value={ownerAccountId} />
       <Flex direction="column" gap="6">
         <SectionHeader
           title="Who it is"
-          description={`Owned by ${ownerAccountId}; whoever manages that account manages this one.`}
+          description={<>Owned by {owner}; whoever manages that account manages this one.</>}
         >
           <Flex direction="column" gap="4">
             <Field label="Name" htmlFor="sa-name" required errors={state.fieldErrors.name}>
@@ -229,7 +236,11 @@ export function ServiceAccountForm({
 
         <SectionHeader
           title="Can reach"
-          description={`Products ${ownerAccountId} owns that it may read or write. Each grant is an ordinary membership, revoked the same way as a person's.`}
+          description={
+            <>
+              Products {owner} owns that it may read or write. Each grant is an ordinary membership, revoked the same way as a person&apos;s.
+            </>
+          }
           rightButton={
             <GrantProductDialog
               ownerAccountId={ownerAccountId}
@@ -243,6 +254,7 @@ export function ServiceAccountForm({
           ))}
           <ProductAccessList
             ownerAccountId={ownerAccountId}
+            accounts={accounts}
             products={products}
             access={grants}
             onChange={setGrant}
@@ -254,6 +266,7 @@ export function ServiceAccountForm({
           pending={pending}
           message={state.message}
           success={state.success}
+          unsaved={dirty}
         />
       </Flex>
     </form>

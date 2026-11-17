@@ -1,6 +1,6 @@
 import { Text } from "@radix-ui/themes";
 import Link from "next/link";
-import { Account, DataConnection, DataProvider } from "@/types";
+import { DataConnection, DataProvider, type PublicAccount } from "@/types";
 import { AccountInfoHoverCard } from "@/components/core/AccountInfoHoverCard";
 import { accountUrl } from "@/lib/urls";
 import { ItemList } from "@/components/core/ItemList";
@@ -44,7 +44,7 @@ interface DataConnectionsListProps {
    * system-owned (unowned) connections from account-owned ones. Omit it
    * (account-scoped view), where every connection has the same owner.
    */
-  ownerAccounts?: Record<string, Account>;
+  ownerAccounts?: Record<string, PublicAccount>;
 }
 
 /**
@@ -58,7 +58,7 @@ function OwnerLabel({
   ownerAccounts,
 }: {
   owner?: string;
-  ownerAccounts: Record<string, Account>;
+  ownerAccounts: Record<string, PublicAccount>;
 }) {
   if (!owner) {
     return <>system</>;

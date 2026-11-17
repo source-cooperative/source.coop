@@ -14,6 +14,7 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { accountsTable } from "./accounts";
+import { publicView } from "@/types";
 import { BaseTable } from "./base";
 import { marshall } from "@aws-sdk/util-dynamodb";
 
@@ -218,7 +219,7 @@ export class ProductsTable extends BaseTable {
 
       return {
         ...(result.Item as Product),
-        account: account || undefined,
+        account: account ? publicView(account) : undefined,
       };
     } catch (error) {
       if (error instanceof ResourceNotFoundException) return null;
@@ -358,12 +359,55 @@ export class ProductsTable extends BaseTable {
     const accounts = await accountsTable.fetchManyByIds(
       products.map((p) => p.account_id).filter((id) => id)
     );
-    const accountMap = new Map(accounts.map((acc) => [acc.account_id, acc]));
+    const accountMap = new Map(accounts.map((acc) => [acc.account_id, publicView(acc)]));
 
     return products.map((item) => ({
       ...item,
       account: accountMap.get(item.account_id) || undefined,
     }));
+  }
+
+  /**
+   * Every product that carries any tag, public or not. Scans the whole table
+   * like listProductsByConnectionId; meant for admin review of suggested tags.
+   */
+  async listTagged(): Promise<Product[]> {
+    const matches: Product[] = [];
+    let lastEvaluatedKey: any = undefined;
+    do {
+      const result = await this.list(1000, lastEvaluatedKey);
+      matches.push(...result.products.filter((p) => p.metadata?.tags?.length));
+      lastEvaluatedKey = result.lastEvaluatedKey;
+    } while (lastEvaluatedKey);
+    return matches;
+  }
+
+  /** Every product carrying the tag, public or not. */
+  async listByTag(tag: string): Promise<Product[]> {
+    return (await this.listTagged()).filter((p) =>
+      p.metadata.tags!.includes(tag)
+    );
+  }
+
+  /** Replaces a product's tags, and nothing else about it. */
+  async setTags(
+    account_id: string,
+    product_id: string,
+    tags: string[]
+  ): Promise<void> {
+    try {
+      await this.client.send(
+        new UpdateCommand({
+          TableName: this.table,
+          Key: { account_id, product_id },
+          UpdateExpression: "SET metadata.tags = :tags",
+          ExpressionAttributeValues: { ":tags": tags },
+        })
+      );
+    } catch (error) {
+      this.logError("setTags", error, { account_id, product_id });
+      throw error;
+    }
   }
 
   async delete(account_id: string, product_id: string): Promise<void> {

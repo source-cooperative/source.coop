@@ -1,5 +1,11 @@
 import { ProductCreationForm } from "@/components/features/products/ProductCreationForm";
-import { accountsTable, getPageSession, membershipsTable } from "@/lib";
+import {
+  accountsTable,
+  getPageSession,
+  membershipsTable,
+  tagsTable,
+  tagProps,
+} from "@/lib";
 import { canCreateProductForAccount, isAuthorized } from "@/lib/api/authz";
 import { listUsableDataConnections } from "@/lib/data-connections";
 import { Actions, DataConnectionObjectSchema, MembershipState } from "@/types";
@@ -77,6 +83,7 @@ export default async function NewProductPage({
       <ProductCreationForm
         potentialOwnerAccounts={potentialOwnerAccounts}
         dataConnections={dataConnections}
+        {...tagProps(await tagsTable.listAll())}
         defaultOwnerId={
           // Preselect the owner from ?owner=… (e.g. "New product" opened from an
           // org's menu), but only if the user can actually own products there.

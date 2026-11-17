@@ -29,6 +29,6 @@ describe("/api/v1/whoami", () => {
     const req = new NextRequest("http://localhost/api/v1/whoami");
     const res = await GET(req, ctx);
     expect(res.status).toBe(401);
-    await expect(res.json()).resolves.toMatchObject({ error: { code: "unauthenticated" } });
+    await expect(res.json()).resolves.toMatchObject({ code: "unauthenticated" });
   });
 });

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { OrganizationProfile } from "./OrganizationProfile";
-import type { IndividualAccount, OrganizationalAccount } from "@/types";
+import type { PublicAccount } from "@/types";
 
 /**
  * An organization's profile page: its details, its people and its products.
@@ -24,14 +24,14 @@ const account = {
     bio: "Expeditions, archives and acoustic surveys of the deep ocean.",
     location: "Arkham, Massachusetts",
   },
-} as unknown as OrganizationalAccount;
+} as unknown as PublicAccount;
 
 const owner = {
   account_id: "wdyer",
   name: "William Dyer",
   type: "individual",
   metadata_public: {},
-} as unknown as IndividualAccount;
+} as unknown as PublicAccount;
 
 export const Default: Story = {
   args: {

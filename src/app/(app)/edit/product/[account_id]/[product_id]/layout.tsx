@@ -1,3 +1,4 @@
+import { publicView } from "@/types";
 import { ReactNode } from "react";
 import { Pencil1Icon, PersonIcon, Link1Icon } from "@radix-ui/react-icons";
 import { Flex } from "@radix-ui/themes";
@@ -8,7 +9,7 @@ import {
   AccountSelector,
 } from "@/components/features/settings";
 import { getPageSession } from "@/lib/api/utils";
-import { isAuthorized, isAdmin } from "@/lib/api/authz";
+import { isAuthorized, isAdmin, isProductDisabled } from "@/lib/api/authz";
 import { Actions } from "@/types";
 import { productsTable } from "@/lib/clients/database";
 import { notFound } from "next/navigation";
@@ -61,7 +62,11 @@ export default async function ProductLayout({
     account_id
   );
   manageableProducts = manageableProducts.filter(
-    (p) => !p.disabled && isAuthorized(session, p, Actions.PutRepository)
+    (p) => {
+      // Listed without its account; every product here has this one.
+      const held = { ...p, account: product.account };
+      return !isProductDisabled(held) && isAuthorized(session, held, Actions.PutRepository);
+    }
   );
 
   const canEditProduct = isAuthorized(session, product, Actions.PutRepository);
@@ -103,7 +108,7 @@ export default async function ProductLayout({
         <Flex align="center" gap="4">
           <AccountSelector
             currentAccount={product.account!}
-            manageableAccounts={manageableAccounts}
+            manageableAccounts={manageableAccounts.map(publicView)}
           />
           <ProductSelector
             currentProduct={product}

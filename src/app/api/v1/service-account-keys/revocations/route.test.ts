@@ -47,7 +47,13 @@ describe("POST /api/v1/service-account-keys/revocations", () => {
   });
 
   test("is 400 for a key in the query string, before any lookup", async () => {
-    expect((await POST(req({ key: KEY }, `${ENDPOINT}?key=${KEY}`))).status).toBe(400);
+    const res = await POST(req({ key: KEY }, `${ENDPOINT}?key=${KEY}`), {});
+    expect(res.status).toBe(400);
+    // Placed at the request like every problem, without echoing the key back.
+    await expect(res.json()).resolves.toMatchObject({
+      type: "http://localhost/api/problems/invalid",
+      instance: ENDPOINT,
+    });
     expect(serviceAccountKeysTable.fetchByHash).not.toHaveBeenCalled();
   });
 

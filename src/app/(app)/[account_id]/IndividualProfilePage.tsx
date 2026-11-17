@@ -1,5 +1,6 @@
 import {
   accountsTable,
+  hidePendingTags,
   isOrganizationalAccount,
   membershipsTable,
   productsTable,
@@ -12,6 +13,7 @@ import {
   isAuthorized,
 } from "@/lib/api/authz";
 import { IndividualProfile } from "@/components/features/profiles/IndividualProfile";
+import { publicView } from "@/types";
 
 interface IndividualProfilePageProps {
   account: IndividualAccount;
@@ -29,9 +31,15 @@ export async function IndividualProfilePage({
     1000
   );
 
-  products = products
-    .map((product) => ({ ...product, account }))
-    .filter((product) => canListOnProfile(session, product));
+  // Authorized with the account attached, so a disabled one disables its
+  // products; the listing itself stays without it, as the profile it sits on
+  // already says who provides them.
+  const owner = publicView(account);
+  products = await hidePendingTags(
+    products.filter((product) =>
+      canListOnProfile(session, { ...product, account: owner })
+    )
+  );
 
   const memberships = (
     await membershipsTable.listByUser(account.account_id)
@@ -42,7 +50,9 @@ export async function IndividualProfilePage({
     await accountsTable.fetchManyByIds(
       memberships.map((membership) => membership.membership_account_id)
     )
-  ).filter(isOrganizationalAccount);
+  )
+    .filter(isOrganizationalAccount)
+    .map(publicView);
 
   // For individual accounts
   return (

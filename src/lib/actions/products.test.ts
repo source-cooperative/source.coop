@@ -2,7 +2,7 @@
 import { Product } from "@/types";
 import { getPageSession } from "@/lib";
 import * as ops from "@/lib/operations/products";
-import { forbidden, ok } from "@/lib/operations/result";
+import { forbidden, invalid, ok } from "@/lib/operations/result";
 import { createProduct, deleteProduct, updateProduct } from "./products";
 
 jest.mock("@/lib", () => ({
@@ -36,9 +36,36 @@ test("createProduct passes the form on, and sends the creator to the new product
   expect(operations.createProduct).toHaveBeenCalledWith(session, {
     account_id: "alice",
     product_id: "My-Product",
+    tags: [],
+    suggest_tags: [],
   });
   // The operation's product ID, which the schema lowercases.
   expect(state).toMatchObject({ success: true, redirectTo: "/alice/my-product?success" });
+});
+
+test("createProduct passes every tag the picker submitted, chosen and new", async () => {
+  operations.createProduct.mockResolvedValue(ok(product));
+  const data = form({ account_id: "alice" });
+  data.append("tags", "ocean");
+  data.append("tags", "acoustics");
+  data.append("suggest_tags", "sea-lion");
+
+  await createProduct(undefined, data);
+
+  expect(operations.createProduct.mock.calls[0][1]).toMatchObject({
+    tags: ["ocean", "acoustics"],
+    suggest_tags: ["sea-lion"],
+  });
+});
+
+test("a refused suggestion is shown under the form's Tags field", async () => {
+  operations.createProduct.mockResolvedValue(
+    invalid("You may have 5 tags awaiting review at once", "suggest_tags")
+  );
+  const state = await createProduct(undefined, form({ account_id: "alice" }));
+  expect(state.fieldErrors).toEqual({
+    tags: ["You may have 5 tags awaiting review at once"],
+  });
 });
 
 describe("updateProduct", () => {
@@ -53,7 +80,24 @@ describe("updateProduct", () => {
       description: undefined,
       visibility: "public",
       disabled: undefined,
+      tags: [],
+      suggest_tags: [],
     });
+  });
+
+  test("passes every submitted tag, and none as an empty list that clears them", async () => {
+    operations.updateProduct.mockResolvedValue(ok(product));
+    const data = form({});
+    data.append("tags", "ocean");
+    data.append("tags", "acoustics");
+
+    await updateProduct(undefined, data);
+    await updateProduct(undefined, form({}));
+
+    expect(operations.updateProduct.mock.calls[0][3]).toMatchObject({
+      tags: ["ocean", "acoustics"],
+    });
+    expect(operations.updateProduct.mock.calls[1][3]).toMatchObject({ tags: [] });
   });
 
   test.each([["true", true], ["false", false]])(

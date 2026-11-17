@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Flex } from "@radix-ui/themes";
 import { ProfileAvatar } from "./ProfileAvatar";
-import type { Account } from "@/types";
+import type { PublicAccount } from "@/types";
 
 /**
  * An account's picture, with a three-step fallback: an uploaded
@@ -24,13 +24,13 @@ const individual = {
   account_id: "acoltrane",
   name: "Alice Coltrane",
   type: "individual",
-} as unknown as Account;
+} as unknown as PublicAccount;
 
 const organization = {
   account_id: "miskatonic",
   name: "Miskatonic University",
   type: "organization",
-} as unknown as Account;
+} as unknown as PublicAccount;
 
 /** Round for a person, squared for an organization. */
 export const Shapes: Story = {
@@ -63,16 +63,14 @@ export const WithImage: Story = {
   args: {
     account: {
       ...individual,
-      metadata_public: {
-        profile_image:
-          "data:image/svg+xml," +
-          encodeURIComponent(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96">' +
-              '<rect width="96" height="96" fill="#4a7ba7"/>' +
-              '<circle cx="48" cy="38" r="16" fill="#fff"/>' +
-              '<ellipse cx="48" cy="82" rx="26" ry="22" fill="#fff"/></svg>'
-          ),
-      },
-    } as unknown as Account,
+      profile_image:
+        "data:image/svg+xml," +
+        encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96">' +
+            '<rect width="96" height="96" fill="#4a7ba7"/>' +
+            '<circle cx="48" cy="38" r="16" fill="#fff"/>' +
+            '<ellipse cx="48" cy="82" rx="26" ry="22" fill="#fff"/></svg>'
+        ),
+    } as unknown as PublicAccount,
   },
 };

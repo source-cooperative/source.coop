@@ -3,7 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
 import { revokeLeakedKey } from "@/lib/accounts/service-account-keys";
 import { API_KEY_PREFIX, isApiKey } from "@/types";
-import { toResponse } from "@/lib/api/handler";
+import { toResponse, withProblems } from "@/lib/api/handler";
 import { errors, registry } from "@/lib/api/openapi";
 import { invalid } from "@/lib/operations/result";
 
@@ -33,7 +33,7 @@ registry.registerPath({
   },
 });
 
-export async function POST(request: NextRequest) {
+async function revokeKey(request: NextRequest) {
   if (request.nextUrl.search.includes(API_KEY_PREFIX)) {
     return toResponse(invalid("Send the key in the request body, not the URL"));
   }
@@ -44,3 +44,5 @@ export async function POST(request: NextRequest) {
   await revokeLeakedKey(parsed.data.key, "holder");
   return new NextResponse(null, { status: StatusCodes.NO_CONTENT });
 }
+
+export const POST = withProblems(revokeKey);

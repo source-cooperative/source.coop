@@ -53,7 +53,8 @@ async function respond<T>(
   ) => Promise<OperationResult<DataConnection>>,
   formData: FormData,
   message: string,
-  redirectTo?: (c: DataConnection) => string
+  redirectTo?: (c: DataConnection) => string,
+  deleted = false
 ): Promise<FormState<T>> {
   let result: OperationResult<DataConnection>;
   try {
@@ -73,7 +74,9 @@ async function respond<T>(
   }
   if (result.ok) {
     revalidatePath(listUrl(result.value));
-    revalidatePath(editUrl(result.value));
+    // Revalidating the page the visitor is on re-renders it within the action
+    // response, so a deleted connection's page would 404 before the redirect.
+    if (!deleted) revalidatePath(editUrl(result.value));
   }
   const url = result.ok && redirectTo ? redirectTo(result.value) : undefined;
   return byLeaf(toFormState(result, formData, message, url) as FormState<T>);
@@ -119,7 +122,8 @@ export async function deleteDataConnection(
     (session) => ops.deleteDataConnection(session, connectionId(formData)),
     formData,
     "Data connection deleted successfully!",
-    listUrl
+    listUrl,
+    true
   );
 }
 

@@ -3,6 +3,7 @@ import { SectionHeader, Skeleton } from "@/components/core";
 import { UsageCardSkeleton } from "@/components/features/analytics";
 import { isAnalyticsConfigured } from "@/lib/clients/analytics";
 import DirectoryListLoading from "@/components/features/products/object-browser/DirectoryListLoading";
+import { ProductObjectTypesCardSkeleton } from "@/components/features/products/ProductCatalogStats";
 
 export default function ProductDetailsLoading() {
   return (
@@ -106,6 +107,7 @@ export default function ProductDetailsLoading() {
           </SectionHeader>
         </Card>
 
+        <ProductObjectTypesCardSkeleton />
         {isAnalyticsConfigured() && <UsageCardSkeleton />}
       </Flex>
     </Grid>

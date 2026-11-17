@@ -19,6 +19,7 @@ export const docsUrl = () => "https://docs.source.coop";
 export const adminUrl = () => "/admin";
 export const adminAnalyticsUrl = () => "/admin/analytics";
 export const adminUserLookupUrl = () => "/admin/user-lookup";
+export const adminTagsUrl = () => "/admin/tags";
 export const adminDataConnectionsUrl = () => "/admin/data-connections";
 export const adminDataConnectionCreateUrl = () =>
   "/admin/data-connections/create";

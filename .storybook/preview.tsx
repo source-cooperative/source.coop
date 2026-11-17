@@ -40,6 +40,8 @@ sb.mock("../src/lib/actions/products.ts");
 sb.mock("../src/lib/actions/memberships.ts");
 sb.mock("../src/lib/actions/service-accounts.ts");
 sb.mock("../src/lib/actions/service-account-keys.ts");
+// Reached through the uploader providers the account menu sits in.
+sb.mock("../src/lib/actions/credentials.ts");
 
 // Mirrors src/styles/theme.tsx. Without it every Radix control renders
 // unstyled, and a story would tell you nothing about how the app looks.

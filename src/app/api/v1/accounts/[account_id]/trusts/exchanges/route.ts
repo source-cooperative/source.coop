@@ -1,19 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
-import { StatusCodes } from "http-status-codes";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateWithOidcToken } from "@/lib/api/oidc";
 import { isAdmin } from "@/lib/api/authz";
-import { toResponse } from "@/lib/api/handler";
+import { toResponse, withProblems } from "@/lib/api/handler";
 import {
   accountParams,
   bearer,
   errors,
   internal,
   json,
+  problemJson,
+  ProblemSchema,
   registry,
 } from "@/lib/api/openapi";
+import { Problem, problem, problemResponse } from "@/lib/api/problems";
 import { accountTrustsTable } from "@/lib/clients/database";
 import { invalid, unauthenticated } from "@/lib/operations/result";
+import { LOGGER } from "@/lib/logging";
 
 const BodySchema = z.object({
   issuer: z.string().min(1).openapi({ description: "The verified token's `iss`." }),
@@ -21,6 +24,13 @@ const BodySchema = z.object({
 });
 
 const AnswerSchema = z.object({ trusted: z.boolean() });
+
+// The refusal is a `forbidden` problem that still says `trusted: false`, so
+// either half of it is enough to read the answer.
+const RefusalSchema = ProblemSchema.extend({ trusted: z.literal(false) }).openapi(
+  "TrustRefusal",
+  { description: "A `forbidden` problem that also says `trusted: false`." }
+);
 
 registry.registerPath({
   method: "post",
@@ -36,15 +46,14 @@ registry.registerPath({
   },
   responses: {
     200: json("The account trusts this subject.", AnswerSchema),
-    403: json("The account does not trust this subject.", AnswerSchema),
+    403: problemJson("The account does not trust this subject.", RefusalSchema),
     ...errors(400, 401),
   },
 });
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ account_id: string }> }
-) {
+type Context = { params: Promise<{ account_id: string }> };
+
+async function exchange(request: NextRequest, { params }: Context) {
   // A read sent as a POST, so it authenticates the proxy's assertion itself:
   // `getApiSession` refuses those for anything but GET and HEAD.
   const session = await authenticateWithOidcToken(
@@ -60,5 +69,34 @@ export async function POST(
   if (!parsed.success) return toResponse(invalid("issuer and subject are required"));
   const { issuer, subject } = parsed.data;
   const trusted = await accountTrustsTable.isTrusted(account_id, issuer, subject);
-  return NextResponse.json({ trusted }, { status: trusted ? StatusCodes.OK : StatusCodes.FORBIDDEN });
+  if (!trusted) {
+    const refusal: Problem & { trusted: false } = {
+      ...problem("forbidden", `${account_id} does not trust this subject`),
+      trusted: false,
+    };
+    return problemResponse(refusal);
+  }
+  // Only the proxy's own call is a use: an admin asking is not an exchange.
+  // Best-effort and after the response, so a throttled write neither delays
+  // nor refuses a trusted workflow.
+  if (session.account.account_id === account_id) {
+    after(() =>
+      accountTrustsTable.touch(account_id, issuer, subject).catch((error: unknown) =>
+        LOGGER.warn("Could not record trust use", {
+          operation: "trustExchange",
+          metadata: {
+            account_id,
+            issuer,
+            subject,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        })
+      )
+    );
+  }
+  return NextResponse.json({ trusted });
 }
+
+// It authenticates the proxy's assertion itself, so `withProblems` rather than
+// `withApiSession`.
+export const POST = withProblems(exchange);

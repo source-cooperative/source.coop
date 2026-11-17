@@ -10,7 +10,7 @@ import {
   resolveMirrorPrefix,
   UserSession,
 } from "@/types";
-import { canListOnProfile, isAdmin, isAuthorized } from "@/lib/api/authz";
+import { canListOnProfile, isAdmin, isAuthorized, isProductDisabled } from "@/lib/api/authz";
 import { denyDataConnectionFor } from "@/lib/data-connections";
 import { LOGGER } from "@/lib/logging";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
@@ -22,6 +22,9 @@ import {
   dataConnectionsTable,
   membershipsTable,
   productsTable,
+  tagsTable,
+  isUsable,
+  hidePendingTags,
 } from "@/lib/clients/database";
 import {
   conflict,
@@ -39,7 +42,9 @@ import {
   encodeCursor,
   unauthenticated,
 } from "./result";
-import { publicView } from "./accounts";
+import { canonTag } from "@/lib/tags/canon";
+import { publicView } from "@/types";
+import { planSuggestions } from "./tags";
 
 export const ListProductsQuerySchema = PageQuerySchema.extend({
   q: z
@@ -49,7 +54,10 @@ export const ListProductsQuerySchema = PageQuerySchema.extend({
   tags: z
     .string()
     .optional()
-    .openapi({ description: "Comma-separated tags, every one of which a product has." }),
+    .openapi({
+      description:
+        "Comma-separated tags, every one of which a product has. Each is read in the tags' own spelling, so `New Zealand` finds `new-zealand`.",
+    }),
   featured: z.enum(["true", "false"]).optional(),
   limit: PageQuerySchema.shape.limit.openapi({
     description: "At most this many, except with `q` or `tags`, whose pages can hold more.",
@@ -58,13 +66,26 @@ export const ListProductsQuerySchema = PageQuerySchema.extend({
 
 export const ProductPageSchema = pageSchema("ProductPage", ProductResponseSchema);
 
+const TagsSchema = z.array(z.string()).openapi({
+  description:
+    "Topics people can filter products by. Each tag must be on Source's list of tags. Tags are lowercase with hyphens between words, and `New Zealand` is read as `new-zealand`.",
+});
+
+const SuggestTagsSchema = z.array(z.string()).openapi({
+  description:
+    "Tags to suggest for Source's list and add to the product in the same save. Each one the list lacks is added awaiting review, which counts toward your 5 suggestions awaiting review. A tag already on the list is just added. Nothing is suggested if the save fails.",
+});
+
 export const CreateProductSchema = ProductCreationRequestSchema.omit({
   search_text: true,
 }).extend({
+  description: ProductSchema.shape.description.default(""),
   data_connection_id: z
     .string({ required_error: "A data connection is required" })
     .min(1, "A data connection is required")
     .openapi({ description: "Where the product's data is stored. Fixed once created." }),
+  tags: TagsSchema.optional(),
+  suggest_tags: SuggestTagsSchema.optional(),
 }).openapi("CreateProduct");
 
 export const UpdateProductSchema = ProductSchema.pick({
@@ -73,9 +94,49 @@ export const UpdateProductSchema = ProductSchema.pick({
   visibility: true,
   disabled: true,
 })
-  .extend({ title: ProductSchema.shape.title.trim().min(1, "A title is required") })
+  .extend({
+    title: ProductSchema.shape.title.trim().min(1, "A title is required"),
+    tags: TagsSchema.openapi({
+      description:
+        "Replaces the product's tags. Each tag must be on Source's list of tags. Tags are lowercase with hyphens between words, and `New Zealand` is read as `new-zealand`. A tag the product already has is kept even if the list has dropped it. Omit the field to leave the tags as they are.",
+    }),
+    suggest_tags: SuggestTagsSchema.openapi({
+      description:
+        "Tags to suggest for Source's list and add to the product, on top of `tags` or, without it, the tags the product has. Each one the list lacks is added awaiting review, which counts toward your 5 suggestions awaiting review. Nothing is suggested if the save fails.",
+    }),
+  })
   .partial()
   .openapi("UpdateProduct");
+
+/**
+ * The tags as they are stored, one per spelling, or the error naming those
+ * outside the corpus. Each tag is matched by its one spelling (canonTag): to
+ * the corpus's entry if there is one, and otherwise to a tag the product
+ * already carries, which is kept as it is even if the corpus has since dropped
+ * it, so editing some other field isn't blocked by a tag nobody chose today.
+ * The corpus includes tags still pending review, so a product can carry the
+ * tag it suggested.
+ */
+async function checkTags(
+  tags: string[],
+  current: string[] = [],
+  // Planned in this save and written just before the product, so the corpus
+  // read here doesn't have them yet.
+  suggested: string[] = []
+): Promise<OperationResult<string[]>> {
+  const keys = [...new Set([...tags, ...suggested].map(canonTag).filter(Boolean))];
+  if (!keys.length) return ok([]);
+  const bySpelling = (list: string[]) => new Map(list.map((t) => [canonTag(t), t]));
+  const corpus = bySpelling([
+    ...(await tagsTable.listAll()).filter(isUsable).map((tag) => tag.tag_id),
+    ...suggested,
+  ]);
+  const carried = bySpelling(current);
+  const unknown = keys.filter((key) => !corpus.has(key) && !carried.has(key));
+  return unknown.length
+    ? invalid(`Unknown tags: ${unknown.join(", ")}`, "tags")
+    : ok(keys.map((key) => corpus.get(key) ?? carried.get(key)!));
+}
 
 export const DeleteProductQuerySchema = z.object({
   preserve_data: z.enum(["true", "false"]).default("false").openapi({
@@ -102,25 +163,19 @@ const publicCursor = (featuredOnly: boolean) =>
     .strict();
 
 /**
- * `product` with as much of its account as the caller may read: the whole
- * record for whoever GetAccount allows, and otherwise its public view. The
- * record also holds its people's emails, Ory identity, flags and private
- * metadata.
+ * Whether a caller sees a product's pending tags: those who may edit it do,
+ * so a tags list they send back doesn't drop them unseen.
  */
-function shown(session: UserSession | null, product: Product): ProductResponse {
-  const { account } = product;
-  if (!account || isAuthorized(session, account, Actions.GetAccount)) return product;
-  return { ...product, account: publicView(account) };
-}
+const editsTags = (session: UserSession | null) => (product: Product) =>
+  isAuthorized(session, product, Actions.PutRepository);
 
 // ponytail: filtering after the read can leave a page short of `limit`; the
 // cursor still moves on correctly.
 const page = (
-  session: UserSession | null,
   items: Product[],
   lastEvaluatedKey: unknown
 ): Page<ProductResponse> => ({
-  items: items.map((p) => shown(session, p)),
+  items,
   next_cursor: encodeCursor(lastEvaluatedKey),
 });
 
@@ -128,7 +183,7 @@ const page = (
  * Drops the cached pages that show a product, and its account's listing of
  * it, whichever adapter changed it.
  */
-function revalidate(account_id: string, product_id?: string) {
+export function revalidate(account_id: string, product_id?: string) {
   revalidatePath(accountUrl(account_id));
   if (product_id) {
     revalidatePath(productUrl(account_id, product_id));
@@ -137,11 +192,12 @@ function revalidate(account_id: string, product_id?: string) {
 }
 
 /**
- * A refusal to act on `product`. A deactivated product is indistinguishable
- * from a missing one to anyone not allowed to see it.
+ * A refusal to act on `product`. A disabled product, deactivated or held by a
+ * disabled account, is indistinguishable from a missing one to anyone not
+ * allowed to see it.
  */
 const refuse = (session: UserSession | null, product: Product, message: string) =>
-  product.disabled && !isAuthorized(session, product, Actions.GetRepository)
+  isProductDisabled(product) && !isAuthorized(session, product, Actions.GetRepository)
     ? notFound(`Product ${product.account_id}/${product.product_id} not found`)
     : deny(session, message);
 
@@ -170,28 +226,38 @@ export async function listProducts(
       productsTable.listByAccount(account_id, limit, start),
     ]);
     if (!account) return notFound(`Account ${account_id} not found`);
+    const shown = publicView(account);
     return ok(
       page(
-        session,
-        result.products
-          .map((p) => ({ ...p, account }))
-          .filter((p) => canListOnProfile(session, p)),
+        await hidePendingTags(
+          result.products
+            .map((p) => ({ ...p, account: shown }))
+            .filter((p) => canListOnProfile(session, p)),
+          editsTags(session)
+        ),
         result.lastEvaluatedKey
       )
     );
   }
 
+  // In the spelling tags are stored in, so `?tags=New Zealand` finds them.
+  const wanted = tags?.split(",").map(canonTag).filter(Boolean) ?? [];
   const result = await productsTable.listPublic(limit, start, {
     search: q,
-    tags,
+    tags: wanted.join(",") || undefined,
     featuredOnly,
   });
+  const visible = await hidePendingTags(
+    (await productsTable.attachAccounts(result.products)).filter((p) =>
+      isAuthorized(session, p, Actions.ListRepository)
+    ),
+    editsTags(session)
+  );
   return ok(
     page(
-      session,
-      (await productsTable.attachAccounts(result.products)).filter((p) =>
-        isAuthorized(session, p, Actions.ListRepository)
-      ),
+      // Matched again on the tags the caller sees, so filtering by a pending
+      // tag doesn't reveal which products carry it.
+      visible.filter((p) => wanted.every((t) => p.metadata?.tags?.includes(t))),
       result.lastEvaluatedKey
     )
   );
@@ -219,7 +285,8 @@ export async function getProduct(
     });
     return refuse(session, product, "You may not view this product");
   }
-  return ok(shown(session, product));
+  const [visible] = await hidePendingTags([product], editsTags(session));
+  return ok(visible);
 }
 
 /**
@@ -233,7 +300,12 @@ export async function createProduct(
   if (!session) return unauthenticated();
   const parsed = CreateProductSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
-  const { data_connection_id, ...request } = parsed.data;
+  const {
+    data_connection_id,
+    tags: requestedTags = [],
+    suggest_tags: toSuggest = [],
+    ...request
+  } = parsed.data;
   const { account_id, product_id } = request;
 
   // Before any lookup, so a caller who may not create products here learns
@@ -271,6 +343,12 @@ export async function createProduct(
       "visibility"
     );
   }
+  const plan = await planSuggestions(session, toSuggest, "suggest_tags");
+  if (!plan.ok) return plan;
+  const tags = await checkTags(requestedTags, [], plan.value.tags);
+  if (!tags.ok) return tags;
+  // Every check has passed, so the suggestions land with the product.
+  await plan.value.write();
 
   const now = new Date().toISOString();
   const product: Product = {
@@ -280,7 +358,7 @@ export async function createProduct(
     disabled: false,
     featured: 0,
     metadata: {
-      tags: [],
+      tags: tags.value,
       primary_mirror: data_connection_id,
       mirrors: {
         [data_connection_id]: {
@@ -315,16 +393,30 @@ export async function updateProduct(
   const parsed = UpdateProductSchema.safeParse(input);
   if (!parsed.success) return fromZodError(parsed.error);
 
+  const { tags: requestedTags, suggest_tags: toSuggest = [], ...fields } = parsed.data;
   // Zod keeps a key given as undefined, which would blank the stored value.
-  const changes = Object.fromEntries(
-    Object.entries(parsed.data).filter(([, value]) => value !== undefined)
+  const changes: Partial<Product> = Object.fromEntries(
+    Object.entries(fields).filter(([, value]) => value !== undefined)
   );
+  let writeSuggestions = async () => {};
+  if (requestedTags || toSuggest.length) {
+    const plan = await planSuggestions(session, toSuggest, "suggest_tags");
+    if (!plan.ok) return plan;
+    const current = product.metadata?.tags ?? [];
+    const tags = await checkTags(requestedTags ?? current, current, plan.value.tags);
+    if (!tags.ok) return tags;
+    changes.metadata = { ...product.metadata, tags: tags.value };
+    writeSuggestions = async () => void (await plan.value.write());
+  }
   // The data connection is fixed at creation, so the allowed visibilities
   // come from the primary mirror's. Without it there's no knowing what's
   // allowed, so the visibility stays as it is.
   const { visibility } = parsed.data;
   if (visibility && visibility !== product.visibility) {
-    const id = product.metadata?.primary_mirror;
+    // The primary is a key into `mirrors`, which on older products isn't the
+    // connection's ID.
+    const { mirrors, primary_mirror } = product.metadata ?? {};
+    const id = mirrors?.[primary_mirror]?.connection_id;
     const connection = id ? await dataConnectionsTable.fetchById(id) : null;
     if (!connection) {
       return invalid(
@@ -340,6 +432,8 @@ export async function updateProduct(
     }
   }
 
+  // Every check has passed, so the suggestions land with the product.
+  await writeSuggestions();
   const updated = {
     // The row as written, with the account it doesn't store.
     ...(await productsTable.update({ ...product, ...changes })),
@@ -348,9 +442,15 @@ export async function updateProduct(
   revalidate(account_id, product_id);
   LOGGER.info("Product updated", {
     operation: "updateProduct",
-    metadata: { account_id, product_id, by: session.account?.account_id, ...changes },
+    metadata: {
+      account_id,
+      product_id,
+      by: session.account?.account_id,
+      ...fields,
+      ...(changes.metadata && { tags: changes.metadata.tags, suggested: toSuggest }),
+    },
   });
-  return ok(shown(session, updated));
+  return ok(updated);
 }
 
 /**
@@ -406,7 +506,7 @@ export async function deleteProduct(
     operation: "deleteProduct",
     metadata: { account_id, product_id, by: session.account?.account_id, preserveData },
   });
-  return ok(shown(session, product));
+  return ok(product);
 }
 
 /**

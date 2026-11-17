@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ProductDisabledCallout } from "./ProductDisabledCallout";
-import type { OrganizationalAccount, Product } from "@/types";
+import type { PublicAccount, Product } from "@/types";
 
 /**
  * The warning at the top of a disabled product's page. Only its owners,
@@ -21,7 +21,7 @@ const account = {
   name: "Miskatonic University",
   type: "organization",
   disabled: false,
-} as unknown as OrganizationalAccount;
+} as unknown as PublicAccount;
 
 const product = {
   account_id: "miskatonic",

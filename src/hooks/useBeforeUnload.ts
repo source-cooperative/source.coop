@@ -3,7 +3,8 @@ import { useEffect } from "react";
 /**
  * Hook to warn users before leaving the page
  *
- * @param shouldWarn - Whether to show the warning
+ * @param shouldWarn - Whether to show the warning, or a function asked at the
+ *   moment of leaving, for state that is cheaper to check then than to track
  * @param message - Optional custom message (note: most browsers ignore this and show their own message)
  *
  * @example
@@ -13,11 +14,15 @@ import { useEffect } from "react";
  * // Warn when uploads are in progress
  * useBeforeUnload(hasActiveUploads, "Uploads in progress will be lost");
  */
-export function useBeforeUnload(shouldWarn: boolean, message?: string) {
+export function useBeforeUnload(
+  shouldWarn: boolean | (() => boolean),
+  message?: string
+) {
   useEffect(() => {
     if (!shouldWarn) return;
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (typeof shouldWarn === "function" && !shouldWarn()) return;
       // Standard way to trigger the browser's confirmation dialog
       event.preventDefault();
 

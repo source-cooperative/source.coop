@@ -34,6 +34,7 @@ import {
 } from "@/lib/urls";
 import type { DataConnectionOption } from "./redact";
 import { ItemList } from "@/components/core/ItemList";
+import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
 import { ConnectionsEmpty } from "./ConnectionsEmpty";
 
 interface ProductMirrorsManagerProps {
@@ -56,6 +57,8 @@ interface ProductMirrorsManagerProps {
   // Connection ids whose mirror prefix this user may edit (needs both account
   // and connection management). Others render the prefix read-only.
   editablePrefixConnectionIds: string[];
+  /** The owning account, for its card on hover. */
+  accounts?: AccountsById;
 }
 
 const emptyFormState = {
@@ -100,6 +103,7 @@ export function ProductMirrorsManager({
   ownedConnectionIds,
   connectionInfo,
   editablePrefixConnectionIds,
+  accounts,
 }: ProductMirrorsManagerProps) {
   const ownedConnections = new Set(ownedConnectionIds);
   const editablePrefixConnections = new Set(editablePrefixConnectionIds);
@@ -141,7 +145,7 @@ export function ProductMirrorsManager({
     const formData = new FormData();
     formData.set("account_id", product.account_id);
     formData.set("product_id", product.product_id);
-    formData.set("mirror_key", mirrorKey);
+    formData.set("connection_id", product.metadata.mirrors[mirrorKey].connection_id);
     setActedOn({ key: mirrorKey, action: kind });
     startTransition(() => action(formData));
   };
@@ -195,7 +199,8 @@ export function ProductMirrorsManager({
             <InfoCircledIcon />
           </Callout.Icon>
           <Callout.Text>
-            Only owners and maintainers of <Code>{product.account_id}</Code> can
+            Only owners and maintainers of{" "}
+            <AccountMention id={product.account_id} accounts={accounts} /> can
             change this product&apos;s data connections.
           </Callout.Text>
         </Callout.Root>
@@ -326,7 +331,11 @@ export function ProductMirrorsManager({
                         name="product_id"
                         value={product.product_id}
                       />
-                      <input type="hidden" name="mirror_key" value={key} />
+                      <input
+                        type="hidden"
+                        name="connection_id"
+                        value={mirror.connection_id}
+                      />
                       <Field
                         label="Prefix"
                         help="Where this product's objects sit inside the connection. You can change it because you manage both this product's account and its connection."

@@ -31,6 +31,8 @@ jest.mock("@/lib/clients/database", () => ({
     listByUser: jest.fn(),
   },
   isIndividualAccount: jest.fn(),
+  // No product here has tags awaiting review.
+  hidePendingTags: async (products: unknown[]) => products,
 }));
 
 // Mock Ory dependencies to prevent Next.js context errors
@@ -91,7 +93,7 @@ describe("/api/v1/products/[account_id]/[product_id]", () => {
 
       expect(response.status).toBe(401);
       const responseData = await response.json();
-      expect(responseData).toMatchObject({ error: { code: "unauthenticated" } });
+      expect(responseData).toMatchObject({ code: "unauthenticated" });
     });
 
     test("returns 404 when repository is not found", async () => {
@@ -109,7 +111,7 @@ describe("/api/v1/products/[account_id]/[product_id]", () => {
 
       expect(response.status).toBe(404);
       const responseData = await response.json();
-      expect(responseData).toMatchObject({ error: { code: "not_found" } });
+      expect(responseData).toMatchObject({ code: "not_found" });
     });
 
     test("returns 404 (not 401) for a deactivated product when not permitted", async () => {
@@ -131,7 +133,7 @@ describe("/api/v1/products/[account_id]/[product_id]", () => {
 
       expect(response.status).toBe(404);
       const responseData = await response.json();
-      expect(responseData).toMatchObject({ error: { code: "not_found" } });
+      expect(responseData).toMatchObject({ code: "not_found" });
     });
 
   });

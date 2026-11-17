@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Flex, IconButton, SegmentedControl, Text, Tooltip } from "@radix-ui/themes";
+import { Flex, IconButton, Link as RadixLink, SegmentedControl, Text, Tooltip } from "@radix-ui/themes";
 import { Cross2Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
 import { ItemList } from "@/components/core/ItemList";
+import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
 import { productUrl } from "@/lib/urls";
 import { MembershipRole, type Product } from "@/types";
 
@@ -49,8 +50,11 @@ export function ProductAccessList({
   access,
   onChange,
   disabled,
+  accounts,
 }: {
   ownerAccountId: string;
+  /** The owner's account, for its card on hover. */
+  accounts?: AccountsById;
   /** Every product the owner has; those in `access` are listed. */
   products: Pick<Product, "product_id" | "title">[];
   access: Record<string, ProductAccess>;
@@ -63,7 +67,7 @@ export function ProductAccessList({
   if (products.length === 0) {
     return (
       <Text size="2" color="gray">
-        {ownerAccountId} has no products yet.
+        <AccountMention id={ownerAccountId} accounts={accounts} /> has no products yet.
       </Text>
     );
   }
@@ -79,19 +83,22 @@ export function ProductAccessList({
             <ItemList.Row
               key={product_id}
               title={
-                <Link
-                  href={productUrl(ownerAccountId, product_id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "var(--accent-11)", textDecoration: "none" }}
+                // The row's name, so the same ink as any other; the icon and
+                // the underline on hover say it is a link.
+                <RadixLink
+                  asChild
+                  size="2"
+                  weight="medium"
+                  color="gray"
+                  highContrast
+                  underline="hover"
+                  style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)" }}
                 >
-                  <Flex align="center" gap="1">
-                    <Text size="2" weight="medium">
-                      {title}
-                    </Text>
+                  <Link href={productUrl(ownerAccountId, product_id)} target="_blank" rel="noopener noreferrer">
+                    {title}
                     <ExternalLinkIcon width="12" height="12" aria-label="opens in a new tab" />
-                  </Flex>
-                </Link>
+                  </Link>
+                </RadixLink>
               }
               meta={`${ownerAccountId}/${product_id}`}
               actions={

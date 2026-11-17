@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { LOGGER, dataConnectionsTable, getPageSession } from "@/lib";
 import { getStorageClient } from "@/lib/clients/storage";
 import { isAccessDeniedError } from "@/lib/storage/s3";
-import { isAuthorized } from "@/lib/api/authz";
+import { isAuthorized, isProductDisabled } from "@/lib/api/authz";
 import { Actions, DataConnection, ProductMirror, ProductObject } from "@/types";
 import { readProxyCredentials } from "@/lib/services/proxy-credentials-read";
 import { getAuthorizedProduct } from "./data";
@@ -54,7 +54,7 @@ export default async function ProductPathPage({ params }: PageProps) {
   // with signed credentials regardless of visibility, taking the same
   // gate-and-mint path a restricted product takes.
   const needsAuthenticatedRead =
-    product.visibility === "restricted" || product.disabled;
+    product.visibility === "restricted" || isProductDisabled(product);
 
   // Maintainers (anyone who can edit the product — same gate as the Edit button,
   // Actions.PutRepository) get the raw failure surfaced in ProductDataUnavailable
