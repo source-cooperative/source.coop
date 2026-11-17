@@ -150,7 +150,7 @@ export function DirectoryList({
     >
       {items.length === 0 && (
         <Box p="4">
-          <MonoText color="gray">This directory is empty.</MonoText>
+          <MonoText color="gray">No objects in this prefix.</MonoText>
         </Box>
       )}
 
