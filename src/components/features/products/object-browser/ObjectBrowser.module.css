@@ -77,7 +77,7 @@
 /* Shared by the header and every row so the columns line up. */
 .columns {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 5.5rem 11rem 4.5rem;
+  grid-template-columns: minmax(0, 1fr) 5.5rem 8rem 4.5rem;
   align-items: center;
   column-gap: var(--space-2);
   width: 100%;

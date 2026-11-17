@@ -37,7 +37,7 @@ import {
   deleteStatusText,
 } from "@/components/features/uploader";
 
-/** The Modified cell: the viewer's local date and time, how long ago on hover. */
+/** The Modified cell: the viewer's local date, the full time and how long ago on hover. */
 function Modified({ iso }: { iso: string }) {
   const { text, hover } = useWhen(iso);
   return (

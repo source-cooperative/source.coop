@@ -6,8 +6,8 @@ import { useWhen } from "@/hooks/useWhen";
 
 /**
  * The Details card's "Objects Updated" row: when any object in the product was
- * last written, per the metadata catalog, in the viewer's local time with how
- * long ago on hover. The catalog loads client-side, so the row appears once it
+ * last written, per the metadata catalog, as the viewer's local date, with the
+ * full time and how long ago on hover. The catalog loads client-side, so the row appears once it
  * has, and never when it has no date for the product.
  */
 export function ProductObjectsUpdated({
@@ -22,9 +22,7 @@ export function ProductObjectsUpdated({
   return (
     <DataList.Item>
       <DataList.Label>Objects Updated</DataList.Label>
-      {/* balance: at the sidebar's width the date wraps, and this keeps the
-          time with its AM/PM instead of leaving it alone on a line. */}
-      <DataList.Value style={{ textWrap: "balance" }}>
+      <DataList.Value>
         <When iso={updated} />
       </DataList.Value>
     </DataList.Item>

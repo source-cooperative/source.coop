@@ -36,7 +36,7 @@ const renderRow = (item: Parameters<typeof DirectoryRow>[0]["item"]) =>
   );
 
 describe("DirectoryRow last modified", () => {
-  it("shows the local date and time, with how long ago as its title", () => {
+  it("shows the local date, with the full time and how long ago as its title", () => {
     const updated = new Date(Date.now() - 21 * 24 * 3600 * 1000);
     renderRow({
       name: "catalog.json",
@@ -45,9 +45,12 @@ describe("DirectoryRow last modified", () => {
       updated_at: updated.toISOString(),
       isDirectory: false,
     });
-    const cell = screen.getByTitle("3 weeks ago");
+    const cell = screen.getByTitle(/\(3 weeks ago\)$/);
     expect(cell).toHaveTextContent(
-      updated.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+      updated.toLocaleDateString(undefined, { dateStyle: "medium" })
+    );
+    expect(cell.title).toContain(
+      updated.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "long" })
     );
   });
 
@@ -59,7 +62,7 @@ describe("DirectoryRow last modified", () => {
       updated_at: new Date().toISOString(),
       isDirectory: true,
     });
-    expect(screen.queryByTitle(/ago$/)).toBeNull();
+    expect(screen.queryByTitle(/ago\)$/)).toBeNull();
   });
 
   it("puts copy behind a menu, leaving download as the one row action", () => {
