@@ -79,7 +79,6 @@ function convertRepositoryToProduct(oldProduct: any) {
     created_at: oldProduct.published,
     updated_at: now,
     disabled: oldProduct.disabled,
-    data_mode: oldProduct.data_mode,
     visibility,
     featured: Number(oldProduct.featured),
     metadata: {
