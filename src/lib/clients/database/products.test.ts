@@ -1,6 +1,7 @@
 import { ProductsTable } from "./products";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import type { Product } from "@/types";
+import type { Account, Product, PublicAccount } from "@/types";
+import { accountsTable } from "./accounts";
 import { createMemoizedRead } from "./request-cache";
 import { fakeReactCache } from "./__test-helpers__/fake-react-cache";
 
@@ -198,5 +199,70 @@ describe("ProductsTable.listProductsByConnectionId", () => {
     expect(await table.listProductsByConnectionId("conn-1")).toHaveLength(1);
     expect(await table.listProductsByConnectionId("conn-2")).toHaveLength(0);
     expect(mockSend).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ProductsTable account attachment", () => {
+  // Products reach client components whole, so whatever account rides along
+  // is serialized into the page for anyone who loads it.
+  const account = {
+    account_id: "kerner-lab",
+    type: "organization",
+    name: "Kerner Lab",
+    disabled: false,
+    created_at: "2024-01-01T00:00:00Z",
+    updated_at: "2024-01-01T00:00:00Z",
+    emails: [{ address: "lab@example.com", is_primary: true, verified: true, added_at: "2024-01-01T00:00:00Z" }],
+    identity_id: "ory-kerner",
+    flags: ["admin"],
+    metadata_private: { note: "secret" },
+    metadata_public: { bio: "Fields" },
+  } as unknown as Account;
+  const expected = {
+    account_id: "kerner-lab",
+    type: "organization",
+    name: "Kerner Lab",
+    disabled: false,
+    metadata_public: { bio: "Fields" },
+    profile_image: undefined,
+  };
+
+  let mockSend: jest.Mock;
+  let table: InstanceType<typeof ProductsTable>;
+
+  beforeEach(() => {
+    mockSend = jest.fn();
+    table = new ProductsTable({ client: { send: mockSend } as unknown as DynamoDBDocumentClient });
+  });
+
+  it("attaches only the public view to a fetched product", async () => {
+    mockSend.mockResolvedValue({ Item: makeProduct() });
+    (accountsTable.fetchById as jest.Mock).mockResolvedValueOnce(account);
+    expect((await table.fetchById("kerner-lab", "fields-of-the-world"))?.account).toEqual(expected);
+  });
+
+  it("attaches only the public view to listed products", async () => {
+    (accountsTable.fetchManyByIds as jest.Mock).mockResolvedValueOnce([account]);
+    const [product] = await table.attachAccounts([makeProduct()]);
+    expect(product.account).toEqual(expected);
+  });
+
+  // isProductDisabled reads product.account, so a product that slips through
+  // without one would be treated as enabled and leak. Fail closed instead.
+  it("drops listed products whose account can't be found", async () => {
+    (accountsTable.fetchManyByIds as jest.Mock).mockResolvedValueOnce([]);
+    expect(await table.attachAccounts([makeProduct()])).toEqual([]);
+  });
+
+  it("returns nothing for a fetched product whose account can't be found", async () => {
+    mockSend.mockResolvedValue({ Item: makeProduct() });
+    (accountsTable.fetchById as jest.Mock).mockResolvedValueOnce(null);
+    expect(await table.fetchById("kerner-lab", "fields-of-the-world")).toBeNull();
+  });
+
+  it("keeps a full account from passing as a public one", () => {
+    // @ts-expect-error a full account carries emails, flags and its Ory identity
+    const leak: PublicAccount = account;
+    expect(leak).toBe(account);
   });
 });

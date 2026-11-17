@@ -31,6 +31,8 @@ jest.mock("@/lib/clients/database", () => ({
     listByUser: jest.fn(),
   },
   isIndividualAccount: jest.fn(),
+  // No product here has tags awaiting review.
+  hidePendingTags: async (products: unknown[]) => products,
 }));
 
 // Mock Ory dependencies to prevent Next.js context errors
@@ -57,6 +59,7 @@ describe("/api/v1/products/[account_id]/[product_id]", () => {
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     disabled: false,
+    account: { account_id: "test-account", disabled: false },
     visibility: "restricted", // Set to restricted to test authorization
   };
 

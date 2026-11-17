@@ -1,3 +1,4 @@
+import { publicView } from "@/types";
 import { ReactNode } from "react";
 import {
   AccountSelector,
@@ -128,8 +129,7 @@ export default async function AccountLayout({
         Actions.GetAccountFlags,
       ),
     },
-    // Individuals and organizations alike can own service accounts, once
-    // granted the CREATE_SERVICE_ACCOUNTS flag.
+    // Individuals and organizations alike can own service accounts.
     {
       id: "service-accounts",
       label: "Service Accounts",
@@ -166,8 +166,8 @@ export default async function AccountLayout({
     <>
       <SettingsHeader>
         <AccountSelector
-          currentAccount={accountToEdit}
-          manageableAccounts={manageableAccounts}
+          currentAccount={publicView(accountToEdit)}
+          manageableAccounts={manageableAccounts.map(publicView)}
           linkToSameView
         />
 

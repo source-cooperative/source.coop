@@ -59,6 +59,14 @@ the real layout has, so it invents overflow the page doesn't have.
 The JSDoc above `meta`, and above each story export, is published prose on
 ui.source.coop — not a code comment. Write it for a reader.
 
+## Account names
+
+Wherever the UI names an account, show it with its card on hover:
+`DisplayNameLink` or `AvatarLinkCompact`, or `AccountInfoHoverCard` around
+anything else. A tooltip can't hold the card, so keep names out of tooltips.
+Look up every account a page names in one `fetchManyByIds` call, pass the
+browser its `publicView`, and show an id that doesn't resolve as plain text.
+
 ## Docs and ADRs
 
 Two repositories outside this one hold prose that a change here can quietly

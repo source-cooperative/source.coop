@@ -7,15 +7,11 @@ import {
   Link as RadixLink,
   Flex,
   Grid,
+  Callout,
 } from "@radix-ui/themes";
-import { PlusIcon } from "@radix-ui/react-icons";
+import { ExclamationTriangleIcon, PlusIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
-import type {
-  IndividualAccount,
-  OrganizationalAccount,
-  AccountEmail,
-  AccountDomain,
-} from "@/types/account";
+import type { AccountDomain, PublicAccount } from "@/types/account";
 import type { Product } from "@/types";
 import { ProductsList } from "@/components/features/products/ProductsList";
 import { OrganizationMembers } from "./OrganizationMembers";
@@ -26,17 +22,20 @@ import { editAccountProfileUrl, newProductUrl } from "@/lib/urls";
 import { EditButton } from "@/components/core";
 
 interface OrganizationProfileProps {
-  account: OrganizationalAccount;
+  account: PublicAccount;
+  /** The organization's primary address, which its profile shows as a contact. */
+  email?: string;
   products: Product[];
-  owners: IndividualAccount[];
-  admins: IndividualAccount[];
-  members: IndividualAccount[];
+  owners: PublicAccount[];
+  admins: PublicAccount[];
+  members: PublicAccount[];
   canEdit: boolean;
   canCreateProduct: boolean;
 }
 
 export function OrganizationProfile({
   account,
+  email,
   products,
   owners,
   admins,
@@ -44,8 +43,25 @@ export function OrganizationProfile({
   canEdit,
   canCreateProduct,
 }: OrganizationProfileProps) {
+  const rorId =
+    "ror_id" in account.metadata_public ? account.metadata_public.ror_id : undefined;
   return (
     <Box>
+      {/* Only members and admins reach a disabled organization's page; to
+          everyone else it does not exist. */}
+      {account.disabled && (
+        <Callout.Root color="amber" role="alert" mb="6">
+          <Callout.Icon>
+            <ExclamationTriangleIcon />
+          </Callout.Icon>
+          <Callout.Text>
+            This organization is disabled. It is hidden from everyone except
+            its members and administrators, and it can&apos;t be used: its
+            products are disabled too and can only be deleted, and no new
+            products can be created under it.
+          </Callout.Text>
+        </Callout.Root>
+      )}
       <Flex gap="4" mb="6" justify="between" align="start">
         <Flex gap="4">
           <ProfileAvatar account={account} size="8" />
@@ -82,33 +98,15 @@ export function OrganizationProfile({
               </Text>
             )
           )}
-          {account.emails?.find((email: AccountEmail) => email.is_primary)
-            ?.address && (
+          {email && (
             <Text as="p" size="2">
-              Email:{" "}
-              <RadixLink
-                href={`mailto:${
-                  account.emails?.find(
-                    (email: AccountEmail) => email.is_primary
-                  )?.address
-                }`}
-              >
-                {
-                  account.emails?.find(
-                    (email: AccountEmail) => email.is_primary
-                  )?.address
-                }
-              </RadixLink>
+              Email: <RadixLink href={`mailto:${email}`}>{email}</RadixLink>
             </Text>
           )}
-          {account.metadata_public.ror_id && (
+          {rorId && (
             <Text as="p" size="2">
               ROR ID:{" "}
-              <RadixLink
-                href={`https://ror.org/${account.metadata_public.ror_id}`}
-              >
-                {account.metadata_public.ror_id}
-              </RadixLink>
+              <RadixLink href={`https://ror.org/${rorId}`}>{rorId}</RadixLink>
             </Text>
           )}
         </Box>

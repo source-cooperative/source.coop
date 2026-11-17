@@ -34,13 +34,30 @@ export function toResponse<T>(
 }
 
 /**
+ * The challenge every 401 carries (RFC 9110 §11.6.1). A request that sent a
+ * bearer token and still got a 401 had that token refused, since
+ * `getApiSession` never falls back to the cookie when one is sent; RFC 6750
+ * §3.1 says so with `invalid_token`. Any other scheme gets the bare challenge,
+ * which names the one we take.
+ */
+const challenge = (request: NextRequest) =>
+  /^bearer /i.test(request.headers.get("Authorization") ?? "")
+    ? 'Bearer error="invalid_token"'
+    : "Bearer";
+
+/**
  * `body` as it happened at `request`: its `type` and `instance` as absolute
- * URLs on the request's own origin, and the platform's request ID when it
- * gives one (Vercel's `x-vercel-id`, which finds the request in its logs).
+ * URLs on the request's own origin, the platform's request ID when it gives
+ * one (Vercel's `x-vercel-id`, which finds the request in its logs), and the
+ * authentication challenge when it is a 401.
  */
 function problemAt(request: NextRequest, body: Problem, headers?: HeadersInit) {
   const { origin, pathname } = request.nextUrl;
   const request_id = request.headers.get("x-vercel-id") ?? undefined;
+  if (body.status === StatusCodes.UNAUTHORIZED) {
+    headers = new Headers(headers);
+    headers.set("WWW-Authenticate", challenge(request));
+  }
   return problemResponse(
     {
       ...body,

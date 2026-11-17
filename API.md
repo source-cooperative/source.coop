@@ -94,6 +94,11 @@ between the two, so nothing above it sees the stored name.
 | `PUT` | replace a whole resource at once (no endpoint uses it yet) | the resource as set |
 | `DELETE` | delete | the resource as it was |
 
+A create whose resource is named by its own content, so that a second request
+can only mean the same thing, answers 200 and the existing resource rather
+than 409. Retrying it is then safe without an `Idempotency-Key` (#708).
+`POST /tags` is one: suggesting a tag that exists answers that tag.
+
 Deactivating is not deleting: it is `PATCH { "disabled": true }`, for products
 and accounts alike. A `DELETE` that can't delete answers 409 and says what to
 do instead.
@@ -172,6 +177,16 @@ The members, and who sets them:
   as an `internal` problem. `withApiSession` is built on it, and a route that
   authenticates its caller itself is wrapped in it directly, so every problem
   carries them.
+
+Every 401 also carries `WWW-Authenticate`
+([RFC 9110 §11.6.1](https://www.rfc-editor.org/rfc/rfc9110#section-11.6.1)):
+`Bearer` when the request sent no bearer token, and
+`Bearer error="invalid_token"`
+([RFC 6750 §3.1](https://www.rfc-editor.org/rfc/rfc6750#section-3.1)) when it
+sent one that was refused, so a client knows to get a new token rather than add
+one. `withProblems` sets it from the request, so a route never does. It names no
+`resource_metadata` yet: that waits on deciding which service is the API's
+authorization server.
 
 Each type is defined once, in `src/lib/api/problems.ts`: its status, title, and
 the prose its page publishes. The handler, the reference's `Problem` schema and

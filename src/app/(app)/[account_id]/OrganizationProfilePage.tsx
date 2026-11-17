@@ -3,6 +3,7 @@ import { OrganizationProfile } from "@/components/features/profiles/Organization
 import { PendingInvitationBanner } from "@/components/features/memberships/PendingInvitationBanner";
 import {
   accountsTable,
+  hidePendingTags,
   isIndividualAccount,
   membershipsTable,
   productsTable,
@@ -21,6 +22,7 @@ import {
   isAuthorized,
 } from "@/lib/api/authz";
 import { getPendingInvitation } from "@/lib/actions/memberships";
+import { publicView } from "@/types";
 
 interface OrganizationProfilePageProps {
   account: OrganizationalAccount;
@@ -74,7 +76,15 @@ export async function OrganizationProfilePage({
         !!account && isIndividualAccount(account)
     );
 
-  products = products.filter((product) => canListOnProfile(session, product));
+  // Authorized with the account attached, so a disabled one disables its
+  // products; the listing itself stays without it, as the profile it sits on
+  // already says who provides them.
+  const owner = publicView(account);
+  products = await hidePendingTags(
+    products.filter((product) =>
+      canListOnProfile(session, { ...product, account: owner })
+    )
+  );
 
   // Check for pending invitation
   const pendingInvitation = await getPendingInvitation(account.account_id);
@@ -91,11 +101,12 @@ export async function OrganizationProfilePage({
 
       <Box py="6">
         <OrganizationProfile
-          account={account}
+          account={publicView(account)}
+          email={account.emails?.find((e) => e.is_primary)?.address}
           products={products}
-          owners={owners}
-          admins={admins}
-          members={members}
+          owners={owners.map(publicView)}
+          admins={admins.map(publicView)}
+          members={members.map(publicView)}
           canEdit={isAuthorized(session, account, Actions.PutAccountProfile)}
           canCreateProduct={canCreateProductForAccount(session, account)}
         />

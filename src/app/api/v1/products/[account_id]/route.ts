@@ -2,7 +2,7 @@ import { ProductResponseSchema } from "@/types";
 import { z } from "zod";
 import { StatusCodes } from "http-status-codes";
 import { withApiSession, toResponse } from "@/lib/api/handler";
-import { bearer, errors, json, registry } from "@/lib/api/openapi";
+import { bearer, errors, json, optionalBearer, registry } from "@/lib/api/openapi";
 import {
   CreateProductSchema,
   createProduct,
@@ -24,6 +24,7 @@ registry.registerPath({
   summary: "List an account's products",
   description:
     "The account's products that the caller may see, one page at a time. Anyone sees the public ones; unlisted and restricted ones need a member's credentials.",
+  security: optionalBearer,
   request: { params, query: PageQuerySchema },
   responses: {
     200: json("A page of products.", ProductPageSchema),

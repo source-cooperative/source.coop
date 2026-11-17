@@ -7,6 +7,7 @@ import {
   accountsTable,
   dataConnectionsTable,
   tagsTable,
+  tagProps,
 } from "@/lib/clients/database";
 import { getPageSession } from "@/lib";
 import { isAuthorized, isAdmin } from "@/lib/api/authz";
@@ -32,7 +33,7 @@ interface PageProps {
 export default async function DetailsPage({ params }: PageProps) {
   const { account_id, product_id } = await params;
 
-  const [product, account, session, tagOptions] = await Promise.all([
+  const [product, account, session, tags] = await Promise.all([
     productsTable.fetchById(account_id, product_id),
     accountsTable.fetchById(account_id),
     getPageSession(),
@@ -61,6 +62,7 @@ export default async function DetailsPage({ params }: PageProps) {
       ]
     : [];
 
+  const canEdit = isAuthorized(session, product, Actions.PutRepository);
   const canDelete = isAuthorized(session, product, Actions.DeleteRepository);
   // Keeping the underlying data on delete is allowed for non-system
   // (account-owned) connections, or for admins on any connection. The server
@@ -69,13 +71,15 @@ export default async function DetailsPage({ params }: PageProps) {
 
   return (
     <>
-      <ProductCreationForm
-        potentialOwnerAccounts={[account]}
-        product={product}
-        dataConnections={dataConnections}
-        mode="edit"
-        tagOptions={tagOptions}
-      />
+      {canEdit && (
+        <ProductCreationForm
+          potentialOwnerAccounts={[account]}
+          product={product}
+          dataConnections={dataConnections}
+          mode="edit"
+          {...tagProps(tags, product.metadata.tags)}
+        />
+      )}
 
       {canDelete && (
         <DangerZone

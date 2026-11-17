@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Text } from "@radix-ui/themes";
 import { AccountInfoHoverCard } from "./AccountInfoHoverCard";
-import type { Account } from "@/types";
+import type { PublicAccount } from "@/types";
 
 /**
  * The card that introduces an account on hover, wherever a name appears in
@@ -31,7 +31,7 @@ const account = {
   metadata_public: {
     bio: "Works on open ocean-acoustics data and cloud-native infrastructure.",
   },
-} as unknown as Account;
+} as unknown as PublicAccount;
 
 export const Default: Story = {
   args: {
@@ -43,7 +43,7 @@ export const Default: Story = {
 /** No bio recorded: the card is the identity block alone, not an empty gap. */
 export const WithoutBio: Story = {
   args: {
-    account: { ...account, metadata_public: {} } as unknown as Account,
+    account: { ...account, metadata_public: {} } as unknown as PublicAccount,
     children: <Text size="2">Alice Coltrane</Text>,
   },
 };
@@ -60,7 +60,7 @@ export const ServiceAccount: Story = {
       type: "service",
       owner_account_id: "miskatonic",
       metadata_public: {},
-    } as unknown as Account,
+    } as unknown as PublicAccount,
     children: <Text size="2">Nightly Sync</Text>,
   },
 };

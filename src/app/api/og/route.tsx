@@ -5,6 +5,7 @@ import { OpenGraphImage } from "@/components/og/OpenGraphImage";
 import { OGAvatar } from "@/components/og/OGAvatar";
 import { accountsTable, productsTable } from "@/lib/clients/database";
 import { AccountType, isServiceAccount } from "@/types/account";
+import { isProductDisabled } from "@/lib/api/authz";
 
 /**
  * OpenGraph Image Generator
@@ -82,8 +83,9 @@ export async function GET(req: NextRequest) {
 async function generateAccountImage(accountId: string, host: string) {
   const account = await accountsTable.fetchById(accountId);
 
-  // A service account has no page for this image to preview.
-  if (!account || isServiceAccount(account)) {
+  // A service account has no page for this image to preview, and a disabled
+  // one looks missing to the anonymous crawlers that fetch it.
+  if (!account || isServiceAccount(account) || account.disabled) {
     return OpenGraphImage({
       title: "Account Not Found",
       host,
@@ -115,7 +117,7 @@ async function generateProductImage(
 ) {
   const product = await productsTable.fetchById(accountId, productId);
 
-  if (!product) {
+  if (!product || isProductDisabled(product)) {
     return OpenGraphImage({
       title: "Product Not Found",
       host,

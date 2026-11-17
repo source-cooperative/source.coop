@@ -44,7 +44,7 @@ export const PROBLEMS: Record<ProblemCode, ProblemDefinition> = {
     status: StatusCodes.UNAUTHORIZED,
     title: "Authentication required",
     description:
-      "The endpoint needs credentials, and the request carries none, or carries some that are not valid. Requests that change something need a bearer token, even from a signed-in browser.",
+      "The endpoint needs credentials, and the request carries none, or carries some that are not valid. `WWW-Authenticate` tells the two apart: `Bearer` when no bearer token was sent, `Bearer error=\"invalid_token\"` when one was sent and refused. Requests that change something need a bearer token, even from a signed-in browser.",
     remedy:
       "Send `Authorization: Bearer` with a token. `source-coop auth token` prints one for you, and a service account can get one from the data proxy.",
   },

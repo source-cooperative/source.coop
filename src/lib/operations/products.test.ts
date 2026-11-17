@@ -6,6 +6,7 @@ import {
   membershipsTable,
   productsTable,
   tagsTable,
+  hidePendingTags,
 } from "@/lib/clients/database";
 import { canListOnProfile, isAdmin, isAuthorized } from "@/lib/api/authz";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
@@ -33,12 +34,15 @@ jest.mock("@/lib/clients/database", () => ({
   },
   dataConnectionsTable: { fetchById: jest.fn() },
   membershipsTable: { deleteByProduct: jest.fn() },
-  tagsTable: { listAll: jest.fn() },
+  tagsTable: { listAll: jest.fn(), suggest: jest.fn() },
+  isUsable: jest.requireActual("@/lib/clients/database/tags").isUsable,
+  hidePendingTags: jest.fn(),
 }));
 jest.mock("@/lib/api/authz", () => ({
   canListOnProfile: jest.fn(),
   isAdmin: jest.fn(),
   isAuthorized: jest.fn(),
+  isProductDisabled: jest.requireActual("@/lib/api/authz").isProductDisabled,
 }));
 jest.mock("@/lib/actions/proxy-credentials", () => ({ getProxyCredentials: jest.fn() }));
 jest.mock("@/lib/clients/storage", () => ({ getStorageClient: jest.fn() }));
@@ -54,6 +58,7 @@ const product = (overrides: Record<string, unknown> = {}) =>
     description: "A description",
     visibility: "public",
     disabled: false,
+    account: { account_id: "alice", disabled: false },
     metadata: {
       primary_mirror: "conn-x",
       mirrors: { "conn-x": { connection_id: "conn-x", prefix: "", is_primary: true } },
@@ -79,7 +84,12 @@ beforeEach(() => {
   (productsTable.attachAccounts as jest.Mock).mockImplementation(async (p) => p);
   (productsTable.create as jest.Mock).mockImplementation(async (p) => p);
   (productsTable.update as jest.Mock).mockImplementation(async (p) => p);
-  (tagsTable.listAll as jest.Mock).mockResolvedValue(["acoustics", "ocean"]);
+  (hidePendingTags as jest.Mock).mockImplementation(async (products) => products);
+  (tagsTable.listAll as jest.Mock).mockResolvedValue([
+    { tag_id: "acoustics" },
+    { tag_id: "ocean" },
+    { tag_id: "sea-ice", pending: true },
+  ]);
 });
 
 describe("listProducts", () => {
@@ -93,7 +103,9 @@ describe("listProducts", () => {
       products: [shown, hidden],
       lastEvaluatedKey: key,
     });
-    (canListOnProfile as jest.Mock).mockImplementation((_s, p) => p === shown);
+    (canListOnProfile as jest.Mock).mockImplementation(
+      (_s, p) => p.product_id === shown.product_id && p.account?.account_id === "alice"
+    );
 
     const result = await listProducts(SESSION, { limit: "10", cursor }, "alice");
 
@@ -104,10 +116,11 @@ describe("listProducts", () => {
     });
   });
 
-  test("shows an account's public profile to whoever may not read the account", async () => {
+  test("lists an account's products with only the public view of the account", async () => {
     (accountsTable.fetchById as jest.Mock).mockResolvedValue({
       account_id: "alice",
       name: "Alice",
+      created_at: "2024-01-01T00:00:00Z",
       emails: [{ address: "alice@example.com" }],
       identity_id: "ory-alice",
       flags: ["admin"],
@@ -116,7 +129,6 @@ describe("listProducts", () => {
     });
     (productsTable.listByAccount as jest.Mock).mockResolvedValue({ products: [product()] });
     (canListOnProfile as jest.Mock).mockReturnValue(true);
-    allowExcept(Actions.GetAccount);
 
     const result = await listProducts(null, {}, "alice");
 
@@ -147,6 +159,31 @@ describe("listProducts", () => {
       featuredOnly: true,
     });
     expect(result).toEqual({ ok: true, value: { items: [], next_cursor: null } });
+  });
+
+  test("filters on tags in the spelling they are stored in", async () => {
+    (productsTable.listPublic as jest.Mock).mockResolvedValue({ products: [] });
+
+    await listProducts(null, { tags: "New Zealand, #ocean,," });
+
+    expect((productsTable.listPublic as jest.Mock).mock.calls[0][2].tags).toBe(
+      "new-zealand,ocean"
+    );
+  });
+
+  test("filtering by a pending tag doesn't reveal which products carry it", async () => {
+    const tagged = product();
+    tagged.metadata = { ...tagged.metadata, tags: ["ocean", "secret-project"] };
+    (productsTable.listPublic as jest.Mock).mockResolvedValue({ products: [tagged] });
+    // As for a caller who may not see the pending tag.
+    (hidePendingTags as jest.Mock).mockImplementation(async (products) =>
+      products.map((p: typeof tagged) => ({ ...p, metadata: { ...p.metadata, tags: ["ocean"] } }))
+    );
+
+    const hidden = await listProducts(null, { tags: "secret-project" });
+    expect(hidden.ok && hidden.value.items).toEqual([]);
+    const shown = await listProducts(null, { tags: "ocean" });
+    expect(shown.ok && shown.value.items).toHaveLength(1);
   });
 
   test("hides public products the caller may not list", async () => {
@@ -187,18 +224,6 @@ describe("getProduct", () => {
     expect(await getProduct(null, "alice", "my-product")).toMatchObject({ ok: true });
   });
 
-  test("shows the whole account only to whoever may read it", async () => {
-    const account = { account_id: "alice", name: "Alice", emails: [{ address: "a@b.c" }] };
-    (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ account }));
-
-    const mine = await getProduct(SESSION, "alice", "my-product");
-    expect(mine.ok && mine.value.account).toEqual(account);
-
-    allowExcept(Actions.GetAccount);
-    const theirs = await getProduct(null, "alice", "my-product");
-    expect(theirs.ok && theirs.value.account).toEqual({ account_id: "alice", name: "Alice" });
-  });
-
   test("refuses a stranger, asking for credentials when there are none", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue(product());
     allowExcept(Actions.GetRepository);
@@ -210,8 +235,28 @@ describe("getProduct", () => {
     });
   });
 
+  test("hides pending tags from anyone who may not edit the product", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(product());
+    await getProduct(SESSION, "alice", "my-product");
+    const keep = (hidePendingTags as jest.Mock).mock.calls[0][1];
+
+    expect(keep(product())).toBe(true);
+    allowExcept(Actions.PutRepository);
+    expect(keep(product())).toBe(false);
+  });
+
   test("a deactivated product is not found by anyone who may not see it", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue(product({ disabled: true }));
+    allowExcept(Actions.GetRepository);
+    expect(await getProduct(SESSION, "alice", "my-product")).toMatchObject({
+      error: "not_found",
+    });
+  });
+
+  test("a product of a disabled account is not found by anyone who may not see it", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({ account: { account_id: "alice", disabled: true } })
+    );
     allowExcept(Actions.GetRepository);
     expect(await getProduct(SESSION, "alice", "my-product")).toMatchObject({
       error: "not_found",
@@ -228,6 +273,13 @@ describe("createProduct", () => {
     visibility: "public",
     data_connection_id: "conn-x",
     ...overrides,
+  });
+
+  test("stores an empty description when the request omits one", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+
+    expect((await createProduct(SESSION, input({ description: undefined }))).ok).toBe(true);
+    expect((productsTable.create as jest.Mock).mock.calls[0][0].description).toBe("");
   });
 
   test("builds mirror metadata from the selected data connection", async () => {
@@ -248,6 +300,16 @@ describe("createProduct", () => {
     });
   });
 
+  test("refuses a disabled account", async () => {
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({ account_id: "alice", disabled: true });
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+
+    const result = await createProduct(SESSION, input());
+
+    expect(result).toMatchObject({ ok: false, error: "forbidden" });
+    expect(productsTable.create).not.toHaveBeenCalled();
+  });
+
   test("saves tags from the corpus, deduplicated", async () => {
     (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
     const result = await createProduct(SESSION, input({ tags: ["ocean", "ocean"] }));
@@ -264,6 +326,35 @@ describe("createProduct", () => {
       error: "invalid",
       fieldErrors: { tags: ["Unknown tags: made-up"] },
     });
+    expect(productsTable.create).not.toHaveBeenCalled();
+  });
+
+  test("suggests new tags with the product, and only once every check passes", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+    const result = await createProduct(
+      SESSION,
+      input({ tags: ["ocean"], suggest_tags: ["Sea Lion", "acoustics"] })
+    );
+    expect(result.ok).toBe(true);
+    // acoustics is already on the list, so only sea-lion is new.
+    expect(tagsTable.suggest).toHaveBeenCalledTimes(1);
+    expect(tagsTable.suggest).toHaveBeenCalledWith("sea-lion", "alice");
+    expect((productsTable.create as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "ocean",
+      "sea-lion",
+      "acoustics",
+    ]);
+  });
+
+  test("a save that fails suggests nothing", async () => {
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+    expect(
+      await createProduct(SESSION, input({ tags: ["made-up"], suggest_tags: ["sea-ice"] }))
+    ).toMatchObject({ error: "invalid" });
+    expect(
+      await createProduct(SESSION, input({ suggest_tags: ["sea_ice"] }))
+    ).toMatchObject({ error: "invalid", fieldErrors: { suggest_tags: expect.any(Array) } });
+    expect(tagsTable.suggest).not.toHaveBeenCalled();
     expect(productsTable.create).not.toHaveBeenCalled();
   });
 
@@ -394,6 +485,16 @@ describe("updateProduct", () => {
     });
   });
 
+  test("accepts a tag that is still pending review", async () => {
+    const result = await updateProduct(SESSION, "alice", "my-product", {
+      tags: ["sea-ice"],
+    });
+    expect(result.ok).toBe(true);
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "sea-ice",
+    ]);
+  });
+
   test("keeps a tag the product already has after the corpus drops it", async () => {
     (productsTable.fetchById as jest.Mock).mockResolvedValue(
       product({ metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["legacy"] } })
@@ -408,10 +509,79 @@ describe("updateProduct", () => {
     ]);
   });
 
+  test("reads a tag in its one spelling, but keeps the product's own as they are", async () => {
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([
+      { tag_id: "ocean" },
+      { tag_id: "sea-ice" },
+    ]);
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({
+        metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["field boundaries"] },
+      })
+    );
+    const result = await updateProduct(SESSION, "alice", "my-product", {
+      tags: ["Sea  Ice", " OCEAN ", "field boundaries"],
+    });
+    expect(result.ok).toBe(true);
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "sea-ice",
+      "ocean",
+      "field boundaries",
+    ]);
+  });
+
+  test("keeps one tag per spelling, preferring the corpus's", async () => {
+    (tagsTable.listAll as jest.Mock).mockResolvedValue([
+      { tag_id: "sea-ice" },
+      { tag_id: "machine learning" },
+    ]);
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({ metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["sea ice"] } })
+    );
+    const result = await updateProduct(SESSION, "alice", "my-product", {
+      tags: ["sea ice", "sea-ice", "Machine-Learning"],
+    });
+    expect(result.ok).toBe(true);
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "sea-ice",
+      "machine learning",
+    ]);
+  });
+
   test("rejects a tag outside the corpus", async () => {
     expect(
       await updateProduct(SESSION, "alice", "my-product", { tags: ["made-up"] })
     ).toMatchObject({ error: "invalid", fieldErrors: { tags: ["Unknown tags: made-up"] } });
+    expect(productsTable.update).not.toHaveBeenCalled();
+  });
+
+  test("suggested tags join the product's own when `tags` is left out", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({ metadata: { primary_mirror: "conn-x", mirrors: {}, tags: ["ocean"] } })
+    );
+    const result = await updateProduct(SESSION, "alice", "my-product", {
+      suggest_tags: ["sea lion"],
+    });
+    expect(result.ok).toBe(true);
+    expect(tagsTable.suggest).toHaveBeenCalledWith("sea-lion", "alice");
+    expect((productsTable.update as jest.Mock).mock.calls[0][0].metadata.tags).toEqual([
+      "ocean",
+      "sea-lion",
+    ]);
+  });
+
+  test("a suggestion past the cap refuses the save", async () => {
+    (tagsTable.listAll as jest.Mock).mockResolvedValue(
+      ["a1", "a2", "a3", "a4", "a5"].map((tag_id) => ({
+        tag_id,
+        pending: true,
+        suggested_by: "alice",
+      }))
+    );
+    expect(
+      await updateProduct(SESSION, "alice", "my-product", { suggest_tags: ["sea-lion"] })
+    ).toMatchObject({ error: "conflict" });
+    expect(tagsTable.suggest).not.toHaveBeenCalled();
     expect(productsTable.update).not.toHaveBeenCalled();
   });
 

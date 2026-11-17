@@ -4,6 +4,7 @@ import { generateDocument } from "@/lib/api/openapi";
 // Each route registers its own path when its module loads. A route missing
 // from this list is missing from the document, which route-coverage.test.ts
 // catches.
+import "../v1/accounts/route";
 import "../v1/accounts/[account_id]/route";
 import "../v1/accounts/[account_id]/keys/route";
 import "../v1/accounts/[account_id]/keys/[key_id]/route";
@@ -24,6 +25,8 @@ import "../v1/products/[account_id]/[product_id]/mirrors/[connection_id]/route";
 import "../v1/secret-scanning/github/route";
 import "../v1/service-account-keys/exchanges/route";
 import "../v1/service-account-keys/revocations/route";
+import "../v1/tags/route";
+import "../v1/tags/[tag_id]/route";
 import "../v1/whoami/route";
 
 // The registry is complete once the imports above have run, so the document

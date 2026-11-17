@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { MembershipsTable } from "./MembershipsTable";
 import {
-  type Account,
+  type PublicAccount,
   type Membership,
   MembershipRole,
   MembershipState,
@@ -27,7 +27,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const account = (account_id: string, name: string, type = "individual") =>
-  ({ account_id, name, type }) as unknown as Account;
+  ({ account_id, name, type }) as unknown as PublicAccount;
 
 const membership = (
   account_id: string,
@@ -100,5 +100,21 @@ export const WithServiceAccount: Story = {
       ...memberAccountsMap,
       ["miskatonic--nightly-sync", account("miskatonic--nightly-sync", "Nightly Sync", "service")],
     ]),
+  },
+};
+
+/**
+ * A member whose account is gone, such as a deleted one. With no account to
+ * show, the row names it by its id, and its role can still be changed or
+ * revoked.
+ */
+export const MissingAccount: Story = {
+  args: {
+    ...base,
+    editable: true,
+    memberships: [
+      ...memberships,
+      membership("departed", MembershipRole.ReadData, MembershipState.Member),
+    ],
   },
 };

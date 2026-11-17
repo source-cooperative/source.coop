@@ -43,6 +43,7 @@ import {
   MembershipRole,
   MembershipState,
   Product,
+  ProductWithAccount,
   UserSession,
 } from "@/types";
 import { match } from "ts-pattern";
@@ -61,14 +62,14 @@ type ActionResourceMap = {
   [Actions.CreateAccount]: Account | "*";
 
   // Product/Repository actions
-  [Actions.GetRepository]: Product;
-  [Actions.ListRepository]: Product;
-  [Actions.PutRepository]: Product;
-  [Actions.DeleteRepository]: Product;
-  [Actions.DisableRepository]: Product;
-  [Actions.ReadRepositoryData]: Product;
-  [Actions.WriteRepositoryData]: Product;
-  [Actions.ListRepositoryMemberships]: Product;
+  [Actions.GetRepository]: ProductWithAccount;
+  [Actions.ListRepository]: ProductWithAccount;
+  [Actions.PutRepository]: ProductWithAccount;
+  [Actions.DeleteRepository]: ProductWithAccount;
+  [Actions.DisableRepository]: ProductWithAccount;
+  [Actions.ReadRepositoryData]: ProductWithAccount;
+  [Actions.WriteRepositoryData]: ProductWithAccount;
+  [Actions.ListRepositoryMemberships]: ProductWithAccount;
   [Actions.CreateRepository]: Product | "*";
 
   // Membership actions
@@ -505,9 +506,7 @@ export function canManageAccount(
  * A disabled service account is still managed this way, so it can be
  * re-enabled or deleted; what may not happen to it while disabled (a new
  * trust, a new key) is refused where that thing is attached. A disabled owner
- * takes its service accounts out of reach with it, admins aside, and so does
- * an owner without the CREATE_SERVICE_ACCOUNTS flag (see
- * canManageAccountServiceAccounts).
+ * takes its service accounts out of reach with it, admins aside.
  */
 export function canManageServiceAccount(
   session: UserSession | null,
@@ -523,21 +522,13 @@ export function canManageServiceAccount(
 
 /**
  * Whether `session` may create and manage service accounts *owned by*
- * `account`. On top of managing the account, the account (individual or org)
- * must hold the platform-granted CREATE_SERVICE_ACCOUNTS flag, which limits
- * service accounts to the accounts an admin has opted in. Admins bypass the
- * flag. The owner's flag is read, never the session's: a person with the flag
- * does not carry it into an organization that lacks it.
+ * `account`: whoever manages the account (individual or org) may.
  */
 export function canManageAccountServiceAccounts(
   session: UserSession | null,
   account: Account
 ): boolean {
-  return canManageWithFlag(
-    session,
-    account,
-    AccountFlags.CREATE_SERVICE_ACCOUNTS
-  );
+  return canManageAccount(session, account);
 }
 
 /**
@@ -549,28 +540,12 @@ export function canManageAccountServiceAccounts(
  * admin-only. This helper takes the owner *account* (the account-scoped UI has
  * already fetched it) so it can additionally require the platform-granted
  * CREATE_DATA_CONNECTIONS flag: an account (individual or org) must hold it to
- * own connections at all. Admins bypass the flag.
+ * own connections at all. Admins bypass the flag. The flag is read from the
+ * account being managed, never the session's own.
  */
 export function canManageAccountDataConnections(
   session: UserSession | null,
   account: Account
-): boolean {
-  return canManageWithFlag(
-    session,
-    account,
-    AccountFlags.CREATE_DATA_CONNECTIONS
-  );
-}
-
-/**
- * Whether `session` manages `account` and `account` holds the platform-granted
- * capability `flag`. The flag is read from the account being managed, never
- * the session's own, and admins bypass it.
- */
-function canManageWithFlag(
-  session: UserSession | null,
-  account: Account,
-  flag: AccountFlags
 ): boolean {
   // canManageAccount already denies a disabled session or owner account.
   if (!canManageAccount(session, account)) {
@@ -581,7 +556,7 @@ function canManageWithFlag(
     return true;
   }
 
-  return !!account.flags?.includes(flag);
+  return !!account.flags?.includes(AccountFlags.CREATE_DATA_CONNECTIONS);
 }
 
 /**
@@ -595,13 +570,27 @@ function canManageWithFlag(
  */
 export function canCreateProductForAccount(
   session: UserSession | null,
-  account: Account
+  account: Pick<Account, "account_id" | "disabled">
 ): boolean {
-  return isAuthorized(
-    session,
-    { account_id: account.account_id } as Product,
-    Actions.CreateRepository
+  // A disabled account takes no new products, whoever asks.
+  return (
+    !account.disabled &&
+    isAuthorized(
+      session,
+      { account_id: account.account_id } as Product,
+      Actions.CreateRepository
+    )
   );
+}
+
+/**
+ * Whether `product` is out of use: deactivated itself, or held by a disabled
+ * account. Either way only its owners, maintainers and admins may see it.
+ * The account is read from `product.account`, which the type requires, so a
+ * caller that forgot to attach it fails to compile rather than leaking.
+ */
+export function isProductDisabled(product: ProductWithAccount): boolean {
+  return product.disabled || product.account.disabled;
 }
 
 /**
@@ -612,11 +601,11 @@ export function canCreateProductForAccount(
  */
 export function canListOnProfile(
   session: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   return (
     isAuthorized(session, product, Actions.ListRepository) ||
-    (product.disabled && isAuthorized(session, product, Actions.GetRepository))
+    (isProductDisabled(product) && isAuthorized(session, product, Actions.GetRepository))
   );
 }
 
@@ -728,10 +717,10 @@ function putAccountProfile(
 
 function writeRepositoryData(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the repository is disabled, no one is authorized
-  if (product.disabled) {
+  if (isProductDisabled(product)) {
     return false;
   }
 
@@ -769,7 +758,7 @@ function writeRepositoryData(
 
 function readRepositoryData(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
@@ -785,7 +774,7 @@ function readRepositoryData(
   // same people who can deactivate it — but is hidden from everyone else,
   // including ReadData members and public/unlisted viewers. (Re-activating a
   // deactivated product remains admin-only; see putRepository.)
-  if (product.disabled) {
+  if (isProductDisabled(product)) {
     return hasRole(
       principal,
       [MembershipRole.Owners, MembershipRole.Maintainers],
@@ -820,7 +809,7 @@ function readRepositoryData(
 
 function getRepository(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
@@ -836,7 +825,7 @@ function getRepository(
   // same people who can deactivate it — but is hidden from everyone else,
   // including ReadData members and public/unlisted viewers. (Re-activating a
   // deactivated product remains admin-only; see putRepository.)
-  if (product.disabled) {
+  if (isProductDisabled(product)) {
     return hasRole(
       principal,
       [MembershipRole.Owners, MembershipRole.Maintainers],
@@ -871,7 +860,7 @@ function getRepository(
 
 function listRepository(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
@@ -884,7 +873,7 @@ function listRepository(
   }
 
   // If the repository is disabled, they are not authorized
-  if (product.disabled) {
+  if (isProductDisabled(product)) {
     return false;
   }
 
@@ -919,7 +908,7 @@ function listRepository(
 
 function deleteRepository(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   if (!principal?.account) {
     return false;
@@ -933,6 +922,9 @@ function deleteRepository(
     return true;
   }
 
+  // A deactivated product is deleted only by an admin. A product of a
+  // disabled account is still deleted by its owners: deletion is the one
+  // thing left to do with it.
   if (product.disabled) {
     return false;
   }
@@ -951,7 +943,7 @@ function deleteRepository(
 
 function putRepository(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
@@ -969,7 +961,7 @@ function putRepository(
   }
 
   // If the repository is disabled, they are not authorized
-  if (product.disabled) {
+  if (isProductDisabled(product)) {
     return false;
   }
 
@@ -1007,9 +999,19 @@ function getAccountProfile(
     return true;
   }
 
-  // If the account is disabled, they are not authorized
+  // A disabled account looks missing to everyone but its own members, who
+  // see it marked as disabled.
   if (account.disabled) {
-    return false;
+    return hasRole(
+      principal,
+      [
+        MembershipRole.Owners,
+        MembershipRole.Maintainers,
+        MembershipRole.WriteData,
+        MembershipRole.ReadData,
+      ],
+      account.account_id
+    );
   }
 
   return true;
@@ -1017,7 +1019,7 @@ function getAccountProfile(
 
 function disableRepository(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
@@ -1035,7 +1037,7 @@ function disableRepository(
   }
 
   // If the repository is disabled, they are not authorized
-  if (product.disabled) {
+  if (isProductDisabled(product)) {
     return false;
   }
 
@@ -1307,7 +1309,7 @@ function listAccountMemberships(
 
 function listRepositoryMemberships(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
