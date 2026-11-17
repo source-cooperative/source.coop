@@ -1,4 +1,4 @@
-import type { Product, ProductMirror } from "@/types";
+import type { Product, ProductMirror, ProductWithAccount } from "@/types";
 import { isConditionalCheckFailed } from "./errors";
 import {
   PutItemCommand,
@@ -200,7 +200,7 @@ export class ProductsTable extends BaseTable {
   async fetchById(
     account_id: string,
     product_id: string
-  ): Promise<Product | null> {
+  ): Promise<ProductWithAccount | null> {
     try {
       const [result, account] = await Promise.all([
         this.cachedSend(
@@ -215,12 +215,10 @@ export class ProductsTable extends BaseTable {
         accountsTable.fetchById(account_id),
       ]);
 
-      if (!result.Item) return null;
+      // No account means we can't tell whether it is disabled: fail closed.
+      if (!result.Item || !account) return null;
 
-      return {
-        ...(result.Item as Product),
-        account: account ? publicView(account) : undefined,
-      };
+      return { ...(result.Item as Product), account: publicView(account) };
     } catch (error) {
       if (error instanceof ResourceNotFoundException) return null;
 
@@ -353,18 +351,20 @@ export class ProductsTable extends BaseTable {
    * @param products - Products to attach accounts to
    * @returns Products with accounts attached
    */
-  async attachAccounts(products: Product[]): Promise<Product[]> {
-    if (!products.length) return products;
+  async attachAccounts(products: Product[]): Promise<ProductWithAccount[]> {
+    if (!products.length) return [];
 
     const accounts = await accountsTable.fetchManyByIds(
       products.map((p) => p.account_id).filter((id) => id)
     );
     const accountMap = new Map(accounts.map((acc) => [acc.account_id, publicView(acc)]));
 
-    return products.map((item) => ({
-      ...item,
-      account: accountMap.get(item.account_id) || undefined,
-    }));
+    // A product whose account can't be found is dropped: without it we can't
+    // tell whether the account is disabled, so it fails closed.
+    return products.flatMap((item) => {
+      const account = accountMap.get(item.account_id);
+      return account ? [{ ...item, account }] : [];
+    });
   }
 
   /**

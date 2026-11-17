@@ -43,6 +43,7 @@ import {
   MembershipRole,
   MembershipState,
   Product,
+  ProductWithAccount,
   UserSession,
 } from "@/types";
 import { match } from "ts-pattern";
@@ -61,14 +62,14 @@ type ActionResourceMap = {
   [Actions.CreateAccount]: Account | "*";
 
   // Product/Repository actions
-  [Actions.GetRepository]: Product;
-  [Actions.ListRepository]: Product;
-  [Actions.PutRepository]: Product;
-  [Actions.DeleteRepository]: Product;
-  [Actions.DisableRepository]: Product;
-  [Actions.ReadRepositoryData]: Product;
-  [Actions.WriteRepositoryData]: Product;
-  [Actions.ListRepositoryMemberships]: Product;
+  [Actions.GetRepository]: ProductWithAccount;
+  [Actions.ListRepository]: ProductWithAccount;
+  [Actions.PutRepository]: ProductWithAccount;
+  [Actions.DeleteRepository]: ProductWithAccount;
+  [Actions.DisableRepository]: ProductWithAccount;
+  [Actions.ReadRepositoryData]: ProductWithAccount;
+  [Actions.WriteRepositoryData]: ProductWithAccount;
+  [Actions.ListRepositoryMemberships]: ProductWithAccount;
   [Actions.CreateRepository]: Product | "*";
 
   // Membership actions
@@ -585,11 +586,11 @@ export function canCreateProductForAccount(
 /**
  * Whether `product` is out of use: deactivated itself, or held by a disabled
  * account. Either way only its owners, maintainers and admins may see it.
- * The account is read from `product.account`, so a product fetched without
- * one counts as in use; list callers attach accounts before authorizing.
+ * The account is read from `product.account`, which the type requires, so a
+ * caller that forgot to attach it fails to compile rather than leaking.
  */
-export function isProductDisabled(product: Product): boolean {
-  return product.disabled || !!product.account?.disabled;
+export function isProductDisabled(product: ProductWithAccount): boolean {
+  return product.disabled || product.account.disabled;
 }
 
 /**
@@ -600,7 +601,7 @@ export function isProductDisabled(product: Product): boolean {
  */
 export function canListOnProfile(
   session: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   return (
     isAuthorized(session, product, Actions.ListRepository) ||
@@ -716,7 +717,7 @@ function putAccountProfile(
 
 function writeRepositoryData(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the repository is disabled, no one is authorized
   if (isProductDisabled(product)) {
@@ -757,7 +758,7 @@ function writeRepositoryData(
 
 function readRepositoryData(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
@@ -808,7 +809,7 @@ function readRepositoryData(
 
 function getRepository(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
@@ -859,7 +860,7 @@ function getRepository(
 
 function listRepository(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the user is disabled, they are not authorized
   if (principal?.account?.disabled) {
@@ -907,7 +908,7 @@ function listRepository(
 
 function deleteRepository(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   if (!principal?.account) {
     return false;
@@ -942,7 +943,7 @@ function deleteRepository(
 
 function putRepository(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
@@ -1018,7 +1019,7 @@ function getAccountProfile(
 
 function disableRepository(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {
@@ -1308,7 +1309,7 @@ function listAccountMemberships(
 
 function listRepositoryMemberships(
   principal: UserSession | null,
-  product: Product
+  product: ProductWithAccount
 ): boolean {
   // If the user does not have an account, they are not authorized
   if (!principal?.account) {

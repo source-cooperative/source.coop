@@ -58,6 +58,7 @@ const product = (overrides: Record<string, unknown> = {}) =>
     description: "A description",
     visibility: "public",
     disabled: false,
+    account: { account_id: "alice", disabled: false },
     metadata: {
       primary_mirror: "conn-x",
       mirrors: { "conn-x": { connection_id: "conn-x", prefix: "", is_primary: true } },

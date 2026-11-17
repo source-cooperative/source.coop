@@ -82,6 +82,9 @@ export type Product = Omit<z.infer<typeof ProductSchema>, "account"> & {
   account?: PublicAccount;
 };
 
+/** A product whose account is attached, as `isProductDisabled` requires. */
+export type ProductWithAccount = Product & { account: PublicAccount };
+
 /** A product as the API answers it, with the public view of its account. */
 export const ProductResponseSchema = ProductSchema.openapi("Product");
 

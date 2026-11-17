@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   Actions,
   Product,
+  ProductWithAccount,
   ProductCreationRequestSchema,
   ProductSchema,
   ProductResponse,
@@ -196,7 +197,7 @@ export function revalidate(account_id: string, product_id?: string) {
  * disabled account, is indistinguishable from a missing one to anyone not
  * allowed to see it.
  */
-const refuse = (session: UserSession | null, product: Product, message: string) =>
+const refuse = (session: UserSession | null, product: ProductWithAccount, message: string) =>
   isProductDisabled(product) && !isAuthorized(session, product, Actions.GetRepository)
     ? notFound(`Product ${product.account_id}/${product.product_id} not found`)
     : deny(session, message);
