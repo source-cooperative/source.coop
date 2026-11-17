@@ -31,8 +31,14 @@ export async function IndividualProfilePage({
     1000
   );
 
+  // Authorized with the account attached, so a disabled one disables its
+  // products; the listing itself stays without it, as the profile it sits on
+  // already says who provides them.
+  const owner = publicView(account);
   products = await hidePendingTags(
-    products.filter((product) => canListOnProfile(session, product))
+    products.filter((product) =>
+      canListOnProfile(session, { ...product, account: owner })
+    )
   );
 
   const memberships = (

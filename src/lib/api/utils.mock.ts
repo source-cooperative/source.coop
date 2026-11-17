@@ -5,6 +5,8 @@ import {
   MembershipSchema,
   Product,
   ProductSchema,
+  ProductWithAccount,
+  publicView,
   DataConnection,
   DataConnectionSchema,
 } from "@/types";
@@ -99,10 +101,15 @@ for (const account of accounts) {
   };
 }
 
-export const mappedProducts: Record<string, Record<string, Product>> = {};
+export const mappedProducts: Record<string, Record<string, ProductWithAccount>> = {};
 for (const product of products) {
+  const account = accounts.find((a) => a.account_id === product.account_id);
+  if (!account) throw new Error(`fixture product ${product.product_id} has no account`);
   if (!mappedProducts[product.account_id]) {
     mappedProducts[product.account_id] = {};
   }
-  mappedProducts[product.account_id][product.product_id] = product;
+  mappedProducts[product.account_id][product.product_id] = {
+    ...product,
+    account: publicView(account),
+  };
 }

@@ -247,6 +247,19 @@ describe("ProductsTable account attachment", () => {
     expect(product.account).toEqual(expected);
   });
 
+  // isProductDisabled reads product.account, so a product that slips through
+  // without one would be treated as enabled and leak. Fail closed instead.
+  it("drops listed products whose account can't be found", async () => {
+    (accountsTable.fetchManyByIds as jest.Mock).mockResolvedValueOnce([]);
+    expect(await table.attachAccounts([makeProduct()])).toEqual([]);
+  });
+
+  it("returns nothing for a fetched product whose account can't be found", async () => {
+    mockSend.mockResolvedValue({ Item: makeProduct() });
+    (accountsTable.fetchById as jest.Mock).mockResolvedValueOnce(null);
+    expect(await table.fetchById("kerner-lab", "fields-of-the-world")).toBeNull();
+  });
+
   it("keeps a full account from passing as a public one", () => {
     // @ts-expect-error a full account carries emails, flags and its Ory identity
     const leak: PublicAccount = account;

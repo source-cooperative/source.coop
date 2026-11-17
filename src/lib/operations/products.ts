@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   Actions,
   Product,
+  ProductWithAccount,
   ProductCreationRequestSchema,
   ProductSchema,
   ProductResponse,
@@ -10,7 +11,7 @@ import {
   resolveMirrorPrefix,
   UserSession,
 } from "@/types";
-import { canListOnProfile, isAdmin, isAuthorized } from "@/lib/api/authz";
+import { canListOnProfile, isAdmin, isAuthorized, isProductDisabled } from "@/lib/api/authz";
 import { denyDataConnectionFor } from "@/lib/data-connections";
 import { LOGGER } from "@/lib/logging";
 import { getProxyCredentials } from "@/lib/actions/proxy-credentials";
@@ -192,11 +193,12 @@ export function revalidate(account_id: string, product_id?: string) {
 }
 
 /**
- * A refusal to act on `product`. A deactivated product is indistinguishable
- * from a missing one to anyone not allowed to see it.
+ * A refusal to act on `product`. A disabled product, deactivated or held by a
+ * disabled account, is indistinguishable from a missing one to anyone not
+ * allowed to see it.
  */
-const refuse = (session: UserSession | null, product: Product, message: string) =>
-  product.disabled && !isAuthorized(session, product, Actions.GetRepository)
+const refuse = (session: UserSession | null, product: ProductWithAccount, message: string) =>
+  isProductDisabled(product) && !isAuthorized(session, product, Actions.GetRepository)
     ? notFound(`Product ${product.account_id}/${product.product_id} not found`)
     : deny(session, message);
 
@@ -230,8 +232,8 @@ export async function listProducts(
       page(
         await hidePendingTags(
           result.products
-            .filter((p) => canListOnProfile(session, p))
-            .map((p) => ({ ...p, account: shown })),
+            .map((p) => ({ ...p, account: shown }))
+            .filter((p) => canListOnProfile(session, p)),
           editsTags(session)
         ),
         result.lastEvaluatedKey
@@ -247,8 +249,8 @@ export async function listProducts(
     featuredOnly,
   });
   const visible = await hidePendingTags(
-    await productsTable.attachAccounts(
-      result.products.filter((p) => isAuthorized(session, p, Actions.ListRepository))
+    (await productsTable.attachAccounts(result.products)).filter((p) =>
+      isAuthorized(session, p, Actions.ListRepository)
     ),
     editsTags(session)
   );
@@ -320,6 +322,7 @@ export async function createProduct(
     dataConnectionsTable.fetchById(data_connection_id),
   ]);
   if (!account) return notFound(`Account ${account_id} not found`);
+  if (account.disabled) return forbidden("This account is disabled and takes no new products");
   // ponytail: check-then-put, so two simultaneous creates can still race;
   // a conditional put in productsTable.create closes it if that ever matters.
   if (existing) return conflict(`Product ${account_id}/${product_id} already exists`);

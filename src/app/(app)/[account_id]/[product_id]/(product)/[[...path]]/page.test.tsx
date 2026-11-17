@@ -59,6 +59,7 @@ jest.mock("@/components/features/products/ProductDataUnavailable", () => ({
 
 jest.mock("@/lib/api/authz", () => ({
   isAuthorized: jest.fn(),
+  isProductDisabled: jest.requireActual("@/lib/api/authz").isProductDisabled,
 }));
 
 jest.mock("next/navigation", () => ({

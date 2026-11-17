@@ -1,14 +1,15 @@
 import { productsTable } from "@/lib/clients/database";
 import { LOGGER } from "@/lib";
+import { isProductDisabled } from "@/lib/api/authz";
 
 export async function GET() {
   try {
     // Fetch products for the feed
     const { products: productsWithoutAccounts } =
       await productsTable.listPublic();
-    const products = await productsTable.attachAccounts(
-      productsWithoutAccounts
-    );
+    const products = (
+      await productsTable.attachAccounts(productsWithoutAccounts)
+    ).filter((product) => !isProductDisabled(product));
 
     // Generate RSS feed
     const xml = `<?xml version="1.0" encoding="UTF-8"?>

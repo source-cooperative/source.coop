@@ -42,6 +42,7 @@ jest.mock("@/lib/api/authz", () => ({
   canListOnProfile: jest.fn(),
   isAdmin: jest.fn(),
   isAuthorized: jest.fn(),
+  isProductDisabled: jest.requireActual("@/lib/api/authz").isProductDisabled,
 }));
 jest.mock("@/lib/actions/proxy-credentials", () => ({ getProxyCredentials: jest.fn() }));
 jest.mock("@/lib/clients/storage", () => ({ getStorageClient: jest.fn() }));
@@ -57,6 +58,7 @@ const product = (overrides: Record<string, unknown> = {}) =>
     description: "A description",
     visibility: "public",
     disabled: false,
+    account: { account_id: "alice", disabled: false },
     metadata: {
       primary_mirror: "conn-x",
       mirrors: { "conn-x": { connection_id: "conn-x", prefix: "", is_primary: true } },
@@ -101,7 +103,9 @@ describe("listProducts", () => {
       products: [shown, hidden],
       lastEvaluatedKey: key,
     });
-    (canListOnProfile as jest.Mock).mockImplementation((_s, p) => p === shown);
+    (canListOnProfile as jest.Mock).mockImplementation(
+      (_s, p) => p.product_id === shown.product_id && p.account?.account_id === "alice"
+    );
 
     const result = await listProducts(SESSION, { limit: "10", cursor }, "alice");
 
@@ -248,6 +252,16 @@ describe("getProduct", () => {
       error: "not_found",
     });
   });
+
+  test("a product of a disabled account is not found by anyone who may not see it", async () => {
+    (productsTable.fetchById as jest.Mock).mockResolvedValue(
+      product({ account: { account_id: "alice", disabled: true } })
+    );
+    allowExcept(Actions.GetRepository);
+    expect(await getProduct(SESSION, "alice", "my-product")).toMatchObject({
+      error: "not_found",
+    });
+  });
 });
 
 describe("createProduct", () => {
@@ -284,6 +298,16 @@ describe("createProduct", () => {
       prefix: "alice/my-product/",
       is_primary: true,
     });
+  });
+
+  test("refuses a disabled account", async () => {
+    (accountsTable.fetchById as jest.Mock).mockResolvedValue({ account_id: "alice", disabled: true });
+    (dataConnectionsTable.fetchById as jest.Mock).mockResolvedValue(connection());
+
+    const result = await createProduct(SESSION, input());
+
+    expect(result).toMatchObject({ ok: false, error: "forbidden" });
+    expect(productsTable.create).not.toHaveBeenCalled();
   });
 
   test("saves tags from the corpus, deduplicated", async () => {
