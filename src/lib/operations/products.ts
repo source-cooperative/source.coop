@@ -182,10 +182,6 @@ const page = (
   next_cursor: encodeCursor(lastEvaluatedKey),
 });
 
-/**
- * Drops the cached pages that show a product, and its account's listing of
- * it, whichever adapter changed it.
- */
 /** The refusal when `connection` doesn't allow `visibility`, or null when it does. */
 export const refuseVisibility = (
   connection: DataConnection,
@@ -199,6 +195,10 @@ export const refuseVisibility = (
         field
       );
 
+/**
+ * Drops the cached pages that show a product, and its account's listing of
+ * it, whichever adapter changed it.
+ */
 export function revalidate(account_id: string, product_id?: string) {
   revalidatePath(accountUrl(account_id));
   if (product_id) {
@@ -420,8 +420,8 @@ export async function updateProduct(
     changes.metadata = { ...product.metadata, tags: tags.value };
     writeSuggestions = async () => void (await plan.value.write());
   }
-  // The data connection is fixed at creation, so the allowed visibilities
-  // come from the primary mirror's. Without it there's no knowing what's
+  // The product is served from its primary mirror, so the allowed visibilities
+  // come from that mirror's connection. Without it there's no knowing what's
   // allowed, so the visibility stays as it is.
   const { visibility } = parsed.data;
   if (visibility && visibility !== product.visibility) {
