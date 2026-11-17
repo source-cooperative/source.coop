@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { Theme } from "@radix-ui/themes";
 import { DirectoryRow } from "./DirectoryRow";
+import { FULL } from "@/hooks/useWhen";
 import type { Product } from "@/types";
 
 jest.mock("next/navigation", () => ({
@@ -50,7 +51,7 @@ describe("DirectoryRow last modified", () => {
       updated.toLocaleDateString(undefined, { dateStyle: "medium" })
     );
     expect(cell.title).toContain(
-      updated.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "long" })
+      updated.toLocaleString(undefined, FULL)
     );
   });
 

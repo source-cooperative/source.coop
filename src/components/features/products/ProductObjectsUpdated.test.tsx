@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { DataList, Theme } from "@radix-ui/themes";
 import { useCatalog } from "@/hooks/useCatalog";
 import { ProductObjectsUpdated } from "./ProductObjectsUpdated";
+import { FULL } from "@/hooks/useWhen";
 
 jest.mock("@/hooks/useCatalog", () => ({ useCatalog: jest.fn() }));
 const catalogHook = jest.mocked(useCatalog);
@@ -24,7 +25,7 @@ it("shows the local date, with the full time and how long ago as its title", () 
   expect(screen.getByText("Objects Updated")).toBeInTheDocument();
   const value = screen.getByTitle(/\(3 days ago\)$/);
   expect(value).toHaveTextContent(updated.toLocaleDateString(undefined, { dateStyle: "medium" }));
-  expect(value.title).toContain(updated.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "long" }));
+  expect(value.title).toContain(updated.toLocaleString(undefined, FULL));
 });
 
 it("renders nothing until the catalog loads, or when it has no date", () => {
