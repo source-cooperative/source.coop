@@ -60,6 +60,21 @@ function getExtensionFromMimeType(mimeType: string): string {
 }
 
 /**
+ * Whether `key` names an avatar object in this account's own folder, in the
+ * shape getProfileImageUploadUrl issues. The key arrives from the client, and
+ * the URL built from it later decides which object a replace or remove
+ * deletes, so a key outside the account's folder must never be stored or
+ * deleted.
+ */
+function isOwnProfileImageKey(accountId: string, key: string): boolean {
+  const prefix = `profile-images/${accountId}/`;
+  return (
+    key.startsWith(prefix) &&
+    /^avatar(-\d+)?\.(jpg|png|webp|gif)$/.test(key.slice(prefix.length))
+  );
+}
+
+/**
  * Generate a presigned URL for uploading a profile image
  *
  * The image will be stored at: profile-images/{account_id}/avatar.{ext}
@@ -203,17 +218,25 @@ export async function updateProfileImage(
     );
   }
 
+  if (!isOwnProfileImageKey(accountId, imageKey)) {
+    throw new Error(`Invalid image key for account ${accountId}`);
+  }
+
   try {
     // Delete old profile image if it exists
     const oldProfileImageUrl = account.metadata_public?.profile_image;
     if (oldProfileImageUrl) {
       try {
+        const oldKey = getKeyFromImageUrl(oldProfileImageUrl);
+        if (!isOwnProfileImageKey(accountId, oldKey)) {
+          throw new Error(`Old image key ${oldKey} is not this account's`);
+        }
+
         const s3Client = new S3Client({
           region: CONFIG.assets.region,
           credentials: CONFIG.database.credentials,
         });
 
-        const oldKey = getKeyFromImageUrl(oldProfileImageUrl);
         const deleteCommand = new DeleteObjectCommand({
           Bucket: CONFIG.assets.bucket,
           Key: oldKey,
@@ -331,27 +354,36 @@ export async function deleteProfileImage(accountId: string): Promise<void> {
       throw new Error("No profile image to delete");
     }
 
-    // Create S3 client with credentials
-    const s3Client = new S3Client({
-      region: CONFIG.assets.region,
-      credentials: CONFIG.database.credentials,
-    });
-
     // Extract the S3 key from the image URL
     const key = getKeyFromImageUrl(profileImageUrl);
 
-    // Delete the specific image file
-    const deleteCommand = new DeleteObjectCommand({
-      Bucket: CONFIG.assets.bucket,
-      Key: key,
-    });
+    if (isOwnProfileImageKey(accountId, key)) {
+      // Create S3 client with credentials
+      const s3Client = new S3Client({
+        region: CONFIG.assets.region,
+        credentials: CONFIG.database.credentials,
+      });
 
-    await s3Client.send(deleteCommand);
+      // Delete the specific image file
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: CONFIG.assets.bucket,
+        Key: key,
+      });
 
-    LOGGER.info("Deleted profile image file from S3", {
-      operation: "deleteProfileImage",
-      metadata: { accountId, key, imageUrl: profileImageUrl },
-    });
+      await s3Client.send(deleteCommand);
+
+      LOGGER.info("Deleted profile image file from S3", {
+        operation: "deleteProfileImage",
+        metadata: { accountId, key, imageUrl: profileImageUrl },
+      });
+    } else {
+      // A stored URL outside the account's folder names someone else's
+      // object; clear the reference but leave the object alone.
+      LOGGER.warn("Not deleting profile image outside the account's folder", {
+        operation: "deleteProfileImage",
+        metadata: { accountId, key, imageUrl: profileImageUrl },
+      });
+    }
 
     // Remove profile_image from account metadata
     const { profile_image, ...remainingMetadata } =
