@@ -59,24 +59,6 @@ export const COG: Story = {
   },
 };
 
-/**
- * A STAC GeoParquet file: two labeled viewer links appear in the header —
- * "Map" (stac-map) and "Table" (parquet-table) — instead of a single
- * "Open in new tab" link.
- */
-export const StacGeoParquet: Story = {
-  name: "STAC GeoParquet",
-  args: {
-    viewerUrl: null,
-    viewerLinks: [
-      { url: "https://developmentseed.org/stac-map?href=...", label: "Map" },
-      { url: "https://source-cooperative.github.io/parquet-table/?iframe=true&url=...", label: "Table" },
-    ],
-    label: "STAC GeoParquet",
-    children: viewerPlaceholder,
-  },
-};
-
 /** A Zarr v2 store detected by the server-side probe. */
 export const ZarrV2: Story = {
   name: "Zarr v2",

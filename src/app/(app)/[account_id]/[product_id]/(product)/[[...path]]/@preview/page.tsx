@@ -11,6 +11,7 @@ import { fileSourceUrl } from "@/lib/urls";
 import { getExtension, isStoreExtension } from "@/lib/files";
 import { getIframeSrc, fileTypeLabel, getSecondaryViewerUrl } from "@/components/features/products/object-browser/ObjectPreviewExternal";
 import { ObjectPreviewCard } from "@/components/features/products/object-browser/ObjectPreviewCard";
+import { MultiViewerPreview } from "@/components/features/products/object-browser/MultiViewerPreview";
 
 interface PageProps {
   params: Promise<{
@@ -24,11 +25,10 @@ function previewCard(
   viewerUrl: string | null,
   label: string | null,
   children: ReactNode,
-  viewerLinks?: { url: string; label: string }[],
 ) {
   return (
     <Card id="preview" mt="4">
-      <ObjectPreviewCard viewerUrl={viewerUrl} viewerLinks={viewerLinks} label={label}>
+      <ObjectPreviewCard viewerUrl={viewerUrl} label={label}>
         {children}
       </ObjectPreviewCard>
     </Card>
@@ -113,16 +113,22 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
       ])
     : [null, null, null];
 
-  const viewerLinks =
-    viewerUrl && secondaryViewerUrl
-      ? [
+  if (viewerUrl && secondaryViewerUrl) {
+    return previewCard(
+      null,
+      label,
+      <MultiViewerPreview
+        viewers={[
           { url: viewerUrl, label: "Map" },
           { url: secondaryViewerUrl, label: "Table" },
-        ]
-      : undefined;
+        ]}
+        title={object_path}
+      />,
+    );
+  }
 
   return previewCard(
-    viewerLinks ? null : viewerUrl,
+    viewerUrl,
     label,
     <Suspense fallback={null}>
       <ObjectPreview
@@ -131,6 +137,5 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
         object_path={object_path}
       />
     </Suspense>,
-    viewerLinks,
   );
 }
