@@ -151,6 +151,16 @@ interface ObjectPreviewExternalProps {
   object_path: string;
 }
 
+export const getSecondaryViewerUrl = async (
+  sourceUrl: string,
+  extension: string,
+): Promise<string | null> => {
+  if (extension === "parquet" && (await isStacGeoParquet(sourceUrl))) {
+    return `https://source-cooperative.github.io/parquet-table/?iframe=true&url=${encodeURIComponent(sourceUrl)}`;
+  }
+  return null;
+};
+
 export const getIframeSrc = async (
   sourceUrl: string,
   extension: string,

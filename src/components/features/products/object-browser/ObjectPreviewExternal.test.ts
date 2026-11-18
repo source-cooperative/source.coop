@@ -15,7 +15,7 @@ jest.mock("./PreviewIframe", () => ({}));
 // that exercise tif/tiff stay deterministic without real network calls.
 global.fetch = jest.fn().mockRejectedValue(new Error("fetch is mocked"));
 
-import { fileTypeLabel, getIframeSrc, parseCogTiling } from "./ObjectPreviewExternal";
+import { fileTypeLabel, getIframeSrc, getSecondaryViewerUrl, parseCogTiling } from "./ObjectPreviewExternal";
 import { DuckDBConnection } from "@duckdb/node-api";
 
 const sourceUrl = "https://data.source.coop/account/product/file";
@@ -104,6 +104,37 @@ function mockFetchResponse(bytes: Buffer) {
     arrayBuffer: () => Promise.resolve(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)),
   });
 }
+
+describe("getSecondaryViewerUrl", () => {
+  function mockDb(rows: unknown[][]) {
+    const db = {
+      run: jest.fn().mockResolvedValue(undefined),
+      runAndReadAll: jest.fn().mockResolvedValue({ getRows: () => rows }),
+      closeSync: jest.fn(),
+    };
+    (DuckDBConnection.create as jest.Mock).mockResolvedValue(db);
+    return db;
+  }
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it("returns the parquet-table URL for STAC GeoParquet", async () => {
+    mockDb([[true]]);
+    const result = await getSecondaryViewerUrl(sourceUrl, "parquet");
+    expect(result).toMatch(/parquet-table/);
+    expect(result).toContain(encodeURIComponent(sourceUrl));
+  });
+
+  it("returns null for a plain parquet file", async () => {
+    mockDb([]);
+    await expect(getSecondaryViewerUrl(sourceUrl, "parquet")).resolves.toBeNull();
+  });
+
+  it("returns null for non-parquet extensions", async () => {
+    await expect(getSecondaryViewerUrl(sourceUrl, "tif")).resolves.toBeNull();
+    await expect(getSecondaryViewerUrl(sourceUrl, "csv")).resolves.toBeNull();
+  });
+});
 
 describe("getIframeSrc", () => {
   describe("tif/tiff", () => {

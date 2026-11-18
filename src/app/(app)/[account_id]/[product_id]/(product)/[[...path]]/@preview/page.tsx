@@ -9,7 +9,7 @@ import { storeViewerUrl, storeLabelFromResult } from "@/components/features/prod
 import { getAuthorizedProduct } from "../data";
 import { fileSourceUrl } from "@/lib/urls";
 import { getExtension, isStoreExtension } from "@/lib/files";
-import { getIframeSrc, fileTypeLabel } from "@/components/features/products/object-browser/ObjectPreviewExternal";
+import { getIframeSrc, fileTypeLabel, getSecondaryViewerUrl } from "@/components/features/products/object-browser/ObjectPreviewExternal";
 import { ObjectPreviewCard } from "@/components/features/products/object-browser/ObjectPreviewCard";
 
 interface PageProps {
@@ -24,10 +24,11 @@ function previewCard(
   viewerUrl: string | null,
   label: string | null,
   children: ReactNode,
+  viewerLinks?: { url: string; label: string }[],
 ) {
   return (
     <Card id="preview" mt="4">
-      <ObjectPreviewCard viewerUrl={viewerUrl} label={label}>
+      <ObjectPreviewCard viewerUrl={viewerUrl} viewerLinks={viewerLinks} label={label}>
         {children}
       </ObjectPreviewCard>
     </Card>
@@ -104,15 +105,24 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
   }
 
   const sourceUrl = fileSourceUrl({ account_id, product_id, object_path });
-  const [viewerUrl, label] = extension
+  const [viewerUrl, label, secondaryViewerUrl] = extension
     ? await Promise.all([
         getIframeSrc(sourceUrl, extension),
         fileTypeLabel(sourceUrl, extension),
+        getSecondaryViewerUrl(sourceUrl, extension),
       ])
-    : [null, null];
+    : [null, null, null];
+
+  const viewerLinks =
+    viewerUrl && secondaryViewerUrl
+      ? [
+          { url: viewerUrl, label: "Map" },
+          { url: secondaryViewerUrl, label: "Table" },
+        ]
+      : undefined;
 
   return previewCard(
-    viewerUrl,
+    viewerLinks ? null : viewerUrl,
     label,
     <Suspense fallback={null}>
       <ObjectPreview
@@ -121,5 +131,6 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
         object_path={object_path}
       />
     </Suspense>,
+    viewerLinks,
   );
 }
