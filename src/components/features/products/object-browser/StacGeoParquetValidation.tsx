@@ -5,10 +5,12 @@ import { LOGGER } from "@/lib/logging";
 import {
   StacGeoParquetValidationSummary,
   type ValidationSummary,
+  type ValidationFinding,
 } from "./StacGeoParquetValidationSummary";
 
 interface ValidationReport {
   summary: ValidationSummary;
+  findings: ValidationFinding[];
 }
 
 const fetchValidation = cache(async (href: string): Promise<ValidationReport | null> => {
@@ -33,5 +35,10 @@ const fetchValidation = cache(async (href: string): Promise<ValidationReport | n
 export async function StacGeoParquetValidation({ href }: { href: string }) {
   const report = await fetchValidation(href);
   if (!report) return null;
-  return <StacGeoParquetValidationSummary summary={report.summary} />;
+  return (
+    <StacGeoParquetValidationSummary
+      summary={report.summary}
+      findings={report.findings}
+    />
+  );
 }

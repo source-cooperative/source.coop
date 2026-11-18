@@ -13,18 +13,34 @@ export interface ValidationSummary {
   };
 }
 
+export interface ValidationFinding {
+  id: string;
+  severity: "error" | "warning" | "compat" | "info";
+  section: string;
+  message: string;
+  reference: string;
+}
+
+const SEVERITY_COLOR: Record<ValidationFinding["severity"], "red" | "orange" | "amber" | "gray"> =
+  { error: "red", warning: "orange", compat: "amber", info: "gray" };
+
 interface StacGeoParquetValidationSummaryProps {
   summary: ValidationSummary;
+  /** Non-info findings to display below the summary row. */
+  findings: ValidationFinding[];
 }
 
 /**
  * Displays validation results from the stac-geoparquet-validator service below
- * the object preview iframe. Shows overall validity status and severity counts.
+ * the object preview iframe. Shows overall validity, severity counts, and the
+ * individual finding messages for every non-info finding.
  */
 export function StacGeoParquetValidationSummary({
   summary,
+  findings,
 }: StacGeoParquetValidationSummaryProps) {
   const { counts } = summary;
+  const visibleFindings = findings.filter((f) => f.severity !== "info");
   return (
     <Box mt="4">
       <Separator size="4" mb="3" />
@@ -61,6 +77,27 @@ export function StacGeoParquetValidationSummary({
           stac-geoparquet-validator
         </Link>
       </Flex>
+      {visibleFindings.length > 0 && (
+        <Box mt="3">
+          {visibleFindings.map((f) => (
+            <Flex key={f.id} align="start" gap="2" mb="2">
+              <Box flexShrink="0" pt="2px">
+                <Badge color={SEVERITY_COLOR[f.severity]} size="1" variant="soft">
+                  {f.severity}
+                </Badge>
+              </Box>
+              <Text size="1" color="gray">
+                {f.message}{" "}
+                {f.reference && (
+                  <Link href={f.reference} target="_blank" rel="noopener noreferrer" size="1">
+                    spec
+                  </Link>
+                )}
+              </Text>
+            </Flex>
+          ))}
+        </Box>
+      )}
     </Box>
   );
 }
