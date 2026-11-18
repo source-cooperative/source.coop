@@ -2,9 +2,11 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { MultiViewerPreview } from "./MultiViewerPreview";
 
 /**
- * Embeds two viewers for the same object with a segmented control switcher.
- * The first viewer is shown by default; clicking the other label swaps the
- * iframe in place without navigating away.
+ * Full preview card for objects with more than one applicable viewer. The
+ * header row shows the format label in the centre and a segmented viewer
+ * switcher plus an "Open in new tab" link on the right. Both the switcher
+ * and the link track the active viewer so the link always opens the
+ * currently embedded viewer.
  */
 const meta = {
   title: "Features/Product page/MultiViewerPreview",
@@ -23,6 +25,7 @@ export const StacGeoParquet: Story = {
       { url: "https://developmentseed.org/stac-map?href=...", label: "Map" },
       { url: "https://source-cooperative.github.io/parquet-table/?iframe=true&url=...", label: "Table" },
     ],
+    formatLabel: "STAC GeoParquet",
     title: "example.parquet",
   },
 };

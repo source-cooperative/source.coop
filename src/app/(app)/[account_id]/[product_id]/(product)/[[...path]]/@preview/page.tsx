@@ -114,16 +114,15 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
     : [null, null, null];
 
   if (viewerUrl && secondaryViewerUrl) {
-    return previewCard(
-      null,
-      label,
+    return (
       <MultiViewerPreview
         viewers={[
           { url: viewerUrl, label: "Map" },
           { url: secondaryViewerUrl, label: "Table" },
         ]}
+        formatLabel={label}
         title={object_path}
-      />,
+      />
     );
   }
 
