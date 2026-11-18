@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Flex, SegmentedControl } from "@radix-ui/themes";
+import { Flex, Link, SegmentedControl } from "@radix-ui/themes";
+import { ExternalLinkIcon } from "@radix-ui/react-icons";
 import { PreviewIframe } from "./PreviewIframe";
 
 export interface Viewer {
@@ -25,7 +26,7 @@ export function MultiViewerPreview({ viewers, title }: MultiViewerPreviewProps) 
 
   return (
     <Flex direction="column" gap="3">
-      <Flex justify="end">
+      <Flex justify="between" align="center">
         <SegmentedControl.Root
           value={String(activeIndex)}
           onValueChange={(v) => setActiveIndex(Number(v))}
@@ -37,6 +38,17 @@ export function MultiViewerPreview({ viewers, title }: MultiViewerPreviewProps) 
             </SegmentedControl.Item>
           ))}
         </SegmentedControl.Root>
+        <Link
+          href={active.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          size="1"
+        >
+          <Flex align="center" gap="1">
+            Open in new tab
+            <ExternalLinkIcon width="14" height="14" />
+          </Flex>
+        </Link>
       </Flex>
       <PreviewIframe src={active.url} title={`${title} — ${active.label} viewer`} />
     </Flex>
