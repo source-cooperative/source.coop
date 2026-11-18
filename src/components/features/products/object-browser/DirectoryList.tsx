@@ -19,6 +19,12 @@ interface DirectoryListProps {
   setFocusedIndex?: (index: number) => void;
 }
 
+const COLUMNS = [
+  { label: "Name" },
+  { label: "Size", numeric: true },
+  { label: "Modified", numeric: true },
+];
+
 const MAX_VISIBLE_ITEMS = 20;
 const ITEM_HEIGHT = 40;
 const UPLOADING_ITEM_HEIGHT = ITEM_HEIGHT * 1.5; // Extra height for progress bar and status
@@ -73,7 +79,7 @@ export function DirectoryList({
   const items = mergeUploadsWithFiles(
     asFileNodes(objects),
     scopedUploads,
-    prefix
+    prefix,
   ).filter((item) => !deletedPaths.has(item.path));
 
   // Sort items: directories first, then files alphabetically
@@ -132,87 +138,114 @@ export function DirectoryList({
   });
 
   return (
-    <Box
-      ref={parentRef}
-      style={
-        isVirtualized
-          ? {
-              maxHeight: `${Math.min(
-                items.length * ITEM_HEIGHT,
-                MAX_VISIBLE_ITEMS * ITEM_HEIGHT
-              )}px`,
-              overflow: "auto",
-              willChange: "transform",
-              position: "relative",
-            }
-          : { position: "relative" }
-      }
-    >
-      {items.length === 0 && (
-        <Box p="4">
-          <MonoText color="gray">This directory is empty.</MonoText>
-        </Box>
-      )}
-
-      {showScrollIndicator && (
-        <Box
-          className={styles.scrollIndicator}
+    <>
+      {items.length > 0 && (
+        <div
+          className={styles.columns}
+          role="row"
           style={{
-            position: "fixed",
-            bottom: "8px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 10,
-            background: "var(--gray-3)",
-            borderRadius: "var(--radius-2)",
-            padding: "4px 8px",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-            pointerEvents: "none",
+            borderBottom: "1px solid var(--gray-5)",
+            paddingBottom: "var(--space-1)",
+            marginBottom: "var(--space-1)",
           }}
         >
-          <Text size="1" color="gray">
-            Scroll for more
-          </Text>
-          <ChevronDownIcon width={12} height={12} />
-        </Box>
+          {COLUMNS.map(({ label, numeric }) => (
+            <div
+              key={label}
+              role="columnheader"
+              className={numeric ? styles.headerHidden : undefined}
+              style={numeric ? { justifySelf: "end" } : undefined}
+            >
+              <Text size="1" color="gray">
+                {label}
+              </Text>
+            </div>
+          ))}
+          <div />
+        </div>
       )}
-
       <Box
-        style={{
-          width: "100%",
-          ...(isVirtualized
+        ref={parentRef}
+        style={
+          isVirtualized
             ? {
-                height: `${rowVirtualizer.getTotalSize()}px`,
+                maxHeight: `${Math.min(
+                  items.length * ITEM_HEIGHT,
+                  MAX_VISIBLE_ITEMS * ITEM_HEIGHT,
+                )}px`,
+                overflow: "auto",
+                willChange: "transform",
                 position: "relative",
               }
-            : {}),
-        }}
+            : { position: "relative" }
+        }
       >
-        {isVirtualized
-          ? rowVirtualizer
-              .getVirtualItems()
-              .map((virtualRow) => (
+        {items.length === 0 && (
+          <Box p="4">
+            <MonoText color="gray">This directory is empty.</MonoText>
+          </Box>
+        )}
+
+        {showScrollIndicator && (
+          <Box
+            className={styles.scrollIndicator}
+            style={{
+              position: "fixed",
+              bottom: "8px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 10,
+              background: "var(--gray-3)",
+              borderRadius: "var(--radius-2)",
+              padding: "4px 8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              pointerEvents: "none",
+            }}
+          >
+            <Text size="1" color="gray">
+              Scroll for more
+            </Text>
+            <ChevronDownIcon width={12} height={12} />
+          </Box>
+        )}
+
+        <Box
+          style={{
+            width: "100%",
+            ...(isVirtualized
+              ? {
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  position: "relative",
+                }
+              : {}),
+          }}
+        >
+          {isVirtualized
+            ? rowVirtualizer
+                .getVirtualItems()
+                .map((virtualRow) => (
+                  <DirectoryRow
+                    key={items[virtualRow.index].path}
+                    item={items[virtualRow.index]}
+                    index={virtualRow.index}
+                    itemHeight={virtualRow.size}
+                    virtualRow={{ start: virtualRow.start }}
+                    {...rowProps}
+                  />
+                ))
+            : items.map((item, index) => (
                 <DirectoryRow
-                  key={items[virtualRow.index].path}
-                  item={items[virtualRow.index]}
-                  index={virtualRow.index}
-                  itemHeight={virtualRow.size}
-                  virtualRow={{ start: virtualRow.start }}
+                  key={item.path}
+                  item={item}
+                  index={index}
+                  itemHeight={getItemHeight(index)}
                   {...rowProps}
                 />
-              ))
-          : items.map((item, index) => (
-              <DirectoryRow
-                key={item.path}
-                item={item}
-                index={index}
-                itemHeight={getItemHeight(index)}
-                {...rowProps}
-              />
-            ))}
+              ))}
+        </Box>
       </Box>
-    </Box>
+    </>
   );
 }
