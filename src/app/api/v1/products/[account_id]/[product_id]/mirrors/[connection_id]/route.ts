@@ -19,7 +19,7 @@ registry.registerPath({
   tags: ["Mirrors"],
   summary: "Edit a mirror",
   description:
-    "Changes a mirror's prefix, makes it the primary, or both. You must be an owner or maintainer of the owning account. To change the prefix, you must also manage the data connection. A 409 means the product changed since you read it. Read it again and retry.",
+    "Changes a mirror's prefix, makes it the primary, or both. The data connection of a new primary must allow the product's visibility. You must be an owner or maintainer of the owning account. To change the prefix, you must also manage the data connection. A 409 means the product changed since you read it. Read it again and retry.",
   security: bearer,
   request: {
     params,

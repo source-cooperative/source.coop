@@ -1,12 +1,14 @@
 import { z } from "zod";
 import {
   Actions,
+  DataConnection,
   Product,
   ProductWithAccount,
   ProductCreationRequestSchema,
   ProductSchema,
   ProductResponse,
   ProductResponseSchema,
+  ProductVisibility,
   RepositoryPermissions,
   resolveMirrorPrefix,
   UserSession,
@@ -180,6 +182,19 @@ const page = (
   next_cursor: encodeCursor(lastEvaluatedKey),
 });
 
+/** The refusal when `connection` doesn't allow `visibility`, or null when it does. */
+export const refuseVisibility = (
+  connection: DataConnection,
+  visibility: ProductVisibility,
+  field: string
+) =>
+  connection.allowed_visibilities.includes(visibility)
+    ? null
+    : invalid(
+        `The "${connection.name}" data connection does not allow ${visibility} products`,
+        field
+      );
+
 /**
  * Drops the cached pages that show a product, and its account's listing of
  * it, whichever adapter changed it.
@@ -338,12 +353,8 @@ export async function createProduct(
         "data_connection_id"
       );
   }
-  if (!connection.allowed_visibilities.includes(request.visibility)) {
-    return invalid(
-      `The "${connection.name}" data connection does not allow ${request.visibility} products`,
-      "visibility"
-    );
-  }
+  const refused = refuseVisibility(connection, request.visibility, "visibility");
+  if (refused) return refused;
   const plan = await planSuggestions(session, toSuggest, "suggest_tags");
   if (!plan.ok) return plan;
   const tags = await checkTags(requestedTags, [], plan.value.tags);
@@ -409,8 +420,8 @@ export async function updateProduct(
     changes.metadata = { ...product.metadata, tags: tags.value };
     writeSuggestions = async () => void (await plan.value.write());
   }
-  // The data connection is fixed at creation, so the allowed visibilities
-  // come from the primary mirror's. Without it there's no knowing what's
+  // The product is served from its primary mirror, so the allowed visibilities
+  // come from that mirror's connection. Without it there's no knowing what's
   // allowed, so the visibility stays as it is.
   const { visibility } = parsed.data;
   if (visibility && visibility !== product.visibility) {
@@ -425,12 +436,8 @@ export async function updateProduct(
         "visibility"
       );
     }
-    if (!connection.allowed_visibilities.includes(visibility)) {
-      return invalid(
-        `The "${connection.name}" data connection does not allow ${visibility} products`,
-        "visibility"
-      );
-    }
+    const refused = refuseVisibility(connection, visibility, "visibility");
+    if (refused) return refused;
   }
 
   // Every check has passed, so the suggestions land with the product.
