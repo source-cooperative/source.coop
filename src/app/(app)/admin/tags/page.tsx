@@ -50,6 +50,12 @@ export default async function AdminTagsPage() {
     ])
   );
   const approvedTags = approved.value.items.map((t) => t.tag_id);
+  const taken = Object.fromEntries([
+    ...pending.value.items.map((t) => [t.tag_id, "awaiting review"]),
+    ...reviewed.value.items
+      .filter((t) => t.outcome === "merged" || t.outcome === "rejected")
+      .map((t) => [t.tag_id, t.outcome]),
+  ]);
   const counted = approved.value.items.map((t) => ({
     tag: t.tag_id,
     products: carrying(t.tag_id).length,
@@ -62,7 +68,7 @@ export default async function AdminTagsPage() {
     <Flex direction="column" gap="6">
       <FormTitle
         title="Tags"
-        description="Review tags people have suggested. Approving adds a tag, in the category you choose, to the list everyone picks from; merging replaces it with an approved tag on every product that carries it; rejecting takes it off them."
+        description="Review tags people have suggested, and change approved ones. Approving adds a tag, in the category you choose, to the list everyone picks from; merging replaces a tag with others on every product that carries it, and a new name renames it; rejecting or removing takes it off them. Every decision can be undone."
       />
       <Flex direction="column" gap="3">
         <Heading size="4">
@@ -95,6 +101,7 @@ export default async function AdminTagsPage() {
             reviewed_at: t.reviewed_at,
             suggested_by: t.suggested_by,
             merged_into: t.merged_into,
+            wasListed: !!t.previous,
             products: (t.changed ?? carrying(t.tag_id)).map(({ account_id, product_id }) => ({
               account_id,
               product_id,
@@ -106,7 +113,7 @@ export default async function AdminTagsPage() {
       </Flex>
       <Flex direction="column" gap="3">
         <Heading size="4">All tags</Heading>
-        <AdminTagList tags={counted} accounts={accounts} />
+        <AdminTagList tags={counted} taken={taken} action={reviewTag} accounts={accounts} />
       </Flex>
     </Flex>
   );
