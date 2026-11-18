@@ -34,6 +34,8 @@ export function ObjectSummary({
       ? `https://${details.account_name}.blob.core.windows.net/${details.container_name}/${prefix}${objectInfo.path}`
       : details?.provider === "s3"
       ? `s3://${details.bucket}/${prefix}${objectInfo.path}`
+      : details?.provider === "gcs"
+      ? `gs://${details.bucket}/${prefix}${objectInfo.path}`
       : undefined;
   const sourceUrl = fileSourceUrl({
     account_id: product.account_id,

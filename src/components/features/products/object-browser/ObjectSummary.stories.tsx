@@ -13,9 +13,9 @@ import {
  *
  * Two rows are conditional and neither is easy to produce on demand in the app.
  * **Cloud URI** appears only when the object's connection is known, and its
- * scheme depends on the provider — `s3://bucket/…` against S3, an
- * `https://account.blob.core.windows.net/…` URL against Azure, and nothing at
- * all for GCS. **Checksum** appears only when the object carries a `sha256`,
+ * scheme depends on the provider — `s3://bucket/…` against S3,
+ * `gs://bucket/…` against GCS, and an
+ * `https://account.blob.core.windows.net/…` URL against Azure. **Checksum** appears only when the object carries a `sha256`,
  * and brings a verifier that streams the file to check it.
  *
  * That verifier is live: pressing it fetches the object, which in Storybook
@@ -68,9 +68,32 @@ const s3Connection = {
   } as unknown as DataConnection,
 };
 
+const gcsConnection = {
+  primaryMirror: { connection_id: "aef-gcs", prefix: "satellite_embedding/v1/", is_primary: true },
+  dataConnection: {
+    data_connection_id: "aef-gcs",
+    name: "AEF GCS",
+    details: {
+      provider: DataProvider.GCS,
+      bucket: "aef-gcs",
+      base_prefix: "",
+    },
+  } as unknown as DataConnection,
+};
+
 /** No connection resolved, no checksum recorded: the rows that always exist. */
 export const Default: Story = {
   args: { product, objectInfo },
+};
+
+/** On GCS the Cloud URI uses the `gs://` scheme. */
+export const OnGcs: Story = {
+  name: "On GCS",
+  args: {
+    product,
+    objectInfo,
+    connectionDetails: gcsConnection,
+  },
 };
 
 /**
