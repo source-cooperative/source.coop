@@ -88,7 +88,7 @@ export function ProductListItem({
           {product.account?.name && (
             <>
               <Text size="1" color="gray">
-                Provided by <DisplayNameLink account={product.account!} />
+                Published by <DisplayNameLink account={product.account!} />
               </Text>
               {" • "}
             </>
