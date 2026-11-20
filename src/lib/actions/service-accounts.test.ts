@@ -105,6 +105,7 @@ beforeEach(() => {
     id === "acme" ? org : id === "acme--nightly-sync" ? bot : null
   );
   mocks.memberships.listByAccount.mockResolvedValue([]);
+  mocks.memberships.listByUser.mockResolvedValue([]);
   mocks.memberships.create.mockImplementation(async (m) => m);
   mocks.accounts.create.mockImplementation(async (a) => a);
   mocks.products.fetchById.mockImplementation(async (owner, id) =>

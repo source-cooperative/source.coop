@@ -3,6 +3,7 @@ import { AccountType, isApiKey, MembershipRole, type Account, type UserSession }
 import {
   accountsTable,
   accountTrustsTable,
+  membershipsTable,
   productsTable,
   serviceAccountKeysTable,
 } from "@/lib/clients/database";
@@ -21,8 +22,9 @@ import { inviteMember } from "./memberships";
 import { ok } from "./result";
 
 jest.mock("@/lib/clients/database", () => ({
-  accountsTable: { fetchById: jest.fn(), create: jest.fn(), listByOwner: jest.fn() },
+  accountsTable: { fetchById: jest.fn(), create: jest.fn(), delete: jest.fn(), listByOwner: jest.fn() },
   productsTable: { fetchById: jest.fn() },
+  membershipsTable: { listByUser: jest.fn(), delete: jest.fn() },
   accountTrustsTable: { create: jest.fn(), delete: jest.fn(), listByAccount: jest.fn() },
   serviceAccountKeysTable: { create: jest.fn(), delete: jest.fn(), listByAccount: jest.fn(), set: jest.fn(), revoke: jest.fn() },
 }));
@@ -56,6 +58,7 @@ beforeEach(() => {
   trusts.create.mockImplementation(async (t) => t);
   trusts.listByAccount.mockResolvedValue([]);
   keys.listByAccount.mockResolvedValue([]);
+  (membershipsTable.listByUser as jest.Mock).mockResolvedValue([]);
   (inviteMember as jest.Mock).mockResolvedValue(ok({}));
 });
 
@@ -78,13 +81,25 @@ describe("listServiceAccounts", () => {
 });
 
 describe("createServiceAccount", () => {
+  it("removes the new account again when the purge fails, so a retry can succeed", async () => {
+    keys.listByAccount.mockResolvedValue([{ key_hash: "old" } as never]);
+    keys.delete.mockRejectedValue(new Error("throttled"));
+
+    await expect(
+      createServiceAccount(session, "acme", { local_id: "sync", name: "Sync" })
+    ).rejects.toThrow("throttled");
+    expect(accounts.delete).toHaveBeenCalledWith("acme--sync");
+  });
+
   it("deletes the keys and trusts an earlier account left under the same id", async () => {
     keys.listByAccount.mockResolvedValue([{ key_hash: "old" } as never]);
     trusts.listByAccount.mockResolvedValue([{ issuer: "https://i", subject: "s" } as never]);
+    (membershipsTable.listByUser as jest.Mock).mockResolvedValue([{ membership_id: "m1" }]);
 
     await createServiceAccount(session, "acme", { local_id: "sync", name: "Sync" });
 
     expect(keys.delete).toHaveBeenCalledWith("old");
+    expect(membershipsTable.delete).toHaveBeenCalledWith("m1");
     expect(trusts.delete).toHaveBeenCalledWith("acme--sync", "https://i", "s");
   });
 
