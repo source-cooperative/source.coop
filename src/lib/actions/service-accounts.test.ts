@@ -42,7 +42,7 @@ jest.mock("@/lib/clients/database", () => ({
   },
   productsTable: { fetchById: jest.fn() },
   accountTrustsTable: { create: jest.fn(), delete: jest.fn(), listByAccount: jest.fn() },
-  serviceAccountKeysTable: { create: jest.fn(), listByAccount: jest.fn(), revoke: jest.fn() },
+  serviceAccountKeysTable: { create: jest.fn(), delete: jest.fn(), listByAccount: jest.fn(), revoke: jest.fn() },
 }));
 jest.mock("../api/utils", () => ({ getPageSession: jest.fn() }));
 jest.mock("../api/authz", () => ({
@@ -98,6 +98,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   mocks.session.mockResolvedValue({ identity_id: "an-identity", account: { account_id: "acme-owner" } } as UserSession);
   mocks.trusts.create.mockImplementation(async (t) => t);
+  mocks.trusts.listByAccount.mockResolvedValue([]);
+  (serviceAccountKeysTable.listByAccount as jest.Mock).mockResolvedValue([]);
   mocks.canManageAccountServiceAccounts.mockReturnValue(true);
   mocks.accounts.fetchById.mockImplementation(async (id) =>
     id === "acme" ? org : id === "acme--nightly-sync" ? bot : null

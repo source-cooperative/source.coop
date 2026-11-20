@@ -241,6 +241,7 @@ export async function createServiceAccount(
     }
     throw error;
   }
+  await purgeOrphans(account.account_id);
 
   // As a member of each product, the way any grant is made; a service account
   // becomes one at once, with nobody at its keyboard to accept.
@@ -266,6 +267,23 @@ export async function createServiceAccount(
     key_id: key?.key_id,
   });
   return ok(key ? { ...account, key } : account);
+}
+
+/**
+ * Deletes the keys and trusts filed under an id whose account did not exist a
+ * moment ago. A delete that failed part-way, or one from before keys were
+ * deleted with their account, leaves rows that a new account taking the id
+ * would otherwise inherit.
+ */
+async function purgeOrphans(account_id: string) {
+  const [orphanKeys, orphanTrusts] = await Promise.all([
+    serviceAccountKeysTable.listByAccount(account_id),
+    accountTrustsTable.listByAccount(account_id, true),
+  ]);
+  await Promise.all([
+    ...orphanKeys.map((k) => serviceAccountKeysTable.delete(k.key_hash)),
+    ...orphanTrusts.map((t) => accountTrustsTable.delete(account_id, t.issuer, t.subject)),
+  ]);
 }
 
 export async function listTrusts(
