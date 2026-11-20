@@ -14,12 +14,14 @@ const PER_TICK = 6;
  * accounts and request counts are invented.
  *
  * The counts are deliberately small. A dot is sized
- * `8 * (1 + min(2, log10(1 + n) / 2))` px, so it caps out at 24px by n = 9999,
- * and anything in the thousands renders as a near-maximum blob — several times
- * the area of a real one, and all within a few px of each other however the
- * counts differ. Keeping the spread to 1..160 puts them on the part of the
- * curve where the size difference is legible, with a typical dot close to what
- * production draws.
+ * `8 * (1 + min(2, log10(1 + r) / 2))` px, where r is the datacenter's recent
+ * request rate in requests per second, so it caps out at 24px by r = 9999, and
+ * anything in the thousands renders as a near-maximum blob — several times the
+ * area of a real one, and all within a few px of each other however the rates
+ * differ. Each datacenter here appears every few seconds, so a count of n comes
+ * to a rate of roughly n / 4. Keeping the spread to 1..160 puts them on the part
+ * of the curve where the size difference is legible, with a typical dot close to
+ * what production draws.
  *
  * One deliberately long product name keeps the popup's truncation visible, and
  * the quietest datacenters exercise its singular "1 request".
@@ -137,10 +139,12 @@ function withMockTraffic(
  * The globe on the landing page: a WebGL earth run through an ordered-dither
  * post-process, turning it into a 1-bit halftone that inverts with the theme.
  *
- * Every few seconds it marks the datacenters that served product data in the
- * last window. A dot grows with that datacenter's request count and fades as it
- * ages out, or as it rounds the limb; hover one for the location and its
- * busiest products.
+ * It marks the datacenters that are serving product data right now. A dot
+ * swells with that datacenter's recent request rate and ebbs as it quiets
+ * down, so a datacenter that is steadily busy holds a large, bright dot, while
+ * one hit only every ten seconds or so blinks on and fades back out; a dot also
+ * fades as it rounds the limb. Hover one for the location and its busiest
+ * products.
  *
  * The globe sizes itself from `width` and `height` rather than from its
  * container — on the landing page a `ResizeObserver` supplies them. This story
