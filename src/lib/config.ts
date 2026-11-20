@@ -83,6 +83,19 @@ export const CONFIG = {
     dataset: process.env.CF_ANALYTICS_DATASET || "",
   },
 
+  // The metadata catalog's git repo, which `PATCH /api/v1/catalog-entries`
+  // commits to as a GitHub App installed on it with `contents: write`. The
+  // private key is the PEM GitHub issues, with newlines or as `\n`.
+  catalog: {
+    repo: "source-cooperative/metadata-catalog",
+    branch: "main",
+    github: {
+      appId: process.env.CATALOG_GITHUB_APP_ID || "",
+      installationId: process.env.CATALOG_GITHUB_INSTALLATION_ID || "",
+      privateKey: process.env.CATALOG_GITHUB_PRIVATE_KEY || "",
+    },
+  },
+
   // Location WebSocket for live globe
   locationWs: {
     url: process.env.NEXT_PUBLIC_LOCATION_WS_URL,

@@ -55,6 +55,11 @@ jest.mock("@/lib/config", () => ({
     proxyCredentialsCookieKey: Buffer.alloc(32).toString("base64"),
     // Unconfigured by default so analytics components no-op in unrelated
     // tests; the analytics client's own tests mock this with real values.
+    catalog: {
+      repo: "o/catalog",
+      branch: "main",
+      github: { appId: "1", installationId: "2", privateKey: "" },
+    },
     analytics: { accountId: "", apiToken: "", dataset: "" },
   },
 }));
