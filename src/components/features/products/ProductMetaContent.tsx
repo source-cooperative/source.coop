@@ -32,7 +32,7 @@ export function ProductMetaContent({ product }: ProductMetaContentProps) {
       </DataList.Item>
 
       <DataList.Item style={{ alignItems: "center" }}>
-        <DataList.Label>Owner</DataList.Label>
+        <DataList.Label>Publisher</DataList.Label>
         <DataList.Value>
           <AvatarLinkCompact account={product.account!} />
         </DataList.Value>

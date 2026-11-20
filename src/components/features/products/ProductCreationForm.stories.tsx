@@ -12,9 +12,9 @@ import {
 /**
  * Creating a product, and the same form in edit mode.
  *
- * The interesting axis is what the viewer can own it as: with one account there
- * is nothing to choose, with several the owner becomes a real decision, and the
- * storage picker only offers connections they may create against.
+ * The interesting axis is what the viewer can publish it as: with one account
+ * there is nothing to choose, with several the publisher becomes a real
+ * decision, and the storage picker only offers connections they may create against.
  *
  * `createProduct` and `updateProduct` are `fn()` stubs, so submitting does
  * nothing.
@@ -74,8 +74,8 @@ const dataConnections = [
 ] as unknown as DataConnection[];
 
 /**
- * One possible owner, so there is no owner decision to make — and only the
- * unowned shared connection is on offer.
+ * One possible publisher, so there is no publisher decision to make — and only
+ * the unowned shared connection is on offer.
  */
 export const Create: Story = {
   args: {
@@ -85,11 +85,11 @@ export const Create: Story = {
 };
 
 /**
- * Several owners: the choice appears, and the preselection comes from ?owner=.
- * Switching the owner to Alice Coltrane drops Miskatonic Archive from the storage
- * picker, since Miskatonic University owns it.
+ * Several publishers: the choice appears, and the preselection comes from ?owner=.
+ * Switching the publisher to Alice Coltrane drops Miskatonic Archive from the
+ * storage picker, since Miskatonic University owns it.
  */
-export const ChoosingAnOwner: Story = {
+export const ChoosingAPublisher: Story = {
   args: {
     potentialOwnerAccounts: [individual, organization],
     dataConnections,

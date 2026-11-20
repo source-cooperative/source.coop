@@ -206,12 +206,12 @@ export function ProductCreationForm({
       ? []
       : ([
           {
-            label: "Owner Account",
+            label: "Publisher Account",
             name: "account_id",
             type: "select",
             required: true,
             section: "Description",
-            description: "The account that owns the product",
+            description: "The account that publishes the product",
             options: potentialOwnerAccounts.map((account) => ({
               value: account.account_id,
               label: account.name,
