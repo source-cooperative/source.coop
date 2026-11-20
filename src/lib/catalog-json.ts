@@ -23,7 +23,7 @@ export function setTopLevel(
   // A value that opens a block runs to the next closing bracket at this indent.
   let last = first;
   if (/[[{]$/.test(lines[first])) {
-    while (!/^  [\]}],?$/.test(lines[++last] ?? "  }")) {
+    while (!/^ {2}[\]}],?$/.test(lines[++last] ?? "  }")) {
       if (last >= lines.length) throw new Error(`Catalog entry's "${key}" is unterminated`);
     }
   }
