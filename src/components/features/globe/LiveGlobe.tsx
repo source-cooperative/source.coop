@@ -21,6 +21,13 @@ import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
 import { DitherShader } from "./DitherShader";
+import {
+  ACTIVITY_FLOOR,
+  addActivity,
+  decayActivity,
+  dotOpacity,
+  dotScale,
+} from "./activity";
 import styles from "./LiveGlobe.module.css";
 import coloLocations from "./locations.json";
 
@@ -29,8 +36,9 @@ interface LocationPoint {
   colo: string;
   lat: number;
   lng: number;
-  timestamp: number;
+  timestamp: number; // when `activity` was last updated
   location: string; // datacenter name, e.g. "Newark, NJ, United States"
+  activity: number; // decayed request count as of `timestamp`; see activity.ts
   count: number; // requests served from this datacenter in the latest window
   products: [string, number][]; // top products: [account/product, request count]
 }
@@ -51,7 +59,6 @@ interface LiveGlobeProps {
   onError?: () => void;
 }
 
-const DOT_TTL_MS = 10 * 1_000;
 const DOT_COLOR = "#75e58c";
 const DOT_SIZE = 8;
 const CLOUDS_ALT = 0.004;
@@ -284,9 +291,11 @@ export function LiveGlobe({
         // Prune expired points (only mutate ref, don't setState)
         const now = Date.now();
         const prev = pointsRef.current;
-        // Early exit: only filter if the oldest point could have expired
-        if (prev.length > 0 && now - prev[0].timestamp >= DOT_TTL_MS) {
-          const alive = prev.filter((p) => now - p.timestamp < DOT_TTL_MS);
+        // A datacenter is dropped once its activity has decayed to nothing.
+        const quiet = (p: LocationPoint) =>
+          decayActivity(p.activity, now - p.timestamp) < ACTIVITY_FLOOR;
+        if (prev.some(quiet)) {
+          const alive = prev.filter((p) => !quiet(p));
           if (alive.length !== prev.length) {
             pointsRef.current = alive;
             // Clear selection if the selected point expired
@@ -355,18 +364,15 @@ export function LiveGlobe({
             const screenX = (_projVec.x * 0.5 + 0.5) * width;
             const screenY = (-_projVec.y * 0.5 + 0.5) * height;
 
-            // Scale the dot with request volume (log, so a few busy
-            // datacenters don't swamp the rest).
-            const scale =
-              1 + Math.min(MAX_DOT_SCALE - 1, Math.log10(1 + p.count) / 2);
-            const size = DOT_SIZE * scale;
-            const age = now - p.timestamp;
-            const ageFade = Math.max(0, 1 - age / DOT_TTL_MS);
+            // Size and brightness follow the datacenter's recent request
+            // rate, which rises and ebbs smoothly between ticks (activity.ts).
+            const activity = decayActivity(p.activity, now - p.timestamp);
+            const size = DOT_SIZE * dotScale(activity, MAX_DOT_SCALE);
             el.style.display = "";
             el.style.width = `${size}px`;
             el.style.height = `${size}px`;
             el.style.transform = `translate(${screenX - size / 2}px,${screenY - size / 2}px)`;
-            el.style.opacity = String(ageFade * edgeFade);
+            el.style.opacity = String(dotOpacity(activity) * edgeFade);
 
             // Update popup position if this point is selected (only when changed)
             if (p.id === selectedIdRef.current) {
@@ -487,27 +493,41 @@ export function LiveGlobe({
           const msg = JSON.parse(event.data);
           if (msg.type !== "tick" || !Array.isArray(msg.locations)) return;
           const now = Date.now();
-          // Key dots by datacenter so repeat activity refreshes the same dot
+          // A replay merges the last few seconds into one message (windowMs).
+          // Its requests are that much older on average than a live tick's.
+          const replayAgeMs =
+            msg.replay === true && Number.isFinite(msg.windowMs)
+              ? msg.windowMs / 2
+              : 0;
+          // Key dots by datacenter so repeat activity feeds the same dot
           // instead of stacking new ones. Datacenters absent from this tick
-          // keep their old timestamp and age out via DOT_TTL_MS in animate().
+          // keep their activity, which decays until animate() drops them.
           const byColo = new Map(pointsRef.current.map((p) => [p.colo, p]));
           for (const loc of msg.locations) {
             const entry = coloLocations[
               loc.colo as keyof typeof coloLocations
             ] as { lat: number; lon: number; name: string } | undefined;
             if (!entry || typeof entry.lat !== "number") continue;
+            const prev = byColo.get(loc.colo);
+            const requests = Number.isFinite(loc.n) && loc.n > 0 ? loc.n : 0;
             byColo.set(loc.colo, {
-              id: byColo.get(loc.colo)?.id ?? nextPointId++,
+              id: prev?.id ?? nextPointId++,
               colo: loc.colo,
               lat: entry.lat,
               lng: entry.lon,
               timestamp: now,
               location: entry.name,
+              activity: addActivity(
+                prev?.activity ?? 0,
+                prev ? now - prev.timestamp : 0,
+                requests,
+                replayAgeMs,
+              ),
               count: loc.n ?? 0,
               products: Array.isArray(loc.p) ? loc.p : [],
             });
           }
-          // Sort oldest-first so the prune early-exit in animate() holds.
+          // Oldest first, so the most recently active dots draw on top.
           pointsRef.current = [...byColo.values()].sort(
             (a, b) => a.timestamp - b.timestamp,
           );
