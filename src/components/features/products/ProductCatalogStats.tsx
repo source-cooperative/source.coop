@@ -211,7 +211,7 @@ export function catalogSummary(entry: CatalogEntry): string {
 export function ObjectsUpdated({ entry }: { entry?: CatalogEntry }) {
   if (!entry?.objects_updated_at) return null;
   return (
-    <Text size="1" color="gray" title={formatDate(entry.objects_updated_at, true)}>
+    <Text size="1" color="gray" title={formatDate(entry.objects_updated_at)}>
       Objects updated {formatRelative(entry.objects_updated_at)}
     </Text>
   );

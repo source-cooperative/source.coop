@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDate } from "@/lib/format";
 import { Text, Table, Flex, Button, Badge } from "@radix-ui/themes";
 import { PersonIcon } from "@radix-ui/react-icons";
 import {
@@ -184,7 +185,7 @@ export function MembershipsTable({
                   </Table.Cell>
                   <Table.Cell>
                     <Text size="2" color="gray">
-                      {new Date(membership.state_changed).toLocaleDateString()}
+                      {formatDate(membership.state_changed)}
                     </Text>
                   </Table.Cell>
                   <Table.Cell>

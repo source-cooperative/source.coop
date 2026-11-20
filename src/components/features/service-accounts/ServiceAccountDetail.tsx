@@ -121,8 +121,8 @@ function TrustRow({
       aside={
         <Tooltip
           content={[
-            `Added ${formatDate(trust.created_at, true)}`,
-            trust.last_used_at && `Last used ${formatDate(trust.last_used_at, true)}`,
+            `Added ${formatDate(trust.created_at)}`,
+            trust.last_used_at && `Last used ${formatDate(trust.last_used_at)}`,
           ]
             .filter(Boolean)
             .join(" · ")}

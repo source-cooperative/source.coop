@@ -28,10 +28,10 @@ export const FULL: Intl.DateTimeFormatOptions = {
  */
 export function useWhen(iso: string) {
   const inBrowser = useSyncExternalStore(subscribe, () => true, () => false);
-  if (!inBrowser) return { text: formatDate(iso), hover: formatDate(iso, true) };
+  if (!inBrowser) return { text: formatDate(iso), hover: formatDate(iso) };
   const date = new Date(iso);
   return {
-    text: date.toLocaleDateString(undefined, { dateStyle: "medium" }),
+    text: formatDate(iso, true),
     hover: `${date.toLocaleString(undefined, FULL)} (${formatRelativeTime(iso)})`,
   };
 }

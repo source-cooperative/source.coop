@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDate } from "@/lib/format";
 import { useState, useTransition } from "react";
 import { Badge, Button, Flex, Table, Text } from "@radix-ui/themes";
 import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
@@ -29,8 +30,6 @@ interface AdminReviewedTagsProps {
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-const date = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium" });
 
 /** What the decision was, in words. */
 function outcome({ outcome, merged_into, products: { length } }: ReviewedTag) {
@@ -126,7 +125,7 @@ function ReviewedRow({
           ) : (
             "unknown"
           )}
-          {tag.reviewed_at && ` on ${date(tag.reviewed_at)}`}
+          {tag.reviewed_at && ` on ${formatDate(tag.reviewed_at)}`}
         </Text>
       </Table.Cell>
       <Table.Cell justify="end">

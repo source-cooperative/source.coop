@@ -1,4 +1,4 @@
-import { formatRelative, formatRelativeTime, formatUrl } from "./format";
+import { formatDate, formatRelative, formatRelativeTime, formatUrl } from "./format";
 
 describe("formatRelative", () => {
   const now = Date.parse("2026-10-21T12:00:00Z");
@@ -91,5 +91,15 @@ describe("formatRelativeTime", () => {
 
   it("returns empty string for an unparseable date", () => {
     expect(formatRelativeTime("not a date", now)).toBe("");
+  });
+});
+
+describe("formatDate", () => {
+  it("renders the medium date style, in UTC unless asked for local", () => {
+    expect(formatDate("2026-03-11T23:30:00Z")).toBe("Mar 11, 2026");
+    expect(formatDate("2026-03-11")).toBe("Mar 11, 2026");
+    expect(formatDate("2026-03-11T12:00:00Z", true)).toBe(
+      new Date("2026-03-11T12:00:00Z").toLocaleDateString(undefined, { dateStyle: "medium" })
+    );
   });
 });

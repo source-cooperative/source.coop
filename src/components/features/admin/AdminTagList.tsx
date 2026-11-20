@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDate } from "@/lib/format";
 import Link from "next/link";
 import { useState } from "react";
 import { Flex, Table, Text, TextField } from "@radix-ui/themes";
@@ -15,8 +16,6 @@ export interface ApprovedTag {
   reviewed_at?: string;
 }
 
-const date = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium" });
 
 /** Where an approved tag came from, in words, its people linked. */
 function Provenance({
@@ -41,7 +40,7 @@ function Provenance({
           <AccountMention id={reviewed_by} accounts={accounts} />
         </>
       )}
-      {reviewed_at && ` on ${date(reviewed_at)}`}
+      {reviewed_at && ` on ${formatDate(reviewed_at)}`}
     </>
   );
 }

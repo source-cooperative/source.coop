@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDate } from "@/lib/format";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Badge, Button, Card, Flex, Popover, Select, Text } from "@radix-ui/themes";
@@ -123,7 +124,7 @@ function SuggestionCard({
             Suggested by{" "}
             {suggested_by ? <AccountMention id={suggested_by} accounts={accounts} /> : "unknown"}
             {suggested_at &&
-              ` on ${new Date(suggested_at).toLocaleDateString("en-US", { dateStyle: "medium" })}`}
+              ` on ${formatDate(suggested_at)}`}
           </Text>
         </Flex>
 

@@ -13,7 +13,7 @@ import {
   type RevokedVia,
   type ServiceAccountKey,
 } from "@/types";
-import { formatRelative } from "@/lib/format";
+import { formatDate, formatRelative } from "@/lib/format";
 import { ApiKeyExpiryField } from "./ApiKeyExpiryField";
 import { ExampleUsage } from "./ExampleUsage";
 import { AccountMention, type AccountsById } from "@/components/core/AccountMention";
@@ -27,8 +27,6 @@ function Status({ state }: { state: ApiKeyActionState }) {
   ) : null;
 }
 
-const date = (iso: string) =>
-  new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 
 
 const REVOKED_VIA: Record<RevokedVia, string> = {
@@ -59,12 +57,12 @@ const keyStanding = (key: ServiceAccountKey) => ({
 /** The row's exact dates, for its tooltip. */
 const keyDates = (key: ServiceAccountKey) =>
   [
-    `Issued ${date(key.created_at)}`,
-    key.last_used_at && `Last used ${date(key.last_used_at)}`,
+    `Issued ${formatDate(key.created_at)}`,
+    key.last_used_at && `Last used ${formatDate(key.last_used_at)}`,
     key.revoked_at
-      ? `Revoked ${date(key.revoked_at)}${revoker(key)}`
+      ? `Revoked ${formatDate(key.revoked_at)}${revoker(key)}`
       : key.expires_at
-        ? `Expires ${date(key.expires_at)}`
+        ? `Expires ${formatDate(key.expires_at)}`
         : "Never expires",
   ]
     .filter(Boolean)

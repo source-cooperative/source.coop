@@ -19,7 +19,7 @@ import {
 // Types only — a value import would drag the server data layer (CONFIG,
 // LOGGER) into the client bundle.
 import type { UsagePoint, UsageUsers } from "@/lib/clients/analytics";
-import { formatDateSSR } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { HELP, mono } from "./style";
 
 export { HELP, mono };
@@ -147,7 +147,7 @@ export function HoverCaption({
       <MonoLabel help={HELP.window}>
         {hovered === null
           ? `${days.length}-day requests`
-          : formatDateSSR(days[hovered].date)}
+          : formatDate(days[hovered].date)}
       </MonoLabel>
     </Flex>
   );
@@ -204,8 +204,8 @@ export function RequestsChart({
         </BarChart>
       </ResponsiveContainer>
       <Flex justify="between" mt="1">
-        <MonoLabel>{formatDateSSR(days[0].date)}</MonoLabel>
-        <MonoLabel>{formatDateSSR(days[days.length - 1].date)}</MonoLabel>
+        <MonoLabel>{formatDate(days[0].date)}</MonoLabel>
+        <MonoLabel>{formatDate(days[days.length - 1].date)}</MonoLabel>
       </Flex>
     </Box>
   );

@@ -71,7 +71,7 @@ export function ObjectSummary({
           <DataList.Label>Last Modified</DataList.Label>
           <DataList.Value>
             <MonoText>
-              <DateText date={objectInfo.updated_at} includeTime={true} />
+              <DateText date={objectInfo.updated_at} />
             </MonoText>
           </DataList.Value>
         </DataList.Item>

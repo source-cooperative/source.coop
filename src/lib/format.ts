@@ -28,16 +28,15 @@ export function formatRelative(iso: string, now = Date.now()): string {
 }
 
 /**
- * Format a date string into a human-readable format that's safe for SSR
- * @param date The date string to format
- * @returns A formatted date string like "5 Feb 2024"
+ * Format a date as "Mar 11, 2026". Renders in UTC and en-US by default so the
+ * server and the browser agree; pass `local` to use the viewer's locale and
+ * time zone, which only the browser knows.
  */
-export function formatDateSSR(date: string): string {
-  const dateObj = new Date(date);
-  const day = dateObj.getUTCDate();
-  const month = dateObj.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
-  const year = dateObj.getUTCFullYear();
-  return `${day} ${month} ${year}`;
+export function formatDate(date: string, local = false): string {
+  return new Date(date).toLocaleDateString(
+    local ? undefined : "en-US",
+    local ? { dateStyle: "medium" } : { dateStyle: "medium", timeZone: "UTC" }
+  );
 }
 
 const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
@@ -66,35 +65,6 @@ export function formatRelativeTime(date: string, now: Date = new Date()): string
     Math.round(seconds / perUnit),
     unit
   );
-}
-
-/**
- * Format a date string into a human-readable format with optional time
- * @param date The date string to format
- * @param includeTime Whether to include the time in the output
- * @returns A formatted date string
- */
-export function formatDate(date: string, includeTime: boolean = false): string {
-  const dateObj = new Date(date);
-  
-  if (!includeTime) {
-    // Match the SSR format exactly
-    return formatDateSSR(date);
-  }
-
-  // For timestamps, use Intl.DateTimeFormat but maintain consistent date format
-  const day = dateObj.getUTCDate();
-  const month = dateObj.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
-  const year = dateObj.getUTCFullYear();
-  const time = new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-    timeZone: 'UTC',
-    timeZoneName: 'short'
-  }).format(dateObj);
-
-  return `${day} ${month} ${year} ${time}`;
 }
 
 const ELLIPSIS = "…";
