@@ -1,5 +1,5 @@
 import { canonTag, TAG_PATTERN } from "./canon";
-import { similarTags, splitTag } from "./similar";
+import { similarTags, singularTag, splitTag } from "./similar";
 
 export interface RecommendedTag {
   /** The keyword, in the spelling tags are stored in. */
@@ -27,11 +27,15 @@ export function recommendTags(
 ): RecommendedTag[] {
   const seen = new Set<string>();
   return keywords.flatMap((raw) => {
-    const keyword = canonTag(raw);
+    const canon = canonTag(raw);
+    // In the singular, as tags are; matching still finds an approved plural.
+    const keyword = singularTag(canon);
     if (!keyword) return [];
+    // A decision on the tag it would be suggested as, or on its own spelling.
+    const decidedAs = keyword in decided ? keyword : canon in decided ? canon : undefined;
     let tags: string[] | null;
-    if (keyword in decided) {
-      tags = decided[keyword]?.filter((t) => approved.includes(t)) ?? [];
+    if (decidedAs !== undefined) {
+      tags = decided[decidedAs]?.filter((t) => approved.includes(t)) ?? [];
       if (!tags.length) return [];
     } else {
       // 0.95 and up is the same tag: spelled without separators, or plural.

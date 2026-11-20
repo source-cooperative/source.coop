@@ -156,6 +156,18 @@ test("a suggested tag waits for the save, as a new suggest_tags value", () => {
   expect(submitted(container, "suggest_tags")).toEqual([]);
 });
 
+test("a plural finds the singular tag, and suggesting one hints at the singular", () => {
+  renderPicker([], "suggest_tags");
+  filterFor("oceans");
+  expect(screen.getByRole("option", { name: "ocean" })).toBeTruthy();
+  expect(screen.getByText("Tags are usually singular, like “ocean”.")).toBeTruthy();
+  // Gently: the plural can still be suggested.
+  expect(screen.getByRole("option", { name: "Suggest “oceans” as a new tag" })).toBeTruthy();
+
+  fireEvent.change(screen.getByPlaceholderText("Filter tags"), { target: { value: "sea ice" } });
+  expect(screen.queryByText(/usually singular/)).toBeNull();
+});
+
 test("an existing tag can't be suggested", () => {
   renderPicker([], "suggest_tags");
   filterFor("ocean");
@@ -202,7 +214,7 @@ describe("recommended tags", () => {
     expect(rows()).toEqual([
       "agriculture",
       "field + boundaries",
-      "land-parcelsnew, for review",
+      "land-parcelnew, for review",
       "Add 2 tags",
     ]);
   });
@@ -211,9 +223,9 @@ describe("recommended tags", () => {
     const { container } = renderRecommended("suggest_tags");
     review();
     fireEvent.click(recommended().getByRole("option", { name: /field \+ boundaries/ }));
-    fireEvent.click(recommended().getByRole("option", { name: /land-parcels/ }));
+    fireEvent.click(recommended().getByRole("option", { name: /land-parcel/ }));
     expect(submitted(container)).toEqual(["field", "boundaries"]);
-    expect(submitted(container, "suggest_tags")).toEqual(["land-parcels"]);
+    expect(submitted(container, "suggest_tags")).toEqual(["land-parcel"]);
     const split = recommended().getByRole("option", { name: /field \+ boundaries/ });
     expect(split.getAttribute("aria-selected")).toBe("true");
 
