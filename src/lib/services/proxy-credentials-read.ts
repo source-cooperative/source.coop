@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
-import { getServerSession } from "@ory/nextjs/app";
+import { getOrySession } from "@/lib/api/page-session";
 import type { ProxyCredentials } from "@/lib/actions/proxy-credentials";
 import { getOryId } from "@/lib/ory";
 import { decryptJson } from "./encrypted-cookie";
@@ -40,12 +40,12 @@ export async function readProxyCredentials(): Promise<
   // signs in on the same browser) the previous user's still-fresh credentials
   // would otherwise be served to the new user. The session is resolved only
   // after a usable cookie is found, so anonymous renders (no cookie) don't pay
-  // for it — and via getServerSession directly (one Ory whoami call) rather
+  // for it — and via getOrySession directly (one Ory whoami call) rather
   // than getPageSession, which would add account + membership DB reads we
   // don't need: the comparison only requires the Ory identity id. Cookies
   // minted before identity binding existed have no identityId and fail the
   // comparison — treated as absent, the gate simply re-mints.
-  const orySession = await getServerSession();
+  const orySession = await getOrySession();
   const identityId = orySession ? getOryId(orySession) : null;
   if (!identityId || cached.identityId !== identityId) {
     return undefined;

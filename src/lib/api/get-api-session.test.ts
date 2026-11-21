@@ -8,10 +8,18 @@ jest.mock("@/lib/config", () => ({
   CONFIG: {
     storage: { endpoint: "https://data.test.source.coop" },
     environment: { isTest: true },
-    auth: { accessToken: "", oauth2: { issuer: "https://auth.test.source.coop" } },
+    auth: {
+      accessToken: "",
+      api: { backendUrl: "https://auth.test.source.coop" },
+      oauth2: { issuer: "https://auth.test.source.coop" },
+    },
   },
 }));
 jest.mock("@ory/nextjs/app", () => ({ getServerSession: jest.fn() }));
+// A request carrying an Ory session cookie, so getOrySession reaches the mocked whoami.
+jest.mock("next/headers", () => ({
+  headers: async () => new Headers({ cookie: "ory_session_test=abc" }),
+}));
 jest.mock("@/lib/clients/database", () => ({
   accountsTable: {},
   membershipsTable: {},
