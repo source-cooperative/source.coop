@@ -10,7 +10,7 @@ import {
   newProductUrl,
   productUrl,
   adminTagsUrl,
-} from "@/lib";
+} from "@/lib/urls";
 import { DropdownSection, DropdownSubmenu } from "./DropdownSection";
 import { logout } from "./logout";
 import { canCreateProductForAccount, isAdmin, isAuthorized } from "@/lib/api/authz";

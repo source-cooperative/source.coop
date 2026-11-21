@@ -3,7 +3,7 @@ import { usePathname } from "next/navigation";
 import { Link, Separator } from "@radix-ui/themes";
 import NextLink from "next/link";
 import styles from "./Navigation.module.css";
-import { docsUrl, homeUrl, productListUrl } from "@/lib";
+import { docsUrl, homeUrl, productListUrl } from "@/lib/urls";
 
 /**
  * Top-level nav links (Products + Docs) — shown to everyone, except on the
