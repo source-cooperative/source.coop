@@ -9,8 +9,9 @@ import { storeViewerUrl, storeLabelFromResult } from "@/components/features/prod
 import { getAuthorizedProduct } from "../data";
 import { fileSourceUrl } from "@/lib/urls";
 import { getExtension, isStoreExtension } from "@/lib/files";
-import { getIframeSrc, fileTypeLabel } from "@/components/features/products/object-browser/ObjectPreviewExternal";
+import { getIframeSrc, fileTypeLabel, getSecondaryViewerUrl } from "@/components/features/products/object-browser/ObjectPreviewExternal";
 import { ObjectPreviewCard } from "@/components/features/products/object-browser/ObjectPreviewCard";
+import { MultiViewerPreview } from "@/components/features/products/object-browser/MultiViewerPreview";
 
 interface PageProps {
   params: Promise<{
@@ -104,12 +105,26 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
   }
 
   const sourceUrl = fileSourceUrl({ account_id, product_id, object_path });
-  const [viewerUrl, label] = extension
+  const [viewerUrl, label, secondaryViewerUrl] = extension
     ? await Promise.all([
         getIframeSrc(sourceUrl, extension),
         fileTypeLabel(sourceUrl, extension),
+        getSecondaryViewerUrl(sourceUrl, extension),
       ])
-    : [null, null];
+    : [null, null, null];
+
+  if (viewerUrl && secondaryViewerUrl) {
+    return (
+      <MultiViewerPreview
+        viewers={[
+          { url: viewerUrl, label: "Map" },
+          { url: secondaryViewerUrl, label: "Table" },
+        ]}
+        formatLabel={label}
+        title={object_path}
+      />
+    );
+  }
 
   return previewCard(
     viewerUrl,
