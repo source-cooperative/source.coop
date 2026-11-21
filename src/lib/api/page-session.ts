@@ -4,7 +4,9 @@ import {
   FrontendApi,
   Configuration,
   ResponseError,
+  type Session,
 } from "@ory/client-fetch";
+import { getServerSession } from "@ory/nextjs/app";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CONFIG } from "@/lib/config";
@@ -18,6 +20,30 @@ const oryFrontend = new FrontendApi(
     headers: { Accept: "application/json" },
   }),
 );
+
+/**
+ * Whether a Cookie header carries an Ory session cookie (`ory_session_<project>`
+ * on Ory Network, `ory_kratos_session` self-hosted). Matches the cookie's name,
+ * not its value.
+ *
+ * ponytail: name heuristic. If Ory renames the cookie, every visitor reads as
+ * signed out until this pattern follows.
+ */
+export function hasOrySessionCookie(
+  cookie: string | null | undefined,
+): boolean {
+  return !!cookie?.split(";").some((c) => /^ory\w*session/i.test(c.trim()));
+}
+
+/**
+ * The Ory session for this request, or null. Skips the whoami round trip to
+ * Ory when the request carries no session cookie: anonymous visitors and
+ * crawlers can't have a session, so the answer is always null for them.
+ */
+export async function getOrySession(): Promise<Session | null> {
+  if (!hasOrySessionCookie((await headers()).get("cookie"))) return null;
+  return getServerSession();
+}
 
 /**
  * Signs the user out when Ory wants their session stepped up to AAL2.
@@ -34,9 +60,7 @@ const oryFrontend = new FrontendApi(
 export async function redirectIfStepUpRequired(): Promise<void> {
   const cookie = (await headers()).get("cookie");
   // No Ory session cookie → definitely not the stuck-AAL1 case; skip the whoami.
-  // ponytail: name heuristic (ory_session_* / ory_kratos_session). If Ory renames
-  // the cookie this just stops short-circuiting — the probe below still works.
-  if (!cookie || !/ory[\w]*session/i.test(cookie)) return;
+  if (!cookie || !hasOrySessionCookie(cookie)) return;
 
   try {
     await oryFrontend.toSession({ cookie });
