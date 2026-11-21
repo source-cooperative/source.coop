@@ -31,7 +31,7 @@ const oryFrontend = new FrontendApi(
  */
 export function hasOrySessionCookie(
   cookie: string | null | undefined,
-): boolean {
+): cookie is string {
   return !!cookie?.split(";").some((c) => /^ory\w*session/i.test(c.trim()));
 }
 
@@ -60,7 +60,7 @@ export async function getOrySession(): Promise<Session | null> {
 export async function redirectIfStepUpRequired(): Promise<void> {
   const cookie = (await headers()).get("cookie");
   // No Ory session cookie → definitely not the stuck-AAL1 case; skip the whoami.
-  if (!cookie || !hasOrySessionCookie(cookie)) return;
+  if (!hasOrySessionCookie(cookie)) return;
 
   try {
     await oryFrontend.toSession({ cookie });
