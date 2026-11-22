@@ -116,6 +116,40 @@ const probeCogTiling = cache(async (sourceUrl: string): Promise<CogTilingInfo | 
   }
 });
 
+// ── STAC JSON probe ──────────────────────────────────────────────────────────
+
+type StacJsonType = "Catalog" | "Collection" | "Feature" | "FeatureCollection";
+
+/**
+ * Return the STAC type from a JSON text chunk, or null if not STAC.
+ * Relies only on string searching so a truncated Range response is usable.
+ */
+export function parseStacType(text: string): StacJsonType | null {
+  if (!text.includes('"stac_version"')) return null;
+  const m = text.match(/"type"\s*:\s*"([^"]+)"/);
+  const t = m?.[1];
+  if (t === "Catalog" || t === "Collection" || t === "Feature" || t === "FeatureCollection") {
+    return t;
+  }
+  return null;
+}
+
+const probeStacJson = cache(async (sourceUrl: string): Promise<StacJsonType | null> => {
+  try {
+    const res = await fetch(sourceUrl, {
+      headers: { Range: "bytes=0-8191" },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (res.status !== 206) {
+      await res.body?.cancel();
+      return null;
+    }
+    return parseStacType(await res.text());
+  } catch {
+    return null;
+  }
+});
+
 // cache(): the remote parquet-schema probe is requested by both the
 // "Open in new tab" link and the preview iframe in one render.
 const isStacGeoParquet = cache(async (sourceUrl: string): Promise<boolean> => {
@@ -190,6 +224,10 @@ export const getIframeSrc = async (
     case "zip":
       return `https://source-cooperative.github.io/zip-viewer/?url=${url}`;
     case "json":
+      if (await probeStacJson(sourceUrl)) {
+        return `https://radiantearth.github.io/stac-browser/#/external/${url}`;
+      }
+      return `https://source-cooperative.github.io/json-viewer/?url=${url}`;
     case "jsonl":
     case "ndjson":
       return `https://source-cooperative.github.io/json-viewer/?url=${url}`;
@@ -236,6 +274,13 @@ export async function fileTypeLabel(
   }
   if (extension === "parquet") {
     return (await isStacGeoParquet(sourceUrl)) ? "STAC GeoParquet" : "Parquet";
+  }
+  if (extension === "json") {
+    const stacType = await probeStacJson(sourceUrl);
+    if (stacType === "Catalog") return "STAC Catalog";
+    if (stacType === "Collection") return "STAC Collection";
+    if (stacType === "Feature") return "STAC Item";
+    if (stacType === "FeatureCollection") return "STAC ItemCollection";
   }
   return FILE_TYPE_LABELS[extension] ?? extension.toUpperCase();
 }
