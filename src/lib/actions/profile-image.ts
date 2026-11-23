@@ -134,7 +134,6 @@ export async function getProfileImageUploadUrl({
     // Create S3 client with credentials
     const s3Client = new S3Client({
       region: CONFIG.assets.region,
-      credentials: CONFIG.database.credentials,
     });
 
     // Create presigned URL for PUT operation
@@ -234,7 +233,6 @@ export async function updateProfileImage(
 
         const s3Client = new S3Client({
           region: CONFIG.assets.region,
-          credentials: CONFIG.database.credentials,
         });
 
         const deleteCommand = new DeleteObjectCommand({
@@ -361,7 +359,6 @@ export async function deleteProfileImage(accountId: string): Promise<void> {
       // Create S3 client with credentials
       const s3Client = new S3Client({
         region: CONFIG.assets.region,
-        credentials: CONFIG.database.credentials,
       });
 
       // Delete the specific image file

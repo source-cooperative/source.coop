@@ -59,7 +59,7 @@ let lastFetchAt = 0;
 /**
  * The public key GitHub names `id`. GitHub rotates keys, so an unseen `id`
  * refetches them, but at most every ten minutes: the keys endpoint allows 60
- * unauthenticated requests an hour from an IP, Vercel's egress IPs are shared,
+ * unauthenticated requests an hour from an IP, Cloudflare's egress IPs are shared,
  * and an identifier anyone can forge must not spend them. The time is taken
  * before the fetch, so a failing or concurrent fetch is throttled too.
  */

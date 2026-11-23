@@ -108,7 +108,7 @@ describe("withApiSession", () => {
 
   it("adds where a problem happened, and the platform's request ID", async () => {
     handler.mockResolvedValueOnce(toResponse(notFound("Gone")) as never);
-    const res = await call({ headers: { "x-vercel-id": "iad1::abc" } });
+    const res = await call({ headers: { "cf-ray": "iad1::abc" } });
     expect(res.status).toBe(404);
     expect(res.headers.get("content-type")).toBe(PROBLEM_CONTENT_TYPE);
     await expect(res.json()).resolves.toMatchObject({

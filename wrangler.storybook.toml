@@ -1,0 +1,8 @@
+# Storybook as a static Worker. Deploy with `wrangler deploy -c wrangler.storybook.toml`.
+name = "source-coop-ui"
+compatibility_date = "2025-09-01"
+preview_urls = true
+routes = [{ pattern = "ui.source.coop", custom_domain = true }]
+
+[assets]
+directory = "storybook-static"

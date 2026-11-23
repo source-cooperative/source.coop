@@ -26,7 +26,7 @@ const params = { params: { account_id: "nightly-sync" } };
 const post = (body: unknown) =>
   new NextRequest("http://localhost/api/v1/accounts/nightly-sync/trusts/exchanges", {
     method: "POST",
-    headers: { "x-vercel-id": "iad1::req-1" },
+    headers: { "cf-ray": "iad1::req-1" },
     body: JSON.stringify(body),
   });
 

@@ -1,0 +1,53 @@
+name = "source-coop"
+main = ".open-next/worker.js"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+
+# Runtime vars and secrets are set on each Worker in the dashboard (or with
+# `wrangler secret put`); keep_vars stops a deploy from wiping the vars.
+# Bindings and routes aren't inherited by `env.*`, so each environment repeats
+# them. See deploy/CLOUDFLARE.md.
+keep_vars = true
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[images]
+binding = "IMAGES"
+
+[observability]
+enabled = true
+
+# Trial deployment at cf.source.coop, beside the live site.
+[env.cf]
+name = "source-coop-cf"
+keep_vars = true
+preview_urls = true
+routes = [{ pattern = "cf.source.coop", custom_domain = true }]
+images = { binding = "IMAGES" }
+observability = { enabled = true }
+assets = { directory = ".open-next/assets", binding = "ASSETS" }
+r2_buckets = [{ binding = "NEXT_INC_CACHE_R2_BUCKET", bucket_name = "source-coop-cf-next-cache" }]
+services = [{ binding = "WORKER_SELF_REFERENCE", service = "source-coop-cf" }]
+
+[env.staging]
+name = "source-coop-staging"
+keep_vars = true
+preview_urls = true
+routes = [{ pattern = "staging.source.coop", custom_domain = true }]
+images = { binding = "IMAGES" }
+observability = { enabled = true }
+assets = { directory = ".open-next/assets", binding = "ASSETS" }
+r2_buckets = [{ binding = "NEXT_INC_CACHE_R2_BUCKET", bucket_name = "source-coop-staging-next-cache" }]
+services = [{ binding = "WORKER_SELF_REFERENCE", service = "source-coop-staging" }]
+
+[env.production]
+name = "source-coop-production"
+keep_vars = true
+routes = [{ pattern = "source.coop", custom_domain = true }]
+images = { binding = "IMAGES" }
+observability = { enabled = true }
+assets = { directory = ".open-next/assets", binding = "ASSETS" }
+r2_buckets = [{ binding = "NEXT_INC_CACHE_R2_BUCKET", bucket_name = "source-coop-production-next-cache" }]
+services = [{ binding = "WORKER_SELF_REFERENCE", service = "source-coop-production" }]

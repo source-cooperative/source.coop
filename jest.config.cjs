@@ -10,6 +10,9 @@ const customJestConfig = {
   setupFiles: ["<rootDir>/jest.polyfills.ts"],
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testEnvironment: "jest-environment-jsdom",
+  // jsdom resolves the "browser" export condition, which newer @aws-sdk
+  // packages map to untransformed ESM. Resolve the Node builds instead.
+  testEnvironmentOptions: { customExportConditions: ["node", "node-addons"] },
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^sinon$": "sinon/pkg/sinon.js",

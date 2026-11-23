@@ -1,7 +1,7 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import { DatabaseConstruct } from "./database-construct";
-import { VercelConstruct } from "./vercel-construct";
+import { CloudflareConstruct } from "./cloudflare-construct";
 import { AssetsConstruct } from "./assets-construct";
 import { DataProxyConstruct } from "./data-proxy-construct";
 
@@ -39,16 +39,11 @@ export class ApiStack extends cdk.Stack {
           },
     );
 
-    // Create Vercel role with OIDC trust relationship
-    const vercel = new VercelConstruct(this, "vercel", {
-      projectName: "radiantearth",
+    const cloudflare = new CloudflareConstruct(this, "cloudflare", {
       stage: props.stage,
-      vercelEnvironment: isProduction
-        ? ["production"]
-        : ["preview", "development", "staging"],
     });
 
-    // Grant Vercel role access to DynamoDB tables
+    // Grant the Worker access to DynamoDB tables
     for (const table of [
       database.accountsTable,
       database.productsTable,
@@ -58,12 +53,12 @@ export class ApiStack extends cdk.Stack {
       database.serviceAccountKeysTable,
       database.tagsTable,
     ]) {
-      table.grantReadWriteData(vercel.vercelRole);
+      table.grantReadWriteData(cloudflare.user);
     }
 
-    // Grant Vercel role write access to assets bucket (for profile image uploads)
-    assets.bucket.grantPut(vercel.vercelRole);
-    assets.bucket.grantDelete(vercel.vercelRole);
+    // Grant the Worker write access to assets bucket (for profile image uploads)
+    assets.bucket.grantPut(cloudflare.user);
+    assets.bucket.grantDelete(cloudflare.user);
 
     // Regions of the platform-hosted opendata buckets the data proxy
     // reads/writes for connections backed by Source's own storage. Each region

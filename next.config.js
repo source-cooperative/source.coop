@@ -23,7 +23,6 @@ const nextConfig = {
     },
   },
   transpilePackages: ["jose"],
-  serverExternalPackages: ["@duckdb/node-api"],
   async headers() {
     if (process.env.STAGE === "prod") {
       return [];
