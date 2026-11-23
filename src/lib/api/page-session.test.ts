@@ -59,6 +59,7 @@ describe("hasOrySessionCookie", () => {
   test.each([
     ["ory_session_abc=1", true],
     ["ory_kratos_session=1", true],
+    ["__Secure-ory_session_abc=1", true],
     ["theme=dark; ory_session_abc=1; other=2", true],
     ["theme=dark", false],
     // The name decides, not the value: a value that mentions it is not a session.

@@ -32,7 +32,9 @@ const oryFrontend = new FrontendApi(
 export function hasOrySessionCookie(
   cookie: string | null | undefined,
 ): cookie is string {
-  return !!cookie?.split(";").some((c) => /^ory\w*session/i.test(c.trim()));
+  return !!cookie
+    ?.split(";")
+    .some((c) => /ory\w*session/i.test(c.split("=")[0]));
 }
 
 /**
@@ -54,8 +56,10 @@ export async function getOrySession(): Promise<Session | null> {
  * /logout to clear it. @ory/nextjs `getServerSession` collapses this 403 to
  * null, so we re-check it here with a client that surfaces the error.
  *
- * Lives in a `server-only` module (not the @/lib barrel) because it imports
- * next/headers; it must never be reachable from a client component.
+ * Lives in a `server-only` module because it imports next/headers; it must
+ * never be reachable from a client component. `@/lib/api/utils` (and so the
+ * `@/lib` barrel) imports this module, so client components import from the
+ * specific `@/lib/*` modules, never the barrel.
  */
 export async function redirectIfStepUpRequired(): Promise<void> {
   const cookie = (await headers()).get("cookie");
