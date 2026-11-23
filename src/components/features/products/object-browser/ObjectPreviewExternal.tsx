@@ -152,7 +152,7 @@ const probeStacJson = cache(async (sourceUrl: string): Promise<StacJsonType | nu
 
 // cache(): the remote parquet-schema probe is requested by both the
 // "Open in new tab" link and the preview iframe in one render.
-const isStacGeoParquet = cache(async (sourceUrl: string): Promise<boolean> => {
+export const isStacGeoParquet = cache(async (sourceUrl: string): Promise<boolean> => {
   let db: DuckDBConnection | undefined;
   try {
     db = await DuckDBConnection.create();

@@ -9,8 +9,9 @@ import { storeViewerUrl, storeLabelFromResult } from "@/components/features/prod
 import { getAuthorizedProduct } from "../data";
 import { fileSourceUrl } from "@/lib/urls";
 import { getExtension, isStoreExtension } from "@/lib/files";
-import { getIframeSrc, fileTypeLabel } from "@/components/features/products/object-browser/ObjectPreviewExternal";
+import { getIframeSrc, fileTypeLabel, isStacGeoParquet } from "@/components/features/products/object-browser/ObjectPreviewExternal";
 import { ObjectPreviewCard } from "@/components/features/products/object-browser/ObjectPreviewCard";
+import { StacGeoParquetValidation } from "@/components/features/products/object-browser/StacGeoParquetValidation";
 
 interface PageProps {
   params: Promise<{
@@ -111,15 +112,27 @@ export default async function ObjectPreviewSlot({ params }: PageProps) {
       ])
     : [null, null];
 
+  // isStacGeoParquet is cached: fileTypeLabel already called it above, so this
+  // is a synchronous cache hit that adds no extra I/O.
+  const stacParquet =
+    extension === "parquet" && (await isStacGeoParquet(sourceUrl));
+
   return previewCard(
     viewerUrl,
     label,
-    <Suspense fallback={null}>
-      <ObjectPreview
-        account_id={account_id}
-        product_id={product_id}
-        object_path={object_path}
-      />
-    </Suspense>,
+    <>
+      <Suspense fallback={null}>
+        <ObjectPreview
+          account_id={account_id}
+          product_id={product_id}
+          object_path={object_path}
+        />
+      </Suspense>
+      {stacParquet && (
+        <Suspense fallback={null}>
+          <StacGeoParquetValidation href={sourceUrl} />
+        </Suspense>
+      )}
+    </>,
   );
 }
