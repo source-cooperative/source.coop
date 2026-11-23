@@ -191,7 +191,9 @@ describe("getIframeSrc", () => {
         status: 206,
         text: () => Promise.resolve('{"type":"Catalog","stac_version":"1.1.0"}'),
       });
-      await expect(getIframeSrc(sourceUrl, "json")).resolves.toMatch(/stac-browser/);
+      await expect(getIframeSrc(sourceUrl, "json")).resolves.toBe(
+        "https://browser.moregeo.it/external/data.source.coop/account/product/file",
+      );
     });
 
     it("returns the JSON viewer URL for a non-STAC JSON file", async () => {

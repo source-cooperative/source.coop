@@ -225,7 +225,7 @@ export const getIframeSrc = async (
       return `https://source-cooperative.github.io/zip-viewer/?url=${url}`;
     case "json":
       if (await probeStacJson(sourceUrl)) {
-        return `https://radiantearth.github.io/stac-browser/#/external/${url}`;
+        return `https://browser.moregeo.it/external/${sourceUrl.replace(/^https?:\/\//, "")}`;
       }
       return `https://source-cooperative.github.io/json-viewer/?url=${url}`;
     case "jsonl":
