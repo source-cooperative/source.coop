@@ -35,10 +35,5 @@ jobs:
         env:
           STAGE: dev
 
-  deploy-cloudflare:
-    needs: deploy-cdk
-    uses: ./.github/workflows/cloudflare-app.yaml
-    with:
-      environment: Staging
-      wrangler_env: staging
-    secrets: inherit
+  # The staging Worker deploys through Cloudflare Workers Builds on push to
+  # main, not from here. See deploy/CLOUDFLARE.md.

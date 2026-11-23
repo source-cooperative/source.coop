@@ -126,10 +126,8 @@ deploy:
 https://<deploy-host>/?path=/story/<story-id>
 ```
 
-The host is predictable: the preview workflow aliases each PR as `pr-<number>`,
-so the host is `pr-<number>-source-coop-ui.<workers-subdomain>.workers.dev`, and
-the workflow's PR comment repeats it. `<number>` is known only once the PR is
-open, so add the links then.
+The `source-coop-ui` Worker's Cloudflare build comments the preview URL on the
+PR once it has built, so add the links then and take the host from that comment.
 
 Link the specific stories rather than the root, and include a screenshot of
 anything visual — it shows the change in the review itself, and it outlives the

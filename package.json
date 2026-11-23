@@ -8,8 +8,6 @@
     "start": "next start",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "cf:upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
-    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "lint": "ESLINT_USE_FLAT_CONFIG=false next lint",
     "lint:fix": "ESLINT_USE_FLAT_CONFIG=false next lint --fix",
     "init-local": "tsx scripts/init-local.ts",

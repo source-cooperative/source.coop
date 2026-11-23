@@ -12,7 +12,7 @@
 
    `feat`, `fix`, `docs`, `test`, `ci`, `refactor`, `perf`, `chore`, `revert`
 
-4. **Preview deployments.** A workflow uploads each same-repo PR to Cloudflare as a preview version and comments the URL. See [deploy/CLOUDFLARE.md](deploy/CLOUDFLARE.md).
+4. **Preview deployments.** Cloudflare builds each PR branch as a preview version and comments the URL on the PR. See [deploy/CLOUDFLARE.md](deploy/CLOUDFLARE.md).
 5. **Describe UI changes.** A PR that changes the UI links the stories it affects on that branch's Storybook deployment and includes a screenshot of anything visual — the screenshot shows the change in the review itself, and outlives the branch deployment.
 6. **Keep the PR current.** The title and description describe the branch as it stands. When a push changes the approach, update them — a stale description is read as the spec, and sends a reviewer looking for code that isn't there.
 7. **Get review and merge** into `main`.
@@ -31,7 +31,7 @@ See the [README](README.md) for setup instructions (prerequisites, database, env
 
 ### Infrastructure
 
-AWS infrastructure is managed with [CDK](https://aws.amazon.com/cdk/) in the `deploy/` directory (DynamoDB, S3, CloudFront, IAM). [Cloudflare Workers](https://workers.cloudflare.com) hosts the Next.js frontend and API, built with [OpenNext](https://opennext.js.org/cloudflare). Each deploy updates both CDK and Cloudflare in parallel.
+AWS infrastructure is managed with [CDK](https://aws.amazon.com/cdk/) in the `deploy/` directory (DynamoDB, S3, CloudFront, IAM). [Cloudflare Workers](https://workers.cloudflare.com) hosts the Next.js frontend and API, built with [OpenNext](https://opennext.js.org/cloudflare). Staging and production deploy CDK and Cloudflare separately; see [deploy/CLOUDFLARE.md](deploy/CLOUDFLARE.md).
 
 CDK is run alongside other deployment workflows via GitHub Actions (see `.github/workflows/`), following the same deployment patterns (with the exception of preview deployments which are not supported).
 

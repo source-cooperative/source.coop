@@ -1,7 +1,0 @@
-{
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "source-coop-ui",
-  "compatibility_date": "2025-09-01",
-  "assets": { "directory": "storybook-static" },
-  "routes": [{ "pattern": "ui.source.coop", "custom_domain": true }]
-}
