@@ -6,6 +6,8 @@ const mockGet = jest.fn();
 const mockSet = jest.fn();
 
 jest.mock("next/headers", () => ({
+  // A request carrying an Ory session cookie, so getOrySession reaches the mocked whoami.
+  headers: async () => new Headers({ cookie: "ory_session_test=abc" }),
   cookies: jest.fn().mockResolvedValue({
     get: (...args: unknown[]) => mockGet(...args),
     set: (...args: unknown[]) => mockSet(...args),

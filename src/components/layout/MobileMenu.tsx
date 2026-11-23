@@ -16,7 +16,7 @@ import {
   newProductUrl,
   newOrganizationUrl,
   docsUrl,
-} from "@/lib";
+} from "@/lib/urls";
 import { LoginButton } from "@/components/core";
 import { canCreateProductForAccount, isAdmin, isAuthorized } from "@/lib/api/authz";
 import { ADMIN_TOOLS } from "@/components/features/admin/tools";

@@ -1,6 +1,6 @@
 import { Box, Callout, Link } from "@radix-ui/themes";
 import { CheckCircledIcon, InfoCircledIcon } from "@radix-ui/react-icons";
-import { verifyEmailUrl } from "@/lib";
+import { verifyEmailUrl } from "@/lib/urls";
 
 /**
  * Which banner to render. "unverified" shows a reminder to verify;

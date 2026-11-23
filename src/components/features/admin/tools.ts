@@ -8,7 +8,7 @@ import {
   adminAnalyticsUrl,
   adminUserLookupUrl,
   adminDataConnectionsUrl,
-} from "@/lib";
+} from "@/lib/urls";
 
 type IconProps = ComponentProps<typeof MagnifyingGlassIcon>;
 
