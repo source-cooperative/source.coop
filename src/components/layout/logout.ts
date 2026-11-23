@@ -1,4 +1,5 @@
-import { CONFIG, LOGGER } from "@/lib";
+import { CONFIG } from "@/lib/config";
+import { LOGGER } from "@/lib/logging";
 
 /** Shared logout handler for the desktop dropdown and the mobile menu. */
 export async function logout() {
