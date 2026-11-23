@@ -1,6 +1,6 @@
 import { createOryMiddleware } from "@ory/nextjs/middleware";
 import { NextRequest, NextResponse } from "next/server";
-import { LOGGER } from "@/lib";
+import { LOGGER } from "@/lib/logging";
 import { productUrl } from "@/lib/urls";
 
 /**

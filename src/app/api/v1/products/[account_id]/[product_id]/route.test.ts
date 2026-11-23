@@ -40,6 +40,11 @@ jest.mock("@ory/nextjs/app", () => ({
   getServerSession: jest.fn(),
 }));
 
+// A request carrying an Ory session cookie, so getOrySession reaches the mocked whoami.
+jest.mock("next/headers", () => ({
+  headers: async () => new Headers({ cookie: "ory_session_test=abc" }),
+}));
+
 jest.mock("@/lib/ory", () => ({
   getOryId: jest.fn(),
 }));

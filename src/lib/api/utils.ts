@@ -34,7 +34,7 @@ import {
   isIndividualAccount,
 } from "@/lib/clients/database";
 import { isAuthorized } from "@/lib/api/authz";
-import { getServerSession } from "@ory/nextjs/app";
+import { getOrySession } from "./page-session";
 import { NextRequest } from "next/server";
 import { getOryId } from "../ory";
 import { authenticateWithOidcToken } from "./oidc";
@@ -113,7 +113,7 @@ export async function getApiSession(
  * @returns A Promise that resolves to a UserSession object if a valid session exists, or null if not authenticated.
  */
 export async function getPageSession(): Promise<UserSession | null> {
-  const orySession = await getServerSession();
+  const orySession = await getOrySession();
   if (!orySession) {
     return null;
   }
