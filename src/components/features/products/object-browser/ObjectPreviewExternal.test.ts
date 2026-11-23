@@ -15,7 +15,7 @@ jest.mock("./PreviewIframe", () => ({}));
 // that exercise tif/tiff stay deterministic without real network calls.
 global.fetch = jest.fn().mockRejectedValue(new Error("fetch is mocked"));
 
-import { fileTypeLabel, getIframeSrc, parseCogTiling } from "./ObjectPreviewExternal";
+import { fileTypeLabel, getIframeSrc, parseCogTiling, parseStacType } from "./ObjectPreviewExternal";
 import { DuckDBConnection } from "@duckdb/node-api";
 
 const sourceUrl = "https://data.source.coop/account/product/file";
@@ -94,6 +94,50 @@ describe("fileTypeLabel", () => {
       await expect(fileTypeLabel(sourceUrl, "parquet")).resolves.toBe("Parquet");
     });
   });
+
+  describe("json", () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    function mockStacFetch(body: string) {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        status: 206,
+        text: () => Promise.resolve(body),
+      });
+    }
+
+    it("returns 'STAC Catalog' for a STAC Catalog JSON", async () => {
+      mockStacFetch('{"type":"Catalog","stac_version":"1.1.0","id":"test"}');
+      await expect(fileTypeLabel(sourceUrl, "json")).resolves.toBe("STAC Catalog");
+    });
+
+    it("returns 'STAC Collection' for a STAC Collection JSON", async () => {
+      mockStacFetch('{"type":"Collection","stac_version":"1.0.0","id":"test"}');
+      await expect(fileTypeLabel(sourceUrl, "json")).resolves.toBe("STAC Collection");
+    });
+
+    it("returns 'STAC Item' for a STAC Feature JSON", async () => {
+      mockStacFetch('{"type":"Feature","stac_version":"1.0.0","id":"test"}');
+      await expect(fileTypeLabel(sourceUrl, "json")).resolves.toBe("STAC Item");
+    });
+
+    it("returns 'STAC ItemCollection' for a STAC FeatureCollection JSON", async () => {
+      mockStacFetch('{"type":"FeatureCollection","stac_version":"1.0.0","features":[]}');
+      await expect(fileTypeLabel(sourceUrl, "json")).resolves.toBe("STAC ItemCollection");
+    });
+
+    it("returns 'JSON' for a non-STAC JSON file", async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("network"));
+      await expect(fileTypeLabel(sourceUrl, "json")).resolves.toBe("JSON");
+    });
+
+    it("returns 'JSON' when the probe returns 200 instead of 206", async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        status: 200,
+        body: { cancel: jest.fn().mockResolvedValue(undefined) },
+      });
+      await expect(fileTypeLabel(sourceUrl, "json")).resolves.toBe("JSON");
+    });
+  });
 });
 
 // Helper: build a mock fetch Response whose arrayBuffer() returns the given bytes.
@@ -136,6 +180,25 @@ describe("getIframeSrc", () => {
       });
       await expect(getIframeSrc(sourceUrl, "tif")).resolves.toMatch(/cog-viewer/);
       expect(cancel).toHaveBeenCalled();
+    });
+  });
+
+  describe("json", () => {
+    beforeEach(() => jest.clearAllMocks());
+
+    it("returns the STAC Browser URL for a STAC Catalog JSON", async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        status: 206,
+        text: () => Promise.resolve('{"type":"Catalog","stac_version":"1.1.0"}'),
+      });
+      await expect(getIframeSrc(sourceUrl, "json")).resolves.toBe(
+        "https://browser.moregeo.it/external/data.source.coop/account/product/file",
+      );
+    });
+
+    it("returns the JSON viewer URL for a non-STAC JSON file", async () => {
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("network"));
+      await expect(getIframeSrc(sourceUrl, "json")).resolves.toMatch(/json-viewer/);
     });
   });
 });
@@ -255,5 +318,33 @@ describe("parseCogTiling", () => {
     // The value 512 = 0x200 was written as LONG (4 bytes), but as SHORT we
     // read only the first 2 bytes, which is still 0x200 in LE. Result is same.
     expect(parseCogTiling(buf)).toBeNull(); // 512×512 image, 256×256 tiles → 4 tiles
+  });
+});
+
+describe("parseStacType", () => {
+  it.each([
+    ['{"type":"Catalog","stac_version":"1.1.0"}', "Catalog"],
+    ['{"type":"Collection","stac_version":"1.0.0"}', "Collection"],
+    ['{"type":"Feature","stac_version":"1.0.0"}', "Feature"],
+    ['{"type":"FeatureCollection","stac_version":"1.0.0"}', "FeatureCollection"],
+  ])("returns %s type from JSON text", (text, expected) => {
+    expect(parseStacType(text)).toBe(expected);
+  });
+
+  it("returns null when stac_version is absent", () => {
+    expect(parseStacType('{"type":"Catalog"}')).toBeNull();
+  });
+
+  it("returns null for an unknown type with stac_version", () => {
+    expect(parseStacType('{"type":"Unknown","stac_version":"1.0.0"}')).toBeNull();
+  });
+
+  it("returns null for empty string", () => {
+    expect(parseStacType("")).toBeNull();
+  });
+
+  it("works on a truncated Range response that still contains the key fields", () => {
+    const truncated = '{"type" : "Catalog", "stac_version" : "1.0.0", "id": "partial-';
+    expect(parseStacType(truncated)).toBe("Catalog");
   });
 });
