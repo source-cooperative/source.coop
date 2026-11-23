@@ -35,22 +35,10 @@ jobs:
         env:
           STAGE: dev
 
-  deploy-vercel:
-    runs-on: ubuntu-latest
-    environment:
-      name: Staging
-      url: https://staging.source.coop
-    steps:
-      - uses: actions/checkout@v4.2.2
-      - uses: actions/setup-node@v4.4.0
-        with:
-          node-version: 22
-      # Installed before the credentials exist: a postinstall in the vercel
-      # package tree must not run with the deploy token in the environment.
-      - run: npm install -g vercel@59
-      - name: Deploy to Vercel
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
-        run: vercel deploy --target=staging --token="$VERCEL_TOKEN"
+  deploy-cloudflare:
+    needs: deploy-cdk
+    uses: ./.github/workflows/cloudflare-app.yaml
+    with:
+      environment: Staging
+      wrangler_env: staging
+    secrets: inherit

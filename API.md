@@ -172,7 +172,7 @@ The members, and who sets them:
   argument when the operation was given the query string, so the fields come
   out as parameters.
 - **`instance`** (the request's URL, without its query) and **`request_id`**
-  (Vercel's `x-vercel-id`, which finds the request in its logs) are added by
+  (Cloudflare's `cf-ray`, which finds the request in its logs) are added by
   `withProblems`, which also makes `type` absolute and answers anything thrown
   as an `internal` problem. `withApiSession` is built on it, and a route that
   authenticates its caller itself is wrapped in it directly, so every problem
@@ -229,5 +229,5 @@ edit of those.
   reference as it changes. It reads problems into its own `--json` error
   output, so a change to a problem's members needs the matching CLI change.
 - **Everyone else** is unknown. Before removing or reshaping an endpoint, check
-  production traffic for it in Vercel's logs for the path; if something still
+  production traffic for it in Cloudflare's logs for the path; if something still
   calls it, deprecate it instead.

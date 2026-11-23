@@ -1,5 +1,4 @@
 import type { StorageConfig } from "@/types/storage";
-import { awsCredentialsProvider } from "@vercel/functions/oidc";
 
 const region = process.env.AWS_REGION || "us-east-1";
 
@@ -28,11 +27,8 @@ export const CONFIG = {
       process.env.DYNAMODB_ENDPOINT ||
       `https://dynamodb.${region}.amazonaws.com`,
     region,
-    credentials: process.env.AWS_ROLE_ARN
-      ? awsCredentialsProvider({
-          roleArn: process.env.AWS_ROLE_ARN,
-        })
-      : undefined,
+    // Credentials come from the SDK's default chain: AWS_ACCESS_KEY_ID and
+    // AWS_SECRET_ACCESS_KEY as Worker secrets in deployment.
   },
 
   // Encryption key (base64, decoding to 32 bytes) for the per-user
@@ -53,7 +49,7 @@ export const CONFIG = {
       // project's issuer domain.
       issuer: process.env.NEXT_PUBLIC_ORY_SDK_URL || "",
       // The audience the API's bearer tokens must name; unset, the request's
-      // own origin. Vercel previews set it to staging's origin, so a staging
+      // own origin. Preview deployments set it to staging's origin, so a staging
       // CLI login works on every preview. That grants previews nothing: they
       // already run with staging's credentials.
       audience: process.env.API_AUDIENCE || "",
@@ -95,7 +91,7 @@ export const CONFIG = {
 
   // Environment configuration
   environment: {
-    // Local development only — Vercel preview and production both set
+    // Local development only — every deployed environment sets
     // NODE_ENV=production. Use isProduction to distinguish prod from staging.
     isDevelopment: process.env.NODE_ENV === "development",
     isProduction: (process.env.STAGE || "dev") === "prod",

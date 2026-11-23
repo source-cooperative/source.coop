@@ -126,27 +126,15 @@ deploy:
 https://<deploy-host>/?path=/story/<story-id>
 ```
 
-Vercel caps a hostname label at 63 characters, so a long branch name is cut short
-and given a hash (`source-coop-ui-git-feat-github-immutable-re-82950d-radiantearth.vercel.app`),
-and a hostname pasted together from the full branch name doesn't resolve. The
-deploy doesn't exist yet when the description is first written, so compute the
-host from the branch:
-
-```sh
-b=$(git branch --show-current) p=source-coop-ui t=radiantearth
-l="$p-git-$(printf %s "$b" | tr -c 'a-zA-Z0-9' - | tr A-Z a-z)-$t"
-[ ${#l} -gt 63 ] && l="${l:0:$((55 - ${#t}))}-$(printf %s "git-$b$p" | shasum -a 256 | cut -c1-6)-$t"
-echo "https://$l.vercel.app"
-```
-
-Once the PR is open, the `source-coop-ui` row of the Vercel bot's comment
-(`gh pr view <n> --comments`) has the host Vercel actually assigned; check the
-links against it.
+The host is predictable: the preview workflow aliases each PR as `pr-<number>`,
+so the host is `pr-<number>-source-coop-ui.<workers-subdomain>.workers.dev`, and
+the workflow's PR comment repeats it. `<number>` is known only once the PR is
+open, so add the links then.
 
 Link the specific stories rather than the root, and include a screenshot of
 anything visual — it shows the change in the review itself, and it outlives the
-branch deployment, which goes away with the branch. (Branch deployments ask for a
-Vercel login; ui.source.coop is public.)
+branch deployment, which goes away with the branch. (ui.source.coop is the
+published copy of `main`.)
 
 The title and description describe the branch as it stands, not as it stood when
 the PR was opened. After pushing to a branch with an open PR, re-read both: if

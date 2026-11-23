@@ -54,7 +54,7 @@ test("an Ory access token goes to the Ory verifier, for this origin", async () =
   expect(authenticateWithOidcToken).not.toHaveBeenCalled();
 });
 
-test("a configured audience replaces the origin, as on Vercel previews", async () => {
+test("a configured audience replaces the origin, as on preview deployments", async () => {
   const { CONFIG } = jest.requireMock("@/lib/config");
   CONFIG.auth.oauth2.audience = "https://staging.test.source.coop";
   try {

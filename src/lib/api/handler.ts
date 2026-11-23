@@ -48,12 +48,12 @@ const challenge = (request: NextRequest) =>
 /**
  * `body` as it happened at `request`: its `type` and `instance` as absolute
  * URLs on the request's own origin, the platform's request ID when it gives
- * one (Vercel's `x-vercel-id`, which finds the request in its logs), and the
+ * one (Cloudflare's `cf-ray`, which finds the request in its logs), and the
  * authentication challenge when it is a 401.
  */
 function problemAt(request: NextRequest, body: Problem, headers?: HeadersInit) {
   const { origin, pathname } = request.nextUrl;
-  const request_id = request.headers.get("x-vercel-id") ?? undefined;
+  const request_id = request.headers.get("cf-ray") ?? undefined;
   if (body.status === StatusCodes.UNAUTHORIZED) {
     headers = new Headers(headers);
     headers.set("WWW-Authenticate", challenge(request));

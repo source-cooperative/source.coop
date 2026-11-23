@@ -1,6 +1,6 @@
 // The published reference is api.docs.source.coop, which renders production's
 // /api/openapi. This page renders the deploy's own, so a branch preview — whose
-// Vercel login a cross-origin page can't pass — documents that branch's
+// access gate a cross-origin page can't pass — documents that branch's
 // endpoints for review. It uses Swagger UI rather than Redoc so a reviewer can
 // call them too: the document's server is the relative /api/v1, so "Try it out"
 // reaches the deploy serving the page.

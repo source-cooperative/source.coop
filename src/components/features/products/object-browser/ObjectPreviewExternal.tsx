@@ -4,7 +4,7 @@ import { LOGGER } from "@/lib/logging";
 import { fileSourceUrl } from "@/lib/urls";
 import { Code, Text } from "@radix-ui/themes";
 import { getExtension } from "@/lib/files";
-import { DuckDBConnection } from "@duckdb/node-api";
+import { asyncBufferFromUrl, parquetMetadataAsync } from "hyparquet";
 import { cache } from "react";
 import { PreviewIframe } from "./PreviewIframe";
 
@@ -153,29 +153,19 @@ const probeStacJson = cache(async (sourceUrl: string): Promise<StacJsonType | nu
 // cache(): the remote parquet-schema probe is requested by both the
 // "Open in new tab" link and the preview iframe in one render.
 const isStacGeoParquet = cache(async (sourceUrl: string): Promise<boolean> => {
-  let db: DuckDBConnection | undefined;
   try {
-    db = await DuckDBConnection.create();
-
-    // Vercel: /tmp is the only writable location
-    await db.run("SET home_directory='/tmp'");
-    await db.run("SET extension_directory='/tmp/duckdb_extensions'");
-
-    const reader = await db.runAndReadAll(
-      `SELECT count(*) > 0 FROM parquet_schema(?) WHERE name IN ('stac_version', 'geometry') GROUP BY file_name HAVING count(*) = 2`,
-      [sourceUrl],
-    );
-    return reader.getRows().length > 0;
+    // Pure JS, so it runs on Workers; reads the footer with range requests.
+    const file = await asyncBufferFromUrl({ url: sourceUrl });
+    const { schema } = await parquetMetadataAsync(file);
+    const names = new Set(schema.map((el) => el.name));
+    return names.has("stac_version") && names.has("geometry");
   } catch (error) {
     LOGGER.error(`Error checking for STAC GeoParquet: ${error}`, {
       operation: "isStacGeoParquet",
-      context: "DuckDB query",
+      context: "parquet footer read",
       metadata: { sourceUrl, error: (error as Error).toString() },
     });
     return false;
-  } finally {
-    // DuckDB connections should be closed to free up resources
-    db?.closeSync();
   }
 });
 

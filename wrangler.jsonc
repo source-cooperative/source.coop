@@ -1,0 +1,45 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "source-coop",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "images": { "binding": "IMAGES" },
+  "observability": { "enabled": true },
+  // Bindings and routes aren't inherited by `env.*`, so each environment below
+  // repeats them. Runtime vars aren't set here: the deploy workflow passes them
+  // with `--var` from the GitHub environment, the same values the build inlines
+  // as NEXT_PUBLIC_*. Secrets live on the Worker (`wrangler secret put`).
+  // See deploy/CLOUDFLARE.md.
+  "env": {
+    // Trial deployment at cf.source.coop, beside the live site.
+    "cf": {
+      "name": "source-coop-cf",
+      "routes": [{ "pattern": "cf.source.coop", "custom_domain": true }],
+      "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+      "images": { "binding": "IMAGES" },
+      "observability": { "enabled": true },
+      "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "source-coop-cf-next-cache" }],
+      "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "source-coop-cf" }]
+    },
+    "staging": {
+      "name": "source-coop-staging",
+      "routes": [{ "pattern": "staging.source.coop", "custom_domain": true }],
+      "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+      "images": { "binding": "IMAGES" },
+      "observability": { "enabled": true },
+      "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "source-coop-staging-next-cache" }],
+      "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "source-coop-staging" }]
+    },
+    "production": {
+      "name": "source-coop-production",
+      "routes": [{ "pattern": "source.coop", "custom_domain": true }],
+      "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+      "images": { "binding": "IMAGES" },
+      "observability": { "enabled": true },
+      "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "source-coop-production-next-cache" }],
+      "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "source-coop-production" }]
+    }
+  }
+}
