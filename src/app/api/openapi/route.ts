@@ -25,6 +25,7 @@ import "../v1/products/[account_id]/[product_id]/mirrors/[connection_id]/route";
 import "../v1/secret-scanning/github/route";
 import "../v1/service-account-keys/exchanges/route";
 import "../v1/service-account-keys/revocations/route";
+import "../v1/catalog-entries/[account_id]/[product_id]/route";
 import "../v1/tags/route";
 import "../v1/tags/[tag_id]/route";
 import "../v1/whoami/route";
