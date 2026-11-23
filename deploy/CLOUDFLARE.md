@@ -107,9 +107,16 @@ release. Delete the Vercel projects afterwards.
 - **No CDK ordering for staging.** Workers Builds doesn't wait for the CDK job,
   so a change that needs new IAM grants or tables can deploy before them.
   Production waits (`needs: deploy-cdk`).
-- **`revalidatePath` doesn't purge.** Only an R2 incremental cache is
-  configured; `unstable_cache` TTLs work. Add a tag cache if an action needs
-  on-demand invalidation to show immediately.
+- **`revalidatePath`/`revalidateTag` don't purge, and the queue is missing.**
+  The cache is R2 behind the regional cache (`open-next.config.ts`), with no tag
+  cache or queue, so the ten or so `revalidatePath` calls after mutations don't
+  refresh cached pages and time-based revalidation isn't deduplicated.
+  [OpenNext's caching guide](https://opennext.js.org/cloudflare/caching)
+  recommends `doQueue` plus `d1NextTagCache` (or `doShardedTagCache` at high
+  traffic), each with its own binding in `wrangler.toml` per environment, and a
+  D1 database for the tag cache. Follow-up.
+- **Regional cache needs a route.** The Cache API does nothing on `*.workers.dev`,
+  so it only speeds up cf.source.coop and the real hostnames, not preview URLs.
 - **Bundle size.** The Worker must fit Cloudflare's size limit (10 MiB
   compressed on the paid plan). Check the `cf:build` output when dependencies
   grow.
