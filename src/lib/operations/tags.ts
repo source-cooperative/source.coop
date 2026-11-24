@@ -12,7 +12,7 @@ import {
 } from "@/lib/clients/database";
 import { MAX_TRANSACTION_ITEMS, type TransactItem } from "@/lib/clients/database/base";
 import { adminTagsUrl } from "@/lib/urls";
-import { canonTag } from "@/lib/tags/canon";
+import { canonTag, MAX_PENDING_PER_ACCOUNT, TAG_PATTERN } from "@/lib/tags/canon";
 import { TAG_CATEGORY_IDS } from "@/lib/tags/categories";
 import { LOGGER } from "@/lib/logging";
 import {
@@ -28,8 +28,6 @@ import {
   unauthenticated,
 } from "./result";
 
-const MAX_PENDING_PER_ACCOUNT = 5;
-const TAG_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?$/;
 const PATTERN_RULE =
   "Use up to 40 lowercase letters, digits or hyphens, starting and ending with a letter or digit. Spaces become hyphens.";
 
@@ -52,7 +50,7 @@ export const TagSchema = z
     }),
     outcome: z.enum(["approved", "merged", "rejected"]).optional().openapi({
       description:
-        "An admin's latest decision on the tag. A merged or rejected tag is off the list and off every product, but stays on record. Only admins see it.",
+        "An admin's latest decision on the tag. A merged or rejected tag is off the list and off every product, but stays on record. Admins see it, and anyone listing tags by `tag_id`.",
     }),
     reviewed_by: z.string().optional().openapi({
       description: "The admin who decided. Only admins see it.",
@@ -99,6 +97,14 @@ export const ListTagsQuerySchema = z.object({
     description:
       "`true` lists the suggested tags an admin has decided, approved, merged or rejected, most recent first. Only admins may ask for them.",
   }),
+  tag_id: z
+    .array(z.string())
+    .max(100)
+    .optional()
+    .openapi({
+      description:
+        "Lists only the tags named, in any state: approved, awaiting review, merged or rejected. Repeat it for each tag, up to 100. A name no tag has is left out. It can't be combined with `pending` or `reviewed`.",
+    }),
 });
 
 export const SuggestTagSchema = z
@@ -162,11 +168,17 @@ export async function listTags(
   if (!parsed.success) return fromZodError(parsed.error);
   const pending = parsed.data.pending === "true";
   const reviewed = parsed.data.reviewed === "true";
+  const names = parsed.data.tag_id?.map(canonTag);
+  if (names && (pending || reviewed)) {
+    return invalid("Name tags, or ask for pending or reviewed ones, not both", "tag_id");
+  }
   if ((pending || reviewed) && !isAdmin(session)) {
     return deny(session, "Only admins may list the tags awaiting or past review");
   }
   const all = await tagsTable.listAll();
-  const tags = pending
+  const tags = names
+    ? all.filter((t) => names.includes(t.tag_id))
+    : pending
     ? all.filter((t) => t.pending)
     : reviewed
       ? all
@@ -175,7 +187,13 @@ export async function listTags(
       : all.filter(isListed);
   return ok(
     onePage(
-      isAdmin(session) ? tags : tags.map(({ tag_id, category }) => ({ tag_id, category }))
+      isAdmin(session)
+        ? tags
+        : // A named tag's state, so a form can tell a merged or rejected one
+          // from a new one; never who suggested or decided it.
+          tags.map(({ tag_id, category, pending, outcome, merged_into }) =>
+            names ? { tag_id, category, pending, outcome, merged_into } : { tag_id, category }
+          )
     )
   );
 }
