@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { useProductIdValidation } from "./useIdValidation";
+import { useAccountIdValidation, useProductIdValidation } from "./useIdValidation";
 
 const answer = (status: number) => {
   global.fetch = jest.fn(async () => new Response(null, { status })) as jest.Mock;
@@ -34,5 +34,25 @@ describe("useProductIdValidation", () => {
       isValid: false,
       error: "Failed to check product ID availability",
     });
+  });
+
+  it("allows a product ID that is reserved for accounts", async () => {
+    answer(404);
+    const { result } = renderHook(() => useProductIdValidation("products", "acoltrane"));
+    await waitFor(() => expect(result.current.isValid).not.toBeNull(), { timeout: 2000 });
+    expect(result.current).toMatchObject({ isValid: true, error: null });
+  });
+});
+
+describe("useAccountIdValidation", () => {
+  it("refuses a reserved ID without asking the server", async () => {
+    answer(404);
+    const { result } = renderHook(() => useAccountIdValidation("products"));
+    await waitFor(() => expect(result.current.isValid).not.toBeNull(), { timeout: 2000 });
+    expect(result.current).toMatchObject({
+      isValid: false,
+      error: "That account ID is reserved",
+    });
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
